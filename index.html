@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>方块像素画生成器</title>
+<title>mcArt · 方块像素画生成器</title>
+<meta name="description" content="把图片转成 Minecraft 方块像素画，可导出 Java 版结构文件（.nbt）。">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMicgc2hhcGUtcmVuZGVyaW5nPSdjcmlzcEVkZ2VzJz48cG9seWdvbiBwb2ludHM9JzE2LDMgMjksMTAuNSAxNiwxOCAzLDEwLjUnIGZpbGw9JyM4NmJiNWUnLz48cG9seWdvbiBwb2ludHM9JzMsMTAuNSAxNiwxOCAxNiwyOCAzLDIwLjUnIGZpbGw9JyM5YzdhNTYnLz48cG9seWdvbiBwb2ludHM9JzI5LDEwLjUgMjksMjAuNSAxNiwyOCAxNiwxOCcgZmlsbD0nIzg1NjM0NycvPjxwb2x5Z29uIHBvaW50cz0nMywxMC41IDE2LDE4IDE2LDIwLjMgMywxMi44JyBmaWxsPScjNmZhMjQ2Jy8+PHBvbHlnb24gcG9pbnRzPScyOSwxMC41IDI5LDEyLjggMTYsMjAuMyAxNiwxOCcgZmlsbD0nIzVjOGMzYycvPjxwb2x5bGluZSBwb2ludHM9JzMsMTAuNSAxNiwzIDI5LDEwLjUnIGZpbGw9J25vbmUnIHN0cm9rZT0nIzE0MTEwYycgc3Ryb2tlLXdpZHRoPScxLjQnLz48cG9seWxpbmUgcG9pbnRzPSczLDEwLjUgMywyMC41IDE2LDI4IDI5LDIwLjUgMjksMTAuNScgZmlsbD0nbm9uZScgc3Ryb2tlPScjMTQxMTBjJyBzdHJva2Utd2lkdGg9JzEuNCcvPjxsaW5lIHgxPScxNicgeTE9JzE4JyB4Mj0nMTYnIHkyPScyOCcgc3Ryb2tlPScjMTQxMTBjJyBzdHJva2Utd2lkdGg9JzEuNCcvPjxsaW5lIHgxPSczJyB5MT0nMTAuNScgeDI9JzE2JyB5Mj0nMTgnIHN0cm9rZT0nIzE0MTEwYycgc3Ryb2tlLXdpZHRoPScxLjQnLz48bGluZSB4MT0nMjknIHkxPScxMC41JyB4Mj0nMTYnIHkyPScxOCcgc3Ryb2tlPScjMTQxMTBjJyBzdHJva2Utd2lkdGg9JzEuNCcvPjwvc3ZnPg==">
 <style>
   :root{
     --gui:#c6c6c6;
@@ -29,20 +31,46 @@
   }
   /* 顶栏 */
   header{
-    display:flex;align-items:baseline;gap:14px;padding:10px 18px 8px;
+    display:flex;align-items:center;gap:11px;padding:8px 16px 9px;
     background:linear-gradient(#4a4537,#332f26);
     border-bottom:2px solid #16140f;
     box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 4px 0 rgba(0,0,0,.35);
+    position:relative;
   }
+  /* 顶栏下沿一道草皮，呼应游戏里的地平线 */
+  header::after{
+    content:"";position:absolute;left:0;right:0;bottom:0;height:2px;pointer-events:none;
+    background:repeating-linear-gradient(90deg,
+      #4a7a2e 0 5px,#5f9040 5px 9px,#3f6b28 9px 14px,#6fa246 14px 16px);
+    opacity:.7;
+  }
+  /* 图标：等距草方块，装在物品格里 */
+  .logo{
+    width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;
+    background:#8b8b8b;border:2px solid #000;
+    box-shadow:inset 2px 2px 0 #4f4f4f, inset -2px -2px 0 #d4d4d4;
+  }
+  .logo svg{display:block;filter:drop-shadow(1px 1px 0 rgba(0,0,0,.5))}
+  .headtxt{display:flex;flex-direction:column;gap:1px;min-width:0}
   header h1{
-    margin:0;font-size:16px;letter-spacing:.04em;font-weight:700;
-    text-shadow:2px 2px 0 #191510, 0 0 8px rgba(120,200,90,.25);
+    margin:0;font-size:15px;line-height:1.25;letter-spacing:.04em;font-weight:700;
+    text-shadow:2px 2px 0 #191510, 0 0 9px rgba(120,200,90,.22);
   }
   header h1 b{color:#9ad36a}
   header .tag{
-    font-size:11px;color:#c8c1a8;letter-spacing:.16em;text-transform:uppercase;
-    text-shadow:1px 1px 0 #191510;
+    font-size:10px;line-height:1.2;color:#b5ad95;letter-spacing:.06em;
+    text-shadow:1px 1px 0 #191510;white-space:nowrap;
   }
+  header .tag i{color:#7f7a68;font-style:normal;margin:0 3px}
+  .hchips{margin-left:auto;display:flex;align-items:center;gap:6px}
+  .chip{
+    font:inherit;font-size:10px;letter-spacing:.05em;white-space:nowrap;
+    color:#e9e5d6;background:#2b2820;border:2px solid #000;padding:3px 7px;
+    text-decoration:none;text-shadow:1px 1px 0 #000;
+    box-shadow:inset 1px 1px 0 #4b4638, inset -1px -1px 0 #14120d;
+  }
+  a.chip:hover{background:#3b3729;color:#9ad36a}
+  a.chip:active{transform:translate(1px,1px)}
   /* 布局 */
   main{
     flex:1;min-height:0;display:grid;
@@ -239,7 +267,11 @@
   .slot:hover{box-shadow:inset 0 0 0 2px #fff}
   .slot.on{box-shadow:inset 2px 2px 0 #4f4f4f, inset -2px -2px 0 #d4d4d4, 0 0 0 2px #ffd94a, 0 0 8px #ffd94a}
   .slot.zero{opacity:.42}
-  .famhead{font-size:10.5px;color:#5a5a5a;margin:7px 0 4px;letter-spacing:.06em;text-shadow:1px 1px 0 #fff}
+  .famhead{
+    display:flex;align-items:center;gap:6px;
+    font-size:10.5px;color:#5a5a5a;margin:7px 0 4px;letter-spacing:.06em;text-shadow:1px 1px 0 #fff;
+  }
+  .famhead::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(0,0,0,.20),rgba(0,0,0,0))}
   .famhead:first-child{margin-top:0}
   .palbox{
     max-height:320px;overflow-y:auto;padding-right:2px;
@@ -261,16 +293,41 @@
     color:#fff;padding:1px 2px;background:rgba(0,0,0,.66);
     text-shadow:1px 1px 0 #000;pointer-events:none;
   }
+  .hb.empty{background:#797979;box-shadow:inset 1px 1px 0 #9a9a9a, inset -1px -1px 0 #616161}
+  .hb.empty .k{opacity:.5}
   .hb:hover{box-shadow:inset 0 0 0 1px #fff}
   .hb.active{
     background:#d0d0d0;
     outline:2px solid #fff;outline-offset:-2px;
     box-shadow:inset 0 0 0 4px rgba(0,0,0,.30);
   }
+  /* 细节 */
+  ::selection{background:#4e8a34;color:#fff}
+  .btn:focus-visible,.drop:focus-visible,.slot:focus-visible,.hb:focus-visible,
+  input:focus-visible,.chip:focus-visible{
+    outline:2px solid #9ad36a;outline-offset:2px;
+  }
+  .win > h2::before,.modal-win h2::before{
+    content:"";display:inline-block;width:7px;height:7px;margin-right:6px;
+    background:var(--green);border:1px solid #2b2b2b;box-shadow:0 0 0 1px #efefef;
+  }
+  .btn:active,.slot:active,.hb:active,.drop:active{transform:translate(1px,1px)}
+  .stagefoot .dot{
+    display:inline-block;width:6px;height:6px;margin-right:5px;
+    background:var(--green);border:1px solid #2b2b2b;vertical-align:1px;
+  }
   /* 滚动条 */
   ::-webkit-scrollbar{width:12px;height:12px}
   ::-webkit-scrollbar-track{background:#2b2925}
   ::-webkit-scrollbar-thumb{background:#8b8b8b;border:2px solid #000;box-shadow:inset 2px 2px 0 #b5b5b5}
+  @media (max-width:640px){
+    header{padding:7px 10px}
+    header .tag{display:none}
+    .logo{width:34px;height:34px;flex-basis:34px}
+    .logo svg{width:27px;height:27px}
+    .hchips{gap:4px}
+    .hchips .chip{padding:2px 5px;font-size:9.5px}
+  }
   @media (max-width:1120px){
     body{overflow:auto}
     main{grid-template-columns:1fr;height:auto}
@@ -281,8 +338,36 @@
 </head>
 <body>
 <header>
-  <h1>方块像素画 <b>生成器</b></h1>
-  <span class="tag">Minecraft 2D · 结构文件</span>
+  <span class="logo" aria-hidden="true">
+    <svg viewBox="0 0 32 32" width="33" height="33" shape-rendering="crispEdges">
+      <!-- 顶面 -->
+      <polygon points="16,3 29,10.5 16,18 3,10.5" fill="#86bb5e"/>
+      <!-- 左右两侧泥土 + 上沿草皮 -->
+      <polygon points="3,10.5 16,18 16,28 3,20.5" fill="#9c7a56"/>
+      <polygon points="29,10.5 29,20.5 16,28 16,18" fill="#856347"/>
+      <polygon points="3,10.5 16,18 16,20.3 3,12.8" fill="#6fa246"/>
+      <polygon points="29,10.5 29,12.8 16,20.3 16,18" fill="#5c8c3c"/>
+      <!-- 像素颗粒 -->
+      <polygon points="12,9.6 13.4,10.3 12,11 10.6,10.3" fill="#74a94f"/>
+      <polygon points="20,12.4 21.2,13 20,13.6 18.8,13" fill="#74a94f"/>
+      <polygon points="7,15 8.2,15.7 8.2,16.7 7,16" fill="#8a6444"/>
+      <polygon points="24,16.6 25.2,15.9 25.2,16.9 24,17.6" fill="#75543a"/>
+      <!-- 描边 -->
+      <polyline points="3,10.5 16,3 29,10.5" fill="none" stroke="#14110c" stroke-width="1.2"/>
+      <polyline points="3,10.5 3,20.5 16,28 29,20.5 29,10.5" fill="none" stroke="#14110c" stroke-width="1.2"/>
+      <line x1="16" y1="18" x2="16" y2="28" stroke="#14110c" stroke-width="1.2"/>
+      <line x1="3" y1="10.5" x2="16" y2="18" stroke="#14110c" stroke-width="1.2"/>
+      <line x1="29" y1="10.5" x2="16" y2="18" stroke="#14110c" stroke-width="1.2"/>
+    </svg>
+  </span>
+  <div class="headtxt">
+    <h1>方块像素画 <b>生成器</b></h1>
+    <span class="tag">mcArt<i>·</i>Minecraft 2D<i>·</i>结构文件</span>
+  </div>
+  <div class="hchips">
+    <span class="chip" title="第一版">v0.1</span>
+    <a class="chip" href="https://github.com/lyynew/mcArt" target="_blank" rel="noopener" title="在 GitHub 上查看源码">GitHub</a>
+  </div>
 </header>
 
 <main>
@@ -399,7 +484,7 @@
         <div class="canvasinner"><canvas id="board"></canvas></div>
       </div>
       <div class="stagefoot">
-        <span>规格 <b id="s1">48×48</b></span>
+        <span><i class="dot"></i>规格 <b id="s1">48×48</b></span>
         <span>方块 <b id="s2">0</b></span>
         <span>用色 <b id="s3">0</b></span>
         <span id="hover">-</span>
@@ -1320,7 +1405,7 @@ function buildHotbar(){
   for (let i = 0; i < 9; i++){
     const e = state.hotbar[i];
     const el = document.createElement("div");
-    el.className = "hb" + (i === state.hotSlot ? " active" : "");
+    el.className = "hb" + (i === state.hotSlot ? " active" : "") + (e ? "" : " empty");
     el.innerHTML = '<span class="k">' + (i + 1) + "</span>";
     if (e){
       const bi = hotBlockIndex(i);
