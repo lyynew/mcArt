@@ -1308,14 +1308,21 @@ function updateStats(){
   const r = counts();
   let used = 0;
   for (let i = 0; i < r.list.length; i++) if (r.list[i] > 0) used++;
-  $("#s1").textContent = n + "×" + n;
+  $("#s1").textContent = n + " × " + n;
   $("#s2").textContent = String(n * n - r.empty);
   $("#s3").textContent = String(used);
-  $("#nbtSize").textContent = n + " × " + (state.orient === "flat" ? 1 : n) + " × " + n;
+  $("#nbtSize").textContent = (state.orient === "flat" ? [n, 1, n] : [n, n, 1]).join(" × ");
   const tiles = Math.ceil(n / STRUCT_MAX);
-  $("#nbtTip").textContent = tiles <= 1
-    ? "结构方块上限 48×48，这个尺寸可以直接载入"
-    : "超出上限，会拆成 " + tiles + "×" + tiles + " 块打包成 zip";
+  /* 文件名里出现不支持的字符时，告诉用户实际会导出成什么 */
+  const rawName = ($("#nbtName").value || "").trim();
+  const cleaned = rawName.replace(/[^A-Za-z0-9_\-]/g, "");
+  if (rawName && cleaned !== rawName){
+    $("#nbtTip").textContent = "名字里有不能用的字符，实际导出为 " + safeName(rawName) + ".nbt";
+  } else {
+    $("#nbtTip").textContent = tiles <= 1
+      ? "结构方块上限 48×48，这个尺寸可以直接载入"
+      : "超出上限，会拆成 " + tiles + "×" + tiles + " 块打包成 zip";
+  }
   return r;
 }
 
@@ -2034,7 +2041,10 @@ $("#openCustom").addEventListener("click", openCustom);
 document.querySelectorAll("[data-n]").forEach(function(b){
   b.addEventListener("click", function(){
     const v = parseInt(b.dataset.n, 10);
+    /* 滑杆有 110ms 防抖，此时点按钮要把它撤销，否则旧值会在之后盖回来 */
+    clearTimeout(sizeTimer);
     $("#size").value = String(v);
+    $("#nval").textContent = v + " × " + v;
     document.querySelectorAll("[data-n]").forEach(function(o){ o.classList.toggle("on", o === b); });
     state.N = v;
     state.zoomPx = 0;
@@ -2173,6 +2183,7 @@ document.querySelectorAll("[data-orient]").forEach(function(b){
 });
 
 $("#reset").addEventListener("click", function(){ refresh(true); });
+$("#nbtName").addEventListener("input", updateStats);
 
 document.addEventListener("keydown", function(e){
   const tag = (e.target && e.target.tagName) || "";
