@@ -1,0 +1,996 @@
+[
+ [
+  "白色混凝土",
+  "White Concrete",
+  "混凝土",
+  "white_concrete",
+  "#CFD5D6"
+ ],
+ [
+  "淡灰色混凝土",
+  "Light Gray Concrete",
+  "混凝土",
+  "light_gray_concrete",
+  "#7D7D73"
+ ],
+ [
+  "灰色混凝土",
+  "Gray Concrete",
+  "混凝土",
+  "gray_concrete",
+  "#373A3E"
+ ],
+ [
+  "黑色混凝土",
+  "Black Concrete",
+  "混凝土",
+  "black_concrete",
+  "#080A0F"
+ ],
+ [
+  "红色混凝土",
+  "Red Concrete",
+  "混凝土",
+  "red_concrete",
+  "#8E2121"
+ ],
+ [
+  "橙色混凝土",
+  "Orange Concrete",
+  "混凝土",
+  "orange_concrete",
+  "#E06101"
+ ],
+ [
+  "黄色混凝土",
+  "Yellow Concrete",
+  "混凝土",
+  "yellow_concrete",
+  "#F1AF15"
+ ],
+ [
+  "黄绿色混凝土",
+  "Lime Concrete",
+  "混凝土",
+  "lime_concrete",
+  "#5EA918"
+ ],
+ [
+  "绿色混凝土",
+  "Green Concrete",
+  "混凝土",
+  "green_concrete",
+  "#495B24"
+ ],
+ [
+  "青色混凝土",
+  "Cyan Concrete",
+  "混凝土",
+  "cyan_concrete",
+  "#157788"
+ ],
+ [
+  "淡蓝色混凝土",
+  "Light Blue Concrete",
+  "混凝土",
+  "light_blue_concrete",
+  "#2489C7"
+ ],
+ [
+  "蓝色混凝土",
+  "Blue Concrete",
+  "混凝土",
+  "blue_concrete",
+  "#2D2F8F"
+ ],
+ [
+  "紫色混凝土",
+  "Purple Concrete",
+  "混凝土",
+  "purple_concrete",
+  "#64209C"
+ ],
+ [
+  "品红色混凝土",
+  "Magenta Concrete",
+  "混凝土",
+  "magenta_concrete",
+  "#A9309F"
+ ],
+ [
+  "粉红色混凝土",
+  "Pink Concrete",
+  "混凝土",
+  "pink_concrete",
+  "#D6658F"
+ ],
+ [
+  "棕色混凝土",
+  "Brown Concrete",
+  "混凝土",
+  "brown_concrete",
+  "#603C20"
+ ],
+ [
+  "白色羊毛",
+  "White Wool",
+  "羊毛",
+  "white_wool",
+  "#EAECED"
+ ],
+ [
+  "淡灰色羊毛",
+  "Light Gray Wool",
+  "羊毛",
+  "light_gray_wool",
+  "#8E8E87"
+ ],
+ [
+  "灰色羊毛",
+  "Gray Wool",
+  "羊毛",
+  "gray_wool",
+  "#3F4448"
+ ],
+ [
+  "黑色羊毛",
+  "Black Wool",
+  "羊毛",
+  "black_wool",
+  "#15151A"
+ ],
+ [
+  "红色羊毛",
+  "Red Wool",
+  "羊毛",
+  "red_wool",
+  "#A12723"
+ ],
+ [
+  "橙色羊毛",
+  "Orange Wool",
+  "羊毛",
+  "orange_wool",
+  "#F17614"
+ ],
+ [
+  "黄色羊毛",
+  "Yellow Wool",
+  "羊毛",
+  "yellow_wool",
+  "#F9C628"
+ ],
+ [
+  "黄绿色羊毛",
+  "Lime Wool",
+  "羊毛",
+  "lime_wool",
+  "#70B91A"
+ ],
+ [
+  "绿色羊毛",
+  "Green Wool",
+  "羊毛",
+  "green_wool",
+  "#556E1C"
+ ],
+ [
+  "青色羊毛",
+  "Cyan Wool",
+  "羊毛",
+  "cyan_wool",
+  "#158A91"
+ ],
+ [
+  "淡蓝色羊毛",
+  "Light Blue Wool",
+  "羊毛",
+  "light_blue_wool",
+  "#3AAFD9"
+ ],
+ [
+  "蓝色羊毛",
+  "Blue Wool",
+  "羊毛",
+  "blue_wool",
+  "#35399D"
+ ],
+ [
+  "紫色羊毛",
+  "Purple Wool",
+  "羊毛",
+  "purple_wool",
+  "#7A2AAD"
+ ],
+ [
+  "品红色羊毛",
+  "Magenta Wool",
+  "羊毛",
+  "magenta_wool",
+  "#BE45B4"
+ ],
+ [
+  "粉红色羊毛",
+  "Pink Wool",
+  "羊毛",
+  "pink_wool",
+  "#EE8DAC"
+ ],
+ [
+  "棕色羊毛",
+  "Brown Wool",
+  "羊毛",
+  "brown_wool",
+  "#724829"
+ ],
+ [
+  "白色陶瓦",
+  "White Terracotta",
+  "陶瓦",
+  "white_terracotta",
+  "#D2B2A1"
+ ],
+ [
+  "淡灰色陶瓦",
+  "Light Gray Terracotta",
+  "陶瓦",
+  "light_gray_terracotta",
+  "#876B62"
+ ],
+ [
+  "灰色陶瓦",
+  "Gray Terracotta",
+  "陶瓦",
+  "gray_terracotta",
+  "#3A2A24"
+ ],
+ [
+  "黑色陶瓦",
+  "Black Terracotta",
+  "陶瓦",
+  "black_terracotta",
+  "#251710"
+ ],
+ [
+  "红色陶瓦",
+  "Red Terracotta",
+  "陶瓦",
+  "red_terracotta",
+  "#8F3D2F"
+ ],
+ [
+  "橙色陶瓦",
+  "Orange Terracotta",
+  "陶瓦",
+  "orange_terracotta",
+  "#A25426"
+ ],
+ [
+  "黄色陶瓦",
+  "Yellow Terracotta",
+  "陶瓦",
+  "yellow_terracotta",
+  "#BA8523"
+ ],
+ [
+  "黄绿色陶瓦",
+  "Lime Terracotta",
+  "陶瓦",
+  "lime_terracotta",
+  "#687635"
+ ],
+ [
+  "绿色陶瓦",
+  "Green Terracotta",
+  "陶瓦",
+  "green_terracotta",
+  "#4C532A"
+ ],
+ [
+  "青色陶瓦",
+  "Cyan Terracotta",
+  "陶瓦",
+  "cyan_terracotta",
+  "#575B5B"
+ ],
+ [
+  "淡蓝色陶瓦",
+  "Light Blue Terracotta",
+  "陶瓦",
+  "light_blue_terracotta",
+  "#716D8A"
+ ],
+ [
+  "蓝色陶瓦",
+  "Blue Terracotta",
+  "陶瓦",
+  "blue_terracotta",
+  "#4A3C5B"
+ ],
+ [
+  "紫色陶瓦",
+  "Purple Terracotta",
+  "陶瓦",
+  "purple_terracotta",
+  "#764656"
+ ],
+ [
+  "品红色陶瓦",
+  "Magenta Terracotta",
+  "陶瓦",
+  "magenta_terracotta",
+  "#96586D"
+ ],
+ [
+  "粉红色陶瓦",
+  "Pink Terracotta",
+  "陶瓦",
+  "pink_terracotta",
+  "#A24E4F"
+ ],
+ [
+  "棕色陶瓦",
+  "Brown Terracotta",
+  "陶瓦",
+  "brown_terracotta",
+  "#4D3324"
+ ],
+ [
+  "石头",
+  "Stone",
+  "石材",
+  "stone",
+  "#7E7E7E"
+ ],
+ [
+  "平滑石头",
+  "Smooth Stone",
+  "石材",
+  "smooth_stone",
+  "#9F9F9F"
+ ],
+ [
+  "圆石",
+  "Cobblestone",
+  "石材",
+  "cobblestone",
+  "#807F80"
+ ],
+ [
+  "苔石",
+  "Mossy Cobblestone",
+  "石材",
+  "mossy_cobblestone",
+  "#6E765F"
+ ],
+ [
+  "花岗岩",
+  "Granite",
+  "石材",
+  "granite",
+  "#956756"
+ ],
+ [
+  "磨制花岗岩",
+  "Polished Granite",
+  "石材",
+  "polished_granite",
+  "#9A6B59"
+ ],
+ [
+  "闪长岩",
+  "Diorite",
+  "石材",
+  "diorite",
+  "#BDBCBD"
+ ],
+ [
+  "磨制闪长岩",
+  "Polished Diorite",
+  "石材",
+  "polished_diorite",
+  "#C1C1C3"
+ ],
+ [
+  "安山岩",
+  "Andesite",
+  "石材",
+  "andesite",
+  "#888889"
+ ],
+ [
+  "磨制安山岩",
+  "Polished Andesite",
+  "石材",
+  "polished_andesite",
+  "#848786"
+ ],
+ [
+  "深板岩",
+  "Deepslate",
+  "石材",
+  "deepslate",
+  "#505053"
+ ],
+ [
+  "磨制深板岩",
+  "Polished Deepslate",
+  "石材",
+  "polished_deepslate",
+  "#484949"
+ ],
+ [
+  "凝灰岩",
+  "Tuff",
+  "石材",
+  "tuff",
+  "#6C6D67"
+ ],
+ [
+  "磨制凝灰岩",
+  "Polished Tuff",
+  "石材",
+  "polished_tuff",
+  "#626864"
+ ],
+ [
+  "方解石",
+  "Calcite",
+  "石材",
+  "calcite",
+  "#DFE0DD"
+ ],
+ [
+  "滴水石",
+  "Dripstone Block",
+  "石材",
+  "dripstone_block",
+  "#866C5D"
+ ],
+ [
+  "黑石",
+  "Blackstone",
+  "石材",
+  "blackstone",
+  "#2A2429"
+ ],
+ [
+  "玄武岩",
+  "Basalt",
+  "石材",
+  "basalt_side",
+  "#49494E"
+ ],
+ [
+  "平滑玄武岩",
+  "Smooth Basalt",
+  "石材",
+  "smooth_basalt",
+  "#49484E"
+ ],
+ [
+  "下界岩",
+  "Netherrack",
+  "石材",
+  "netherrack",
+  "#622626"
+ ],
+ [
+  "末地石",
+  "End Stone",
+  "石材",
+  "end_stone",
+  "#DCDF9E"
+ ],
+ [
+  "下界砖块",
+  "Nether Bricks",
+  "石材",
+  "nether_bricks",
+  "#2C161A"
+ ],
+ [
+  "红色下界砖块",
+  "Red Nether Bricks",
+  "石材",
+  "red_nether_bricks",
+  "#460709"
+ ],
+ [
+  "紫珀块",
+  "Purpur Block",
+  "石材",
+  "purpur_block",
+  "#AA7EAA"
+ ],
+ [
+  "黑曜石",
+  "Obsidian",
+  "石材",
+  "obsidian",
+  "#0F0B19"
+ ],
+ [
+  "基岩",
+  "Bedrock",
+  "石材",
+  "bedrock",
+  "#555555"
+ ],
+ [
+  "海晶石",
+  "Prismarine",
+  "石材",
+  "prismarine",
+  "#62A292"
+ ],
+ [
+  "暗海晶石",
+  "Dark Prismarine",
+  "石材",
+  "dark_prismarine",
+  "#345C4C"
+ ],
+ [
+  "海晶石砖",
+  "Prismarine Bricks",
+  "石材",
+  "prismarine_bricks",
+  "#63AC9E"
+ ],
+ [
+  "泥土",
+  "Dirt",
+  "砂土",
+  "dirt",
+  "#866043"
+ ],
+ [
+  "砂土",
+  "Coarse Dirt",
+  "砂土",
+  "coarse_dirt",
+  "#77563B"
+ ],
+ [
+  "缠根泥土",
+  "Rooted Dirt",
+  "砂土",
+  "rooted_dirt",
+  "#90684D"
+ ],
+ [
+  "泥巴",
+  "Mud",
+  "砂土",
+  "mud",
+  "#3C393D"
+ ],
+ [
+  "压实泥巴",
+  "Packed Mud",
+  "砂土",
+  "packed_mud",
+  "#8E6B50"
+ ],
+ [
+  "沙子",
+  "Sand",
+  "砂土",
+  "sand",
+  "#DBCFA3"
+ ],
+ [
+  "红沙",
+  "Red Sand",
+  "砂土",
+  "red_sand",
+  "#BF6721"
+ ],
+ [
+  "沙砾",
+  "Gravel",
+  "砂土",
+  "gravel",
+  "#847F7F"
+ ],
+ [
+  "黏土",
+  "Clay",
+  "砂土",
+  "clay",
+  "#A1A6B3"
+ ],
+ [
+  "雪块",
+  "Snow Block",
+  "砂土",
+  "snow",
+  "#F9FEFE"
+ ],
+ [
+  "砂岩",
+  "Sandstone",
+  "砂土",
+  "sandstone",
+  "#D8CB9C"
+ ],
+ [
+  "红砂岩",
+  "Red Sandstone",
+  "砂土",
+  "red_sandstone",
+  "#BB631D"
+ ],
+ [
+  "切制砂岩",
+  "Cut Sandstone",
+  "砂土",
+  "cut_sandstone",
+  "#DACEA0"
+ ],
+ [
+  "橡木木板",
+  "Oak Planks",
+  "木质",
+  "oak_planks",
+  "#A2834F"
+ ],
+ [
+  "云杉木板",
+  "Spruce Planks",
+  "木质",
+  "spruce_planks",
+  "#735531"
+ ],
+ [
+  "白桦木板",
+  "Birch Planks",
+  "木质",
+  "birch_planks",
+  "#C0AF79"
+ ],
+ [
+  "丛林木板",
+  "Jungle Planks",
+  "木质",
+  "jungle_planks",
+  "#A07351"
+ ],
+ [
+  "金合欢木板",
+  "Acacia Planks",
+  "木质",
+  "acacia_planks",
+  "#A85A32"
+ ],
+ [
+  "深色橡木木板",
+  "Dark Oak Planks",
+  "木质",
+  "dark_oak_planks",
+  "#432B14"
+ ],
+ [
+  "红树木板",
+  "Mangrove Planks",
+  "木质",
+  "mangrove_planks",
+  "#763631"
+ ],
+ [
+  "樱花木板",
+  "Cherry Planks",
+  "木质",
+  "cherry_planks",
+  "#E3B3AD"
+ ],
+ [
+  "竹木板",
+  "Bamboo Planks",
+  "木质",
+  "bamboo_planks",
+  "#C1AD50"
+ ],
+ [
+  "绯红木板",
+  "Crimson Planks",
+  "木质",
+  "crimson_planks",
+  "#653147"
+ ],
+ [
+  "诡异木板",
+  "Warped Planks",
+  "木质",
+  "warped_planks",
+  "#2B6963"
+ ],
+ [
+  "橡木原木",
+  "Oak Log",
+  "木质",
+  "oak_log",
+  "#6D5533"
+ ],
+ [
+  "云杉原木",
+  "Spruce Log",
+  "木质",
+  "spruce_log",
+  "#3B2611"
+ ],
+ [
+  "深色橡木原木",
+  "Dark Oak Log",
+  "木质",
+  "dark_oak_log",
+  "#3C2F1A"
+ ],
+ [
+  "去皮橡木原木",
+  "Stripped Oak Log",
+  "木质",
+  "stripped_oak_log",
+  "#B19056"
+ ],
+ [
+  "去皮白桦原木",
+  "Stripped Birch Log",
+  "木质",
+  "stripped_birch_log",
+  "#C5B076"
+ ],
+ [
+  "铁块",
+  "Block of Iron",
+  "金属宝石",
+  "iron_block",
+  "#DCDCDC"
+ ],
+ [
+  "金块",
+  "Block of Gold",
+  "金属宝石",
+  "gold_block",
+  "#F6D03E"
+ ],
+ [
+  "钻石块",
+  "Block of Diamond",
+  "金属宝石",
+  "diamond_block",
+  "#62EDE4"
+ ],
+ [
+  "绿宝石块",
+  "Block of Emerald",
+  "金属宝石",
+  "emerald_block",
+  "#2ACB58"
+ ],
+ [
+  "青金石块",
+  "Block of Lapis Lazuli",
+  "金属宝石",
+  "lapis_block",
+  "#1F438C"
+ ],
+ [
+  "红石块",
+  "Block of Redstone",
+  "金属宝石",
+  "redstone_block",
+  "#B01905"
+ ],
+ [
+  "煤炭块",
+  "Block of Coal",
+  "金属宝石",
+  "coal_block",
+  "#101010"
+ ],
+ [
+  "下界合金块",
+  "Block of Netherite",
+  "金属宝石",
+  "netherite_block",
+  "#433D40"
+ ],
+ [
+  "铜块",
+  "Block of Copper",
+  "金属宝石",
+  "copper_block",
+  "#C06C50"
+ ],
+ [
+  "斑驳的铜块",
+  "Exposed Copper",
+  "金属宝石",
+  "exposed_copper",
+  "#A17E68"
+ ],
+ [
+  "锈蚀的铜块",
+  "Weathered Copper",
+  "金属宝石",
+  "weathered_copper",
+  "#6C996E"
+ ],
+ [
+  "氧化铜块",
+  "Oxidized Copper",
+  "金属宝石",
+  "oxidized_copper",
+  "#52A385"
+ ],
+ [
+  "紫水晶块",
+  "Block of Amethyst",
+  "金属宝石",
+  "amethyst_block",
+  "#8662BF"
+ ],
+ [
+  "石英块",
+  "Block of Quartz",
+  "金属宝石",
+  "quartz_block_side",
+  "#ECE6DF"
+ ],
+ [
+  "平滑石英块",
+  "Smooth Quartz Block",
+  "金属宝石",
+  "quartz_block_bottom",
+  "#EDE6E0"
+ ],
+ [
+  "砖块",
+  "Bricks",
+  "金属宝石",
+  "bricks",
+  "#976253"
+ ],
+ [
+  "泥砖",
+  "Mud Bricks",
+  "金属宝石",
+  "mud_bricks",
+  "#89684F"
+ ],
+ [
+  "下界疣块",
+  "Nether Wart Block",
+  "彩色",
+  "nether_wart_block",
+  "#730302"
+ ],
+ [
+  "诡异疣块",
+  "Warped Wart Block",
+  "彩色",
+  "warped_wart_block",
+  "#177879"
+ ],
+ [
+  "菌光体",
+  "Shroomlight",
+  "彩色",
+  "shroomlight",
+  "#F19347"
+ ],
+ [
+  "岩浆块",
+  "Magma Block",
+  "彩色",
+  "magma",
+  "#8E3F1F"
+ ],
+ [
+  "灵魂沙",
+  "Soul Sand",
+  "彩色",
+  "soul_sand",
+  "#513E33"
+ ],
+ [
+  "蜜脾块",
+  "Honeycomb Block",
+  "彩色",
+  "honeycomb_block",
+  "#E5941E"
+ ],
+ [
+  "干草捆",
+  "Hay Bale",
+  "彩色",
+  "hay_block_side",
+  "#A68826"
+ ],
+ [
+  "苔藓块",
+  "Moss Block",
+  "彩色",
+  "moss_block",
+  "#596E2D"
+ ],
+ [
+  "南瓜",
+  "Pumpkin",
+  "彩色",
+  "pumpkin_side",
+  "#C47318"
+ ],
+ [
+  "海绵",
+  "Sponge",
+  "彩色",
+  "sponge",
+  "#C4C04B"
+ ],
+ [
+  "赭黄蛙明灯",
+  "Ochre Froglight",
+  "彩色",
+  "ochre_froglight_side",
+  "#F5E9B6"
+ ],
+ [
+  "青翠蛙明灯",
+  "Verdant Froglight",
+  "彩色",
+  "verdant_froglight_side",
+  "#D3EBD0"
+ ],
+ [
+  "珠光蛙明灯",
+  "Pearlescent Froglight",
+  "彩色",
+  "pearlescent_froglight_side",
+  "#ECE1E5"
+ ],
+ [
+  "幽匿块",
+  "Sculk",
+  "彩色",
+  "sculk",
+  "#0D1C22"
+ ],
+ [
+  "干海带块",
+  "Dried Kelp Block",
+  "彩色",
+  "dried_kelp_side",
+  "#26311E"
+ ],
+ [
+  "骨块",
+  "Bone Block",
+  "彩色",
+  "bone_block_side",
+  "#E5E2D0"
+ ],
+ [
+  "萤石",
+  "Glowstone",
+  "彩色",
+  "glowstone",
+  "#AC8354"
+ ],
+ [
+  "海晶灯",
+  "Sea Lantern",
+  "彩色",
+  "sea_lantern",
+  "#ACC8BF"
+ ],
+ [
+  "哭泣的黑曜石",
+  "Crying Obsidian",
+  "彩色",
+  "crying_obsidian",
+  "#210A3C"
+ ]
+]

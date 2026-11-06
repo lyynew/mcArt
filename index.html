@@ -1,0 +1,2563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>方块像素画生成器</title>
+<style>
+  :root{
+    --gui:#c6c6c6;
+    --gui-dark:#8b8b8b;
+    --gui-line:#373737;
+    --gui-light:#ffffff;
+    --ink:#3f3f3f;
+    --green:#4e8a34;
+    --green-hi:#6fb14b;
+    --green-lo:#2d5420;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;color:#fff;
+    font:13px/1.45 ui-monospace,"Cascadia Mono",Consolas,"Microsoft YaHei",monospace;
+    background:#2a2723;
+    background-image:
+      repeating-linear-gradient(0deg,rgba(255,255,255,.028) 0 2px,transparent 2px 5px),
+      repeating-linear-gradient(90deg,rgba(0,0,0,.10) 0 2px,transparent 2px 7px),
+      radial-gradient(1200px 700px at 50% -10%,#3b382f 0%,#232019 70%);
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  /* 顶栏 */
+  header{
+    display:flex;align-items:baseline;gap:14px;padding:10px 18px 8px;
+    background:linear-gradient(#4a4537,#332f26);
+    border-bottom:2px solid #16140f;
+    box-shadow:0 1px 0 rgba(255,255,255,.08) inset,0 4px 0 rgba(0,0,0,.35);
+  }
+  header h1{
+    margin:0;font-size:16px;letter-spacing:.04em;font-weight:700;
+    text-shadow:2px 2px 0 #191510, 0 0 8px rgba(120,200,90,.25);
+  }
+  header h1 b{color:#9ad36a}
+  header .tag{
+    font-size:11px;color:#c8c1a8;letter-spacing:.16em;text-transform:uppercase;
+    text-shadow:1px 1px 0 #191510;
+  }
+  /* 布局 */
+  main{
+    flex:1;min-height:0;display:grid;
+    grid-template-columns:232px minmax(0,1fr) 272px;
+    gap:12px;padding:12px 14px 14px;
+  }
+  .col{display:flex;flex-direction:column;gap:12px;min-height:0}
+  .col.scroll{overflow-y:auto;padding-right:2px}
+  /* MC 窗口 */
+  .win{
+    background:var(--gui);
+    border:2px solid #000;
+    box-shadow:inset 2px 2px 0 var(--gui-light), inset -2px -2px 0 #565656, 4px 4px 0 rgba(0,0,0,.45);
+    padding:9px;
+    color:var(--ink);
+  }
+  .win > h2{
+    margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.1em;
+    color:#3b3b3b;text-shadow:1px 1px 0 #fff;text-transform:uppercase;
+  }
+  /* 按钮 */
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:5px;width:100%;
+    background:var(--gui-dark);color:#fff;border:2px solid #000;
+    box-shadow:inset 2px 2px 0 #b5b5b5, inset -2px -2px 0 #575757;
+    padding:5px 7px;font:inherit;font-size:12px;cursor:pointer;
+    text-shadow:1px 1px 0 #2b2b2b;
+  }
+  .btn:hover{background:#9d9d9d;box-shadow:inset 2px 2px 0 #d0d0d0, inset -2px -2px 0 #575757}
+  .btn:active{box-shadow:inset 2px 2px 0 #575757, inset -2px -2px 0 #b5b5b5}
+  .btn.on{background:var(--green);box-shadow:inset 2px 2px 0 var(--green-hi), inset -2px -2px 0 var(--green-lo)}
+  .btn.primary{background:var(--green);box-shadow:inset 2px 2px 0 var(--green-hi), inset -2px -2px 0 var(--green-lo)}
+  .btn.primary:hover{background:#5c9f3e;box-shadow:inset 2px 2px 0 #82c95c, inset -2px -2px 0 var(--green-lo)}
+  .btn.sm{padding:3px 5px;font-size:11px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:5px}
+  .stack{display:flex;flex-direction:column;gap:5px}
+  /* 上传区 */
+  .drop{
+    background:#b0b0b0;border:2px solid #000;
+    box-shadow:inset 2px 2px 0 #4f4f4f, inset -2px -2px 0 #dedede;
+    padding:12px 8px;text-align:center;cursor:pointer;
+  }
+  .drop:hover{background:#bcbcbc}
+  .drop.over{background:#a8c78e}
+  .drop strong{display:block;font-size:12.5px;margin-bottom:3px}
+  .drop small{color:#5b5b5b;font-size:11px;line-height:1.5}
+  .fileline{
+    margin-top:6px;font-size:11px;background:#8f8f8f;color:#fff;padding:4px 6px;
+    border:1px solid #5a5a5a;display:none;word-break:break-all;text-shadow:1px 1px 0 #2f2f2f;
+  }
+  .fileline.on{display:block}
+  /* 分段 / 滑杆 */
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+  .seg.three{grid-template-columns:1fr 1fr 1fr}
+  .palseg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px}
+  .palseg .btn{padding:3px 2px;font-size:10.5px}
+  .palseg [data-p="custom"]{grid-column:1 / -1}
+  /* 自定义方块弹窗 */
+  .modal{
+    position:fixed;inset:0;z-index:60;padding:26px;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(12,11,8,.72);
+    background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.25) 0 4px,transparent 4px 8px);
+  }
+  .modal[hidden]{display:none}
+  .modal-win{
+    width:min(880px,100%);max-height:100%;display:flex;flex-direction:column;
+    background:var(--gui);border:2px solid #000;padding:10px;color:var(--ink);
+    box-shadow:inset 2px 2px 0 #fff, inset -2px -2px 0 #565656, 8px 8px 0 rgba(0,0,0,.5);
+  }
+  .modal-win h2{
+    margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.1em;
+    color:#3b3b3b;text-shadow:1px 1px 0 #fff;text-transform:uppercase;
+  }
+  .modal-bar{display:flex;gap:8px;align-items:center}
+  .modal-bar .search{flex:1}
+  .modal-bar .count{
+    font-size:11px;color:#fff;text-shadow:1px 1px 0 #2f2f2f;white-space:nowrap;
+    background:#8b8b8b;border:2px solid #000;padding:4px 8px;
+    box-shadow:inset 1px 1px 0 #c8c8c8, inset -1px -1px 0 #5a5a5a;
+  }
+  .modal-body{
+    flex:1;min-height:120px;overflow-y:auto;margin:8px 0;padding:8px;
+    background:#b0b0b0;border:2px solid #000;
+    box-shadow:inset 2px 2px 0 #4f4f4f, inset -2px -2px 0 #dedede;
+  }
+  .cfam{
+    font-size:10.5px;color:#2f2f2f;text-shadow:1px 1px 0 #fff;
+    margin:8px 0 4px;letter-spacing:.08em;
+  }
+  .cfam:first-child{margin-top:0}
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:4px}
+  .blk{
+    display:flex;align-items:center;gap:6px;padding:3px 4px;cursor:pointer;
+    background:#909090;border:2px solid #000;
+    box-shadow:inset 1px 1px 0 #c4c4c4, inset -1px -1px 0 #5c5c5c;
+  }
+  .blk:hover{background:#a0a0a0}
+  .blk .c{
+    width:24px;height:24px;flex:0 0 24px;border:1px solid #000;
+    background-size:cover;background-position:center;image-rendering:pixelated;
+  }
+  .blk .t{
+    font-size:10px;line-height:1.25;color:#fff;text-shadow:1px 1px 0 #2b2b2b;
+    overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  }
+  .blk.on{background:var(--green);box-shadow:inset 1px 1px 0 var(--green-hi), inset -1px -1px 0 var(--green-lo)}
+  .blk.on .c{box-shadow:0 0 0 1px #ffe66b}
+  .modal-foot{display:flex;gap:6px;align-items:center}
+  .modal-foot .btn{width:auto;padding:5px 12px;font-size:11.5px}
+  .note{font-size:10.5px;color:#5f5f5f;line-height:1.5;margin-top:6px;min-height:14px}
+  .lbl{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;margin-bottom:3px}
+  .lbl b{font-size:12px;color:#2f2f2f}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:12px;margin:0 0 7px;
+    background:#8b8b8b;border:2px solid #000;
+    box-shadow:inset 2px 2px 0 #4f4f4f, inset -2px -2px 0 #d4d4d4;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:12px;height:16px;background:var(--gui);
+    border:2px solid #000;box-shadow:inset 2px 2px 0 #fff, inset -2px -2px 0 #6a6a6a;cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:12px;height:16px;background:var(--gui);border:2px solid #000;cursor:pointer;
+  }
+  input.txt, input.search{
+    width:100%;background:#8b8b8b;color:#fff;border:2px solid #000;padding:5px 6px;
+    font:inherit;font-size:12px;outline:none;text-shadow:1px 1px 0 #2f2f2f;
+    box-shadow:inset 2px 2px 0 #4f4f4f, inset -2px -2px 0 #d4d4d4;
+  }
+  input.txt::placeholder, input.search::placeholder{color:#dcdcdc}
+  /* 开关 */
+  .sw{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;cursor:pointer;padding:2px 0;user-select:none}
+  .sw input{display:none}
+  .box{
+    width:14px;height:14px;background:#8b8b8b;border:2px solid #000;flex:0 0 auto;
+    box-shadow:inset 2px 2px 0 #4f4f4f, inset -2px -2px 0 #d4d4d4;
+  }
+  .sw input:checked + .box{background:var(--green);box-shadow:inset 2px 2px 0 var(--green-hi), inset -2px -2px 0 var(--green-lo)}
+  /* 舞台 */
+  .stagewin{flex:1;min-height:0;display:flex;flex-direction:column;padding:0}
+  .toolbar{
+    display:flex;flex-wrap:wrap;gap:4px;align-items:center;
+    padding:7px;border-bottom:2px solid #000;
+    background:#b6b6b6;box-shadow:inset 0 2px 0 #dedede;
+  }
+  .toolbar .sep{width:2px;height:20px;background:#8b8b8b;box-shadow:1px 0 0 #fff;margin:0 3px}
+  .toolbar .btn{width:auto;padding:3px 7px;font-size:11.5px}
+  .tgroup{display:flex;align-items:center;gap:3px;flex-wrap:nowrap}
+  .tlabel{font-size:10px;color:#5d5d5d;letter-spacing:.06em;margin-right:1px;user-select:none}
+  .zoomwrap{display:flex;align-items:center;gap:4px;margin-left:auto}
+  .zoomval{
+    min-width:74px;text-align:center;font-size:10.5px;color:#2f2f2f;padding:3px 4px;
+    background:#a9a9a9;border:2px solid #000;
+    box-shadow:inset 2px 2px 0 #4f4f4f, inset -2px -2px 0 #d4d4d4;
+  }
+  .btn.zb{width:28px;padding:3px 0;font-size:14px;line-height:1}
+  .canvaswrap{
+    flex:1;min-height:0;overflow:auto;display:block;
+    padding:14px;background:#1d1b17;
+    background-image:
+      repeating-linear-gradient(45deg,rgba(255,255,255,.022) 0 6px,transparent 6px 12px);
+  }
+  .canvaswrap.panning{cursor:grabbing !important}
+  .canvaswrap.panning #board{cursor:grabbing !important}
+  .canvasinner{display:flex;min-width:100%;min-height:100%}
+  #board{
+    display:block;margin:auto;image-rendering:pixelated;background:#fff;cursor:crosshair;
+    box-shadow:0 0 0 2px #000, 0 0 0 4px #6b6553, 10px 10px 0 rgba(0,0,0,.45);
+  }
+  .stagefoot{
+    display:flex;flex-wrap:wrap;gap:12px;align-items:center;
+    padding:6px 9px;border-top:2px solid #000;background:#b6b6b6;
+    color:#3b3b3b;font-size:11.5px;box-shadow:inset 0 2px 0 #dedede;
+  }
+  .stagefoot b{color:#1f1f1f}
+  .stagefoot .hint{margin-left:auto;color:#5c5c5c}
+  /* 调色板 */
+  .palgrid{
+    display:grid;grid-template-columns:repeat(auto-fill,36px);gap:4px;
+    max-height:none;
+  }
+  .slot{
+    width:36px;height:36px;position:relative;cursor:pointer;
+    border:2px solid #000;background:#8b8b8b;
+    box-shadow:inset 2px 2px 0 #4f4f4f, inset -2px -2px 0 #d4d4d4;
+  }
+  .slot .c{position:absolute;inset:3px}
+  .slot .n{
+    position:absolute;right:1px;bottom:1px;font-size:9px;line-height:1;color:#fff;
+    background:rgba(0,0,0,.62);padding:1px 2px;letter-spacing:-.02em;
+  }
+  .slot:hover{box-shadow:inset 0 0 0 2px #fff}
+  .slot.on{box-shadow:inset 2px 2px 0 #4f4f4f, inset -2px -2px 0 #d4d4d4, 0 0 0 2px #ffd94a, 0 0 8px #ffd94a}
+  .slot.zero{opacity:.42}
+  .famhead{font-size:10.5px;color:#5a5a5a;margin:7px 0 4px;letter-spacing:.06em;text-shadow:1px 1px 0 #fff}
+  .famhead:first-child{margin-top:0}
+  .palbox{
+    max-height:320px;overflow-y:auto;padding-right:2px;
+    box-shadow:inset 0 -10px 10px -10px rgba(0,0,0,.45);
+  }
+  /* 快捷栏 */
+  .hotbar{
+    margin-top:8px;background:#5c5c5c;border:2px solid #000;padding:3px;
+    box-shadow:inset 2px 2px 0 #3a3a3a;
+    display:grid;grid-template-columns:repeat(9,1fr);gap:2px;
+  }
+  .hb{
+    aspect-ratio:1;background:#8b8b8b;border:1px solid #2a2a2a;position:relative;cursor:pointer;
+    box-shadow:inset 1px 1px 0 #b5b5b5, inset -1px -1px 0 #5a5a5a;
+  }
+  .hb .c{position:absolute;inset:2px;z-index:1}
+  .hb .k{
+    position:absolute;top:0;left:0;z-index:2;font-size:9px;line-height:1;
+    color:#fff;padding:1px 2px;background:rgba(0,0,0,.66);
+    text-shadow:1px 1px 0 #000;pointer-events:none;
+  }
+  .hb:hover{box-shadow:inset 0 0 0 1px #fff}
+  .hb.active{
+    background:#d0d0d0;
+    outline:2px solid #fff;outline-offset:-2px;
+    box-shadow:inset 0 0 0 4px rgba(0,0,0,.30);
+  }
+  /* 滚动条 */
+  ::-webkit-scrollbar{width:12px;height:12px}
+  ::-webkit-scrollbar-track{background:#2b2925}
+  ::-webkit-scrollbar-thumb{background:#8b8b8b;border:2px solid #000;box-shadow:inset 2px 2px 0 #b5b5b5}
+  @media (max-width:1120px){
+    body{overflow:auto}
+    main{grid-template-columns:1fr;height:auto}
+    .stagewin{min-height:62vh}
+    .col.scroll{overflow:visible}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>方块像素画 <b>生成器</b></h1>
+  <span class="tag">Minecraft 2D · 结构文件</span>
+</header>
+
+<main>
+  <!-- 左栏 -->
+  <aside class="col scroll">
+    <section class="win">
+      <h2>原图</h2>
+      <div class="drop" id="drop">
+        <strong>放入图片</strong>
+        <small>点击选择 / 拖进来 / Ctrl+V 粘贴<br>方形裁切，透明处留空</small>
+      </div>
+      <div class="fileline" id="fileline"></div>
+    </section>
+
+    <section class="win">
+      <h2>真实材质</h2>
+      <div class="row">
+        <button class="btn sm" id="pickDir">选文件夹</button>
+        <button class="btn sm" id="pickFiles">选图片</button>
+      </div>
+      <div class="drop" id="texdrop" style="margin-top:6px;padding:8px 6px">
+        <strong style="font-size:12px">拖入材质 PNG</strong>
+        <small>文件名＝方块 ID，如 white_concrete.png</small>
+      </div>
+      <label class="sw" style="margin-top:5px">画布用真实材质 <input type="checkbox" id="chkRealTex" checked><span class="box"></span></label>
+      <div class="note" id="texNote">未载入材质，现在显示的是平均色</div>
+    </section>
+
+    <section class="win">
+      <h2>规格</h2>
+      <div class="lbl"><span>边长格数</span><b id="nval">48 × 48</b></div>
+      <input type="range" id="size" min="16" max="160" step="1" value="48">
+      <div class="seg three" id="sizePresets">
+        <button class="btn sm" data-n="32">32</button>
+        <button class="btn sm on" data-n="48">48</button>
+        <button class="btn sm" data-n="64">64</button>
+        <button class="btn sm" data-n="96">96</button>
+        <button class="btn sm" data-n="128">128</button>
+        <button class="btn sm" data-n="160">160</button>
+      </div>
+      <div class="note">格数越少越像图标，越多越接近照片</div>
+    </section>
+
+    <section class="win">
+      <h2>方块色系</h2>
+      <div class="palseg" id="palSeg">
+        <button class="btn sm on" data-p="basic">基本</button>
+        <button class="btn sm" data-p="concrete">混凝土</button>
+        <button class="btn sm" data-p="wool">羊毛</button>
+        <button class="btn sm" data-p="terracotta">陶瓦</button>
+        <button class="btn sm" data-p="stone">石材</button>
+        <button class="btn sm" data-p="wood">木质</button>
+        <button class="btn sm" data-p="metal">金属</button>
+        <button class="btn sm" data-p="vivid">彩色</button>
+        <button class="btn sm" data-p="all">全部</button>
+        <button class="btn sm" data-p="custom" title="自己挑方块，点下面的「选择方块」">自定义</button>
+      </div>
+      <button class="btn sm" id="openCustom" style="margin-top:6px">选择方块…</button>
+      <div class="note" id="palNote"></div>
+    </section>
+
+    <section class="win">
+      <h2>调色</h2>
+      <div class="lbl"><span>对比度</span><b id="cval">0</b></div>
+      <input type="range" id="contrast" min="-60" max="60" step="2" value="0">
+      <div class="lbl"><span>饱和度</span><b id="sval">0</b></div>
+      <input type="range" id="sat" min="-60" max="60" step="2" value="0">
+      <div class="note">照片发灰就加对比度，颜色过艳降饱和度</div>
+    </section>
+
+    <section class="win">
+      <h2>显示</h2>
+      <label class="sw">网格线 <input type="checkbox" id="chkGrid" checked><span class="box"></span></label>
+      <label class="sw" title="给每一格加一圈明暗边，看起来像堆起来的方块；只影响画布预览，不影响导出">方块质感 <input type="checkbox" id="chkTexture" checked><span class="box"></span></label>
+      <label class="sw">去杂点 <input type="checkbox" id="chkDespeckle" checked><span class="box"></span></label>
+      <label class="sw">颜色抖动 <input type="checkbox" id="chkDither"><span class="box"></span></label>
+      <label class="sw">聚焦选中方块 <input type="checkbox" id="chkFocus"><span class="box"></span></label>
+    </section>
+  </aside>
+
+  <!-- 中间舞台 -->
+  <section class="col">
+    <div class="win stagewin">
+      <div class="toolbar">
+        <div class="tgroup">
+          <span class="tlabel">工具</span>
+          <button class="btn sm on" data-tool="brush" title="画笔：左键落方块（B）">画笔</button>
+          <button class="btn sm" data-tool="eraser" title="橡皮：把格子擦成空格（E）">橡皮</button>
+          <button class="btn sm" data-tool="picker" title="吸管：吸取画面里已有的方块（I）">吸管</button>
+          <button class="btn sm" data-tool="fill" title="填充：一整片同色区域换掉（F）">填充</button>
+          <button class="btn sm" data-tool="replace" title="替换：点画面里某种方块，全图同种方块都换成当前选的；点空格则把所有空格填满（R）">替换</button>
+          <button class="btn sm" data-tool="pan" title="抓手：拖动画面（H），任何时候按住空格或中键也能拖">抓手</button>
+        </div>
+        <span class="sep"></span>
+        <div class="tgroup">
+          <span class="tlabel">笔刷</span>
+          <button class="btn sm on" data-brush="1" title="1 格宽（[ ] 切换）">1格</button>
+          <button class="btn sm" data-brush="2" title="2 格宽">2格</button>
+          <button class="btn sm" data-brush="3" title="3 格宽">3格</button>
+        </div>
+        <span class="sep"></span>
+        <button class="btn sm" id="btnMirror" title="左右对称绘制，画一边自动镜像到另一边（M）">对称绘制</button>
+        <span class="sep"></span>
+        <button class="btn sm" id="undoBtn" title="撤销（Ctrl+Z）">撤销</button>
+        <button class="btn sm" id="redoBtn" title="重做（Ctrl+Shift+Z）">重做</button>
+        <div class="zoomwrap">
+          <button class="btn sm zb" id="zoomOut" title="缩小（滚轮下滑）">−</button>
+          <span class="zoomval" id="zoomVal">-</span>
+          <button class="btn sm zb" id="zoomIn" title="放大（滚轮上滑）">+</button>
+          <button class="btn sm" id="zoomFit" title="缩放到刚好铺满窗口">适应</button>
+        </div>
+      </div>
+      <div class="canvaswrap" id="canvaswrap">
+        <div class="canvasinner"><canvas id="board"></canvas></div>
+      </div>
+      <div class="stagefoot">
+        <span>规格 <b id="s1">48×48</b></span>
+        <span>方块 <b id="s2">0</b></span>
+        <span>用色 <b id="s3">0</b></span>
+        <span id="hover">-</span>
+        <span class="hint" id="modeHint">滚轮缩放 · 空格/中键拖动 · 左键绘制</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 右栏 -->
+  <aside class="col scroll">
+    <section class="win">
+      <h2>方块调色板</h2>
+      <input type="search" class="search" id="search" placeholder="搜方块 / 英文名 / ID">
+      <label class="sw" style="margin:6px 0 4px">只看用到的 <input type="checkbox" id="onlyUsed"><span class="box"></span></label>
+      <div class="palbox"><div id="palGrid"></div></div>
+      <div class="hotbar" id="hotbar"></div>
+      <div class="note" id="hotTip">先点一个格子选中，再点上面的方块放进去；右键格子清空</div>
+    </section>
+
+    <section class="win">
+      <h2>结构文件</h2>
+      <div class="lbl"><span>尺寸</span><b id="nbtSize">48 × 1 × 48</b></div>
+      <input type="text" class="txt" id="nbtName" value="pixelart" spellcheck="false">
+      <div class="seg" style="margin-top:6px">
+        <button class="btn sm on" data-orient="flat">平铺地面</button>
+        <button class="btn sm" data-orient="wall">立到墙上</button>
+      </div>
+      <label class="sw" style="margin-top:6px">空格填成空气 <input type="checkbox" id="nbtAir" checked><span class="box"></span></label>
+      <button class="btn primary" id="expNbt" style="margin-top:6px">导出 .nbt</button>
+      <div class="note" id="nbtTip"></div>
+    </section>
+
+    <section class="win">
+      <h2>图片导出</h2>
+      <div class="stack">
+        <button class="btn primary" id="expPure">纯净像素图 PNG</button>
+        <button class="btn" id="expBoard">施工图 PNG（带坐标）</button>
+        <button class="btn" id="expCsv">材料清单 CSV</button>
+        <button class="btn" id="reset">按原图重新生成</button>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<!-- 自定义方块方案 -->
+<div class="modal" id="customModal" hidden>
+  <div class="modal-win">
+    <h2>自定义方块方案</h2>
+    <div class="modal-bar">
+      <input type="search" class="search" id="customSearch" placeholder="搜方块 / 英文名 / ID">
+      <span class="count" id="customCount">已选 0 种</span>
+    </div>
+    <div class="modal-body" id="customBody"></div>
+    <div class="modal-foot">
+      <button class="btn sm" id="customAll">全选</button>
+      <button class="btn sm" id="customNone">清空</button>
+      <button class="btn sm" id="customUsed">只留图里用到的</button>
+      <span style="flex:1"></span>
+      <button class="btn sm" id="customCancel">取消</button>
+      <button class="btn sm primary" id="customApply">应用</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ================= 方块数据 ================= */
+/* 方块总表：[中文名, 英文名, 平均色, 方块ID, 分组, 贴图文件名] */
+const BLOCK_DEFS = [
+  ["白色混凝土","White Concrete","#CFD5D6","white_concrete","混凝土","white_concrete"],
+  ["淡灰色混凝土","Light Gray Concrete","#7D7D73","light_gray_concrete","混凝土","light_gray_concrete"],
+  ["灰色混凝土","Gray Concrete","#373A3E","gray_concrete","混凝土","gray_concrete"],
+  ["黑色混凝土","Black Concrete","#080A0F","black_concrete","混凝土","black_concrete"],
+  ["红色混凝土","Red Concrete","#8E2121","red_concrete","混凝土","red_concrete"],
+  ["橙色混凝土","Orange Concrete","#E06101","orange_concrete","混凝土","orange_concrete"],
+  ["黄色混凝土","Yellow Concrete","#F1AF15","yellow_concrete","混凝土","yellow_concrete"],
+  ["黄绿色混凝土","Lime Concrete","#5EA918","lime_concrete","混凝土","lime_concrete"],
+  ["绿色混凝土","Green Concrete","#495B24","green_concrete","混凝土","green_concrete"],
+  ["青色混凝土","Cyan Concrete","#157788","cyan_concrete","混凝土","cyan_concrete"],
+  ["淡蓝色混凝土","Light Blue Concrete","#2489C7","light_blue_concrete","混凝土","light_blue_concrete"],
+  ["蓝色混凝土","Blue Concrete","#2D2F8F","blue_concrete","混凝土","blue_concrete"],
+  ["紫色混凝土","Purple Concrete","#64209C","purple_concrete","混凝土","purple_concrete"],
+  ["品红色混凝土","Magenta Concrete","#A9309F","magenta_concrete","混凝土","magenta_concrete"],
+  ["粉红色混凝土","Pink Concrete","#D6658F","pink_concrete","混凝土","pink_concrete"],
+  ["棕色混凝土","Brown Concrete","#603C20","brown_concrete","混凝土","brown_concrete"],
+  ["白色羊毛","White Wool","#EAECED","white_wool","羊毛","white_wool"],
+  ["淡灰色羊毛","Light Gray Wool","#8E8E87","light_gray_wool","羊毛","light_gray_wool"],
+  ["灰色羊毛","Gray Wool","#3F4448","gray_wool","羊毛","gray_wool"],
+  ["黑色羊毛","Black Wool","#15151A","black_wool","羊毛","black_wool"],
+  ["红色羊毛","Red Wool","#A12723","red_wool","羊毛","red_wool"],
+  ["橙色羊毛","Orange Wool","#F17614","orange_wool","羊毛","orange_wool"],
+  ["黄色羊毛","Yellow Wool","#F9C628","yellow_wool","羊毛","yellow_wool"],
+  ["黄绿色羊毛","Lime Wool","#70B91A","lime_wool","羊毛","lime_wool"],
+  ["绿色羊毛","Green Wool","#556E1C","green_wool","羊毛","green_wool"],
+  ["青色羊毛","Cyan Wool","#158A91","cyan_wool","羊毛","cyan_wool"],
+  ["淡蓝色羊毛","Light Blue Wool","#3AAFD9","light_blue_wool","羊毛","light_blue_wool"],
+  ["蓝色羊毛","Blue Wool","#35399D","blue_wool","羊毛","blue_wool"],
+  ["紫色羊毛","Purple Wool","#7A2AAD","purple_wool","羊毛","purple_wool"],
+  ["品红色羊毛","Magenta Wool","#BE45B4","magenta_wool","羊毛","magenta_wool"],
+  ["粉红色羊毛","Pink Wool","#EE8DAC","pink_wool","羊毛","pink_wool"],
+  ["棕色羊毛","Brown Wool","#724829","brown_wool","羊毛","brown_wool"],
+  ["白色陶瓦","White Terracotta","#D2B2A1","white_terracotta","陶瓦","white_terracotta"],
+  ["淡灰色陶瓦","Light Gray Terracotta","#876B62","light_gray_terracotta","陶瓦","light_gray_terracotta"],
+  ["灰色陶瓦","Gray Terracotta","#3A2A24","gray_terracotta","陶瓦","gray_terracotta"],
+  ["黑色陶瓦","Black Terracotta","#251710","black_terracotta","陶瓦","black_terracotta"],
+  ["红色陶瓦","Red Terracotta","#8F3D2F","red_terracotta","陶瓦","red_terracotta"],
+  ["橙色陶瓦","Orange Terracotta","#A25426","orange_terracotta","陶瓦","orange_terracotta"],
+  ["黄色陶瓦","Yellow Terracotta","#BA8523","yellow_terracotta","陶瓦","yellow_terracotta"],
+  ["黄绿色陶瓦","Lime Terracotta","#687635","lime_terracotta","陶瓦","lime_terracotta"],
+  ["绿色陶瓦","Green Terracotta","#4C532A","green_terracotta","陶瓦","green_terracotta"],
+  ["青色陶瓦","Cyan Terracotta","#575B5B","cyan_terracotta","陶瓦","cyan_terracotta"],
+  ["淡蓝色陶瓦","Light Blue Terracotta","#716D8A","light_blue_terracotta","陶瓦","light_blue_terracotta"],
+  ["蓝色陶瓦","Blue Terracotta","#4A3C5B","blue_terracotta","陶瓦","blue_terracotta"],
+  ["紫色陶瓦","Purple Terracotta","#764656","purple_terracotta","陶瓦","purple_terracotta"],
+  ["品红色陶瓦","Magenta Terracotta","#96586D","magenta_terracotta","陶瓦","magenta_terracotta"],
+  ["粉红色陶瓦","Pink Terracotta","#A24E4F","pink_terracotta","陶瓦","pink_terracotta"],
+  ["棕色陶瓦","Brown Terracotta","#4D3324","brown_terracotta","陶瓦","brown_terracotta"],
+  ["石头","Stone","#7E7E7E","stone","石材","stone"],
+  ["平滑石头","Smooth Stone","#9F9F9F","smooth_stone","石材","smooth_stone"],
+  ["圆石","Cobblestone","#807F80","cobblestone","石材","cobblestone"],
+  ["苔石","Mossy Cobblestone","#6E765F","mossy_cobblestone","石材","mossy_cobblestone"],
+  ["花岗岩","Granite","#956756","granite","石材","granite"],
+  ["磨制花岗岩","Polished Granite","#9A6B59","polished_granite","石材","polished_granite"],
+  ["闪长岩","Diorite","#BDBCBD","diorite","石材","diorite"],
+  ["磨制闪长岩","Polished Diorite","#C1C1C3","polished_diorite","石材","polished_diorite"],
+  ["安山岩","Andesite","#888889","andesite","石材","andesite"],
+  ["磨制安山岩","Polished Andesite","#848786","polished_andesite","石材","polished_andesite"],
+  ["深板岩","Deepslate","#505053","deepslate","石材","deepslate"],
+  ["磨制深板岩","Polished Deepslate","#484949","polished_deepslate","石材","polished_deepslate"],
+  ["凝灰岩","Tuff","#6C6D67","tuff","石材","tuff"],
+  ["磨制凝灰岩","Polished Tuff","#626864","polished_tuff","石材","polished_tuff"],
+  ["方解石","Calcite","#DFE0DD","calcite","石材","calcite"],
+  ["滴水石","Dripstone Block","#866C5D","dripstone_block","石材","dripstone_block"],
+  ["黑石","Blackstone","#2A2429","blackstone","石材","blackstone"],
+  ["玄武岩","Basalt","#49494E","basalt","石材","basalt_side"],
+  ["平滑玄武岩","Smooth Basalt","#49484E","smooth_basalt","石材","smooth_basalt"],
+  ["下界岩","Netherrack","#622626","netherrack","石材","netherrack"],
+  ["末地石","End Stone","#DCDF9E","end_stone","石材","end_stone"],
+  ["下界砖块","Nether Bricks","#2C161A","nether_bricks","石材","nether_bricks"],
+  ["红色下界砖块","Red Nether Bricks","#460709","red_nether_bricks","石材","red_nether_bricks"],
+  ["紫珀块","Purpur Block","#AA7EAA","purpur_block","石材","purpur_block"],
+  ["黑曜石","Obsidian","#0F0B19","obsidian","石材","obsidian"],
+  ["基岩","Bedrock","#555555","bedrock","石材","bedrock"],
+  ["海晶石","Prismarine","#62A292","prismarine","石材","prismarine"],
+  ["暗海晶石","Dark Prismarine","#345C4C","dark_prismarine","石材","dark_prismarine"],
+  ["海晶石砖","Prismarine Bricks","#63AC9E","prismarine_bricks","石材","prismarine_bricks"],
+  ["泥土","Dirt","#866043","dirt","砂土","dirt"],
+  ["砂土","Coarse Dirt","#77563B","coarse_dirt","砂土","coarse_dirt"],
+  ["缠根泥土","Rooted Dirt","#90684D","rooted_dirt","砂土","rooted_dirt"],
+  ["泥巴","Mud","#3C393D","mud","砂土","mud"],
+  ["压实泥巴","Packed Mud","#8E6B50","packed_mud","砂土","packed_mud"],
+  ["沙子","Sand","#DBCFA3","sand","砂土","sand"],
+  ["红沙","Red Sand","#BF6721","red_sand","砂土","red_sand"],
+  ["沙砾","Gravel","#847F7F","gravel","砂土","gravel"],
+  ["黏土","Clay","#A1A6B3","clay","砂土","clay"],
+  ["雪块","Snow Block","#F9FEFE","snow_block","砂土","snow"],
+  ["砂岩","Sandstone","#D8CB9C","sandstone","砂土","sandstone"],
+  ["红砂岩","Red Sandstone","#BB631D","red_sandstone","砂土","red_sandstone"],
+  ["切制砂岩","Cut Sandstone","#DACEA0","cut_sandstone","砂土","cut_sandstone"],
+  ["橡木木板","Oak Planks","#A2834F","oak_planks","木质","oak_planks"],
+  ["云杉木板","Spruce Planks","#735531","spruce_planks","木质","spruce_planks"],
+  ["白桦木板","Birch Planks","#C0AF79","birch_planks","木质","birch_planks"],
+  ["丛林木板","Jungle Planks","#A07351","jungle_planks","木质","jungle_planks"],
+  ["金合欢木板","Acacia Planks","#A85A32","acacia_planks","木质","acacia_planks"],
+  ["深色橡木木板","Dark Oak Planks","#432B14","dark_oak_planks","木质","dark_oak_planks"],
+  ["红树木板","Mangrove Planks","#763631","mangrove_planks","木质","mangrove_planks"],
+  ["樱花木板","Cherry Planks","#E3B3AD","cherry_planks","木质","cherry_planks"],
+  ["竹木板","Bamboo Planks","#C1AD50","bamboo_planks","木质","bamboo_planks"],
+  ["绯红木板","Crimson Planks","#653147","crimson_planks","木质","crimson_planks"],
+  ["诡异木板","Warped Planks","#2B6963","warped_planks","木质","warped_planks"],
+  ["橡木原木","Oak Log","#6D5533","oak_log","木质","oak_log"],
+  ["云杉原木","Spruce Log","#3B2611","spruce_log","木质","spruce_log"],
+  ["深色橡木原木","Dark Oak Log","#3C2F1A","dark_oak_log","木质","dark_oak_log"],
+  ["去皮橡木原木","Stripped Oak Log","#B19056","stripped_oak_log","木质","stripped_oak_log"],
+  ["去皮白桦原木","Stripped Birch Log","#C5B076","stripped_birch_log","木质","stripped_birch_log"],
+  ["铁块","Block of Iron","#DCDCDC","iron_block","金属宝石","iron_block"],
+  ["金块","Block of Gold","#F6D03E","gold_block","金属宝石","gold_block"],
+  ["钻石块","Block of Diamond","#62EDE4","diamond_block","金属宝石","diamond_block"],
+  ["绿宝石块","Block of Emerald","#2ACB58","emerald_block","金属宝石","emerald_block"],
+  ["青金石块","Block of Lapis Lazuli","#1F438C","lapis_block","金属宝石","lapis_block"],
+  ["红石块","Block of Redstone","#B01905","redstone_block","金属宝石","redstone_block"],
+  ["煤炭块","Block of Coal","#101010","coal_block","金属宝石","coal_block"],
+  ["下界合金块","Block of Netherite","#433D40","netherite_block","金属宝石","netherite_block"],
+  ["铜块","Block of Copper","#C06C50","copper_block","金属宝石","copper_block"],
+  ["斑驳的铜块","Exposed Copper","#A17E68","exposed_copper","金属宝石","exposed_copper"],
+  ["锈蚀的铜块","Weathered Copper","#6C996E","weathered_copper","金属宝石","weathered_copper"],
+  ["氧化铜块","Oxidized Copper","#52A385","oxidized_copper","金属宝石","oxidized_copper"],
+  ["紫水晶块","Block of Amethyst","#8662BF","amethyst_block","金属宝石","amethyst_block"],
+  ["石英块","Block of Quartz","#ECE6DF","quartz_block","金属宝石","quartz_block_side"],
+  ["平滑石英块","Smooth Quartz Block","#EDE6E0","smooth_quartz","金属宝石","quartz_block_bottom"],
+  ["砖块","Bricks","#976253","bricks","金属宝石","bricks"],
+  ["泥砖","Mud Bricks","#89684F","mud_bricks","金属宝石","mud_bricks"],
+  ["下界疣块","Nether Wart Block","#730302","nether_wart_block","彩色","nether_wart_block"],
+  ["诡异疣块","Warped Wart Block","#177879","warped_wart_block","彩色","warped_wart_block"],
+  ["菌光体","Shroomlight","#F19347","shroomlight","彩色","shroomlight"],
+  ["岩浆块","Magma Block","#8E3F1F","magma_block","彩色","magma"],
+  ["灵魂沙","Soul Sand","#513E33","soul_sand","彩色","soul_sand"],
+  ["蜜脾块","Honeycomb Block","#E5941E","honeycomb_block","彩色","honeycomb_block"],
+  ["干草捆","Hay Bale","#A68826","hay_block","彩色","hay_block_side"],
+  ["苔藓块","Moss Block","#596E2D","moss_block","彩色","moss_block"],
+  ["南瓜","Pumpkin","#C47318","pumpkin","彩色","pumpkin_side"],
+  ["海绵","Sponge","#C4C04B","sponge","彩色","sponge"],
+  ["赭黄蛙明灯","Ochre Froglight","#F5E9B6","ochre_froglight","彩色","ochre_froglight_side"],
+  ["青翠蛙明灯","Verdant Froglight","#D3EBD0","verdant_froglight","彩色","verdant_froglight_side"],
+  ["珠光蛙明灯","Pearlescent Froglight","#ECE1E5","pearlescent_froglight","彩色","pearlescent_froglight_side"],
+  ["幽匿块","Sculk","#0D1C22","sculk","彩色","sculk"],
+  ["干海带块","Dried Kelp Block","#26311E","dried_kelp_block","彩色","dried_kelp_side"],
+  ["骨块","Bone Block","#E5E2D0","bone_block","彩色","bone_block_side"],
+  ["萤石","Glowstone","#AC8354","glowstone","彩色","glowstone"],
+  ["海晶灯","Sea Lantern","#ACC8BF","sea_lantern","彩色","sea_lantern"],
+  ["哭泣的黑曜石","Crying Obsidian","#210A3C","crying_obsidian","彩色","crying_obsidian"]
+];
+
+function hexToRgb(hex){
+  const v = parseInt(hex.slice(1), 16);
+  return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
+}
+
+function rgbToLab(r, g, b){
+  let R = r / 255, G = g / 255, B = b / 255;
+  R = R > 0.04045 ? Math.pow((R + 0.055) / 1.055, 2.4) : R / 12.92;
+  G = G > 0.04045 ? Math.pow((G + 0.055) / 1.055, 2.4) : G / 12.92;
+  B = B > 0.04045 ? Math.pow((B + 0.055) / 1.055, 2.4) : B / 12.92;
+  const X = (R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047;
+  const Y = (R * 0.2126 + G * 0.7152 + B * 0.0722) / 1.0;
+  const Z = (R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883;
+  const f = function(t){ return t > 0.008856 ? Math.cbrt(t) : (7.787 * t + 16 / 116); };
+  const fx = f(X), fy = f(Y), fz = f(Z);
+  return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+}
+
+function labDist(a, b){
+  const dl = a[0] - b[0], da = a[1] - b[1], db = a[2] - b[2];
+  return Math.sqrt(dl * dl + da * da + db * db);
+}
+
+/* ---------- 全部方块 ---------- */
+const ALL_BLOCKS = BLOCK_DEFS.map(function(d, ai){
+  const rgb = hexToRgb(d[2]);
+  return {
+    zh: d[0], en: d[1], hex: d[2],
+    id: "minecraft:" + d[3], fam: d[4], tex: d[5],
+    rgb: rgb, lab: rgbToLab(rgb[0], rgb[1], rgb[2]),
+    i: -1,          /* 在当前方案里的下标 */
+    all: ai         /* 在所有方块里的下标，手动编辑记的就是这个 */
+  };
+});
+
+const FAMILIES = [];
+ALL_BLOCKS.forEach(function(b){ if (FAMILIES.indexOf(b.fam) < 0) FAMILIES.push(b.fam); });
+
+const FAM_CN = {
+  "混凝土": "混凝土", "羊毛": "羊毛", "陶瓦": "陶瓦",
+  "石材": "石材", "砂土": "砂土与砂岩", "木质": "木质",
+  "金属宝石": "金属与宝石", "彩色": "彩色方块"
+};
+
+function famBlocks(fam){
+  return ALL_BLOCKS.filter(function(b){ return b.fam === fam; });
+}
+
+/* 按分组取方块；thr > 0 时把颜色过于接近的方块去掉（先到先得） */
+function collect(fams, thr){
+  const out = [];
+  fams.forEach(function(f){
+    famBlocks(f).forEach(function(b){
+      if (!thr){ out.push(b); return; }
+      let min = Infinity;
+      for (let i = 0; i < out.length; i++){
+        const d = labDist(b.lab, out[i].lab);
+        if (d < min) min = d;
+      }
+      if (min > thr) out.push(b);
+    });
+  });
+  return out;
+}
+
+/* 每种方案用独立副本，i 是它在本方案里的下标 */
+function makePal(list){
+  return list.map(function(b, i){
+    const o = Object.assign({}, b);
+    o.i = i;
+    return o;
+  });
+}
+
+/* ---------- 预设方案 ---------- */
+const BASIC_ORDER = ["混凝土", "羊毛", "石材", "砂土", "木质", "金属宝石", "彩色", "陶瓦"];
+const BASIC_THR = 6;
+
+const PALETTES = {
+  basic: {
+    label: "基本",
+    desc: "八个分组去重后的通用套装，几乎不丢颜色",
+    blocks: makePal(collect(BASIC_ORDER, BASIC_THR))
+  },
+  concrete: {
+    label: "混凝土",
+    desc: "纯色块最干净，单一材料最省事",
+    blocks: makePal(collect(["混凝土"]))
+  },
+  wool: {
+    label: "羊毛",
+    desc: "哑光、色偏柔和，老派地图画首选",
+    blocks: makePal(collect(["羊毛"]))
+  },
+  terracotta: {
+    label: "陶瓦",
+    desc: "整体偏暗偏灰，像素风更厚重",
+    blocks: makePal(collect(["陶瓦"]))
+  },
+  stone: {
+    label: "石材",
+    desc: "石、土、砂岩，冷灰到暖棕，适合建筑风",
+    blocks: makePal(collect(["石材", "砂土"]))
+  },
+  wood: {
+    label: "木质",
+    desc: "木板与原木，暖调木头色",
+    blocks: makePal(collect(["木质"]))
+  },
+  metal: {
+    label: "金属",
+    desc: "铁金铜与宝石块，饱和度高、对比强",
+    blocks: makePal(collect(["金属宝石"]))
+  },
+  vivid: {
+    label: "彩色",
+    desc: "荧光、菌光、蛙明灯这类特殊彩色方块",
+    blocks: makePal(collect(["彩色"]))
+  },
+  all: {
+    label: "全部",
+    desc: "所有内置方块，选项最多但材料也最杂",
+    blocks: makePal(ALL_BLOCKS)
+  },
+  custom: {
+    label: "自定义",
+    desc: "自己挑方块，想用几种用几种",
+    blocks: [],
+    custom: true
+  }
+};
+
+/* 自定义方案的方块 ID 集合 */
+const customIds = new Set();
+
+function setCustomPalette(ids){
+  customIds.clear();
+  ids.forEach(function(id){ customIds.add(id); });
+  PALETTES.custom.blocks = makePal(ALL_BLOCKS.filter(function(b){ return customIds.has(b.id); }));
+  try{ localStorage.setItem("mcPixelCustom", JSON.stringify(Array.from(customIds))); }catch(e){}
+}
+
+function loadCustomPalette(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem("mcPixelCustom") || "null"); }catch(e){}
+  if (saved && saved.length) setCustomPalette(saved);
+}
+
+/* 备注：种数 + 说明 */
+function palNoteText(){
+  const p = PALETTES[state.palette];
+  const n = p.blocks.length;
+  if (p.custom) return n ? "自定义方案 · " + n + " 种方块" : "还没挑方块，点下面「选择方块」";
+  return n + " 种方块 · " + p.desc;
+}
+
+/* ================= 状态 ================= */
+const state = {
+  image: null,
+  imageName: "",
+  N: 48,
+  palette: "basic",
+  dither: false,
+  grid: true,
+  texture: true,
+  despeckle: true,
+  focus: false,
+  contrast: 0,
+  sat: 0,
+  src: null,
+  idx: null,
+  selected: -1,
+  tool: "brush",
+  brush: 1,
+  mirror: false,
+  zoomPx: 0,
+  history: [],
+  future: [],
+  hotbar: new Array(9).fill(null),
+  hotSlot: 0,
+  manual: null,
+  manualBlock: null,
+  texFiles: {},
+  realTex: true,
+  customCount: 0,
+  dragging: false,
+  orient: "flat"
+};
+
+const $ = function(s){ return document.querySelector(s); };
+const board = $("#board");
+
+/* ================= 示例图 ================= */
+const demoCanvas = (function(){
+  const cells = [
+    "........",
+    ".XX..XX.",
+    ".XX..XX.",
+    "...XX...",
+    "..XXXX..",
+    "..XXXX..",
+    ".XXXXXX.",
+    ".X....X."
+  ];
+  const unit = 16, size = 8 * unit;
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const g = c.getContext("2d");
+  const greens = ["#4E8F2C", "#5CA537", "#437B26", "#63AF3D"];
+  for (let y = 0; y < 8; y++){
+    for (let x = 0; x < 8; x++){
+      const isFace = cells[y][x] === "X";
+      g.fillStyle = isFace ? "#141519" : greens[(x * 3 + y * 5 + (x ^ y)) % greens.length];
+      g.fillRect(x * unit, y * unit, unit, unit);
+      if (!isFace){
+        g.fillStyle = "rgba(0,0,0,0.10)";
+        g.fillRect(x * unit, y * unit, unit, 3);
+        g.fillRect(x * unit, y * unit, 3, unit);
+      }
+    }
+  }
+  return c;
+})();
+
+/* ================= 采样 ================= */
+function buildSource(){
+  const n = state.N;
+  const img = state.image || demoCanvas;
+  const w = img.width || 128, h = img.height || 128;
+  const side = Math.min(w, h);
+  const S = Math.max(1, Math.min(1024, Math.round(side)));
+
+  const c = document.createElement("canvas");
+  c.width = c.height = S;
+  const g = c.getContext("2d", { willReadFrequently: true });
+  g.imageSmoothingEnabled = true;
+  g.imageSmoothingQuality = "high";
+  g.drawImage(img, (w - side) / 2, (h - side) / 2, side, side, 0, 0, S, S);
+  const data = g.getImageData(0, 0, S, S).data;
+
+  const out = new Uint8ClampedArray(n * n * 4);
+  const step = S / n;
+
+  for (let cy = 0; cy < n; cy++){
+    const y0 = Math.floor(cy * step), y1 = Math.max(y0 + 1, Math.ceil((cy + 1) * step));
+    for (let cx = 0; cx < n; cx++){
+      const x0 = Math.floor(cx * step), x1 = Math.max(x0 + 1, Math.ceil((cx + 1) * step));
+      let r = 0, gg = 0, b = 0, a = 0, cnt = 0, aw = 0;
+      for (let y = y0; y < y1 && y < S; y++){
+        for (let x = x0; x < x1 && x < S; x++){
+          const p = (y * S + x) * 4;
+          const al = data[p + 3];
+          r += data[p] * al;
+          gg += data[p + 1] * al;
+          b += data[p + 2] * al;
+          a += al;
+          aw += al;
+          cnt++;
+        }
+      }
+      const o = (cy * n + cx) * 4;
+      if (!cnt || aw === 0){ out[o] = 0; out[o + 1] = 0; out[o + 2] = 0; out[o + 3] = 0; continue; }
+      out[o] = r / aw;
+      out[o + 1] = gg / aw;
+      out[o + 2] = b / aw;
+      out[o + 3] = a / cnt;
+    }
+  }
+
+  const k = 1 + state.contrast / 100;
+  const s = 1 + state.sat / 100;
+  if (k !== 1 || s !== 1){
+    for (let i = 0; i < n * n; i++){
+      const o = i * 4;
+      if (out[o + 3] === 0) continue;
+      let r = out[o], gg = out[o + 1], b = out[o + 2];
+      const lum = 0.299 * r + 0.587 * gg + 0.114 * b;
+      r = lum + (r - lum) * s;
+      gg = lum + (gg - lum) * s;
+      b = lum + (b - lum) * s;
+      r = (r - 128) * k + 128;
+      gg = (gg - 128) * k + 128;
+      b = (b - 128) * k + 128;
+      out[o] = r; out[o + 1] = gg; out[o + 2] = b;
+    }
+  }
+  state.src = out;
+}
+
+/* ================= 匹配 ================= */
+/* CIEDE2000 色差：比 Lab 直线距离更贴近人眼判断，高饱和色尤其明显 */
+function ciede2000(L1, a1, b1, L2, a2, b2){
+  const RAD = Math.PI / 180;
+  const C1 = Math.sqrt(a1 * a1 + b1 * b1);
+  const C2 = Math.sqrt(a2 * a2 + b2 * b2);
+  const Cm = (C1 + C2) / 2;
+  const Cm7 = Math.pow(Cm, 7);
+  const G = 0.5 * (1 - Math.sqrt(Cm7 / (Cm7 + 6103515625)));
+  const ap1 = (1 + G) * a1, ap2 = (1 + G) * a2;
+  const Cp1 = Math.sqrt(ap1 * ap1 + b1 * b1);
+  const Cp2 = Math.sqrt(ap2 * ap2 + b2 * b2);
+  let hp1 = (Cp1 === 0) ? 0 : Math.atan2(b1, ap1) / RAD;
+  if (hp1 < 0) hp1 += 360;
+  let hp2 = (Cp2 === 0) ? 0 : Math.atan2(b2, ap2) / RAD;
+  if (hp2 < 0) hp2 += 360;
+
+  const dLp = L2 - L1;
+  const dCp = Cp2 - Cp1;
+  let dhp = 0;
+  if (Cp1 * Cp2 !== 0){
+    dhp = hp2 - hp1;
+    if (dhp > 180) dhp -= 360;
+    else if (dhp < -180) dhp += 360;
+  }
+  const dHp = 2 * Math.sqrt(Cp1 * Cp2) * Math.sin(dhp * RAD / 2);
+
+  const Lpm = (L1 + L2) / 2;
+  const Cpm = (Cp1 + Cp2) / 2;
+  let hpm = hp1 + hp2;
+  if (Cp1 * Cp2 !== 0){
+    hpm = (Math.abs(hp1 - hp2) > 180) ? (hp1 + hp2 + 360) / 2 : (hp1 + hp2) / 2;
+  }
+  const T = 1 - 0.17 * Math.cos((hpm - 30) * RAD)
+              + 0.24 * Math.cos(2 * hpm * RAD)
+              + 0.32 * Math.cos((3 * hpm + 6) * RAD)
+              - 0.20 * Math.cos((4 * hpm - 63) * RAD);
+  const dTh = 30 * Math.exp(-Math.pow((hpm - 275) / 25, 2));
+  const Cpm7 = Math.pow(Cpm, 7);
+  const Rc = 2 * Math.sqrt(Cpm7 / (Cpm7 + 6103515625));
+  const Sl = 1 + (0.015 * Math.pow(Lpm - 50, 2)) / Math.sqrt(20 + Math.pow(Lpm - 50, 2));
+  const Sc = 1 + 0.045 * Cpm;
+  const Sh = 1 + 0.015 * Cpm * T;
+  const Rt = -Math.sin(2 * dTh * RAD) * Rc;
+  const t1 = dLp / Sl, t2 = dCp / Sc, t3 = dHp / Sh;
+  return Math.sqrt(t1 * t1 + t2 * t2 + t3 * t3 + Rt * t2 * t3);
+}
+
+/* 粗筛（Lab 距离）→ 精算（CIEDE2000），比全量精算快几倍，结果基本一致 */
+const NEAR_D2 = new Float64Array(512);
+
+function findNearest(l, a, b, blocks){
+  const n = blocks.length;
+  let coarse = 0, cd = Infinity;
+  for (let i = 0; i < n; i++){
+    const c = blocks[i].lab;
+    const dl = l - c[0], da = a - c[1], db = b - c[2];
+    const d = dl * dl + da * da + db * db;
+    NEAR_D2[i] = d;
+    if (d < cd){ cd = d; coarse = i; }
+  }
+  if (n < 3) return coarse;
+  const limit = cd * 4 + 1;
+  let best = coarse, bd = Infinity;
+  for (let i = 0; i < n; i++){
+    if (NEAR_D2[i] > limit) continue;
+    const c = blocks[i].lab;
+    const d = ciede2000(l, a, b, c[0], c[1], c[2]);
+    if (d < bd){ bd = d; best = i; }
+  }
+  return best;
+}
+
+/* ---------- 手动编辑标记 ----------
+   manual[i] = 1 表示这一格是人手画的，重新匹配时不能被算法覆盖
+   manualBlock[i] = 全表下标，-1 表示手动擦成空格，-2 表示没动过 */
+function resetManual(){
+  const n = state.N;
+  state.manual = new Uint8Array(n * n);
+  state.manualBlock = new Int16Array(n * n).fill(-2);
+}
+
+function markManual(i, k){
+  if (!state.manual) return;
+  state.manual[i] = 1;
+  if (k < 0){ state.manualBlock[i] = -1; return; }
+  const b = PALETTES[state.palette].blocks[k];
+  state.manualBlock[i] = b ? b.all : -2;
+}
+
+function clearManual(i){
+  if (!state.manual) return;
+  state.manual[i] = 0;
+  state.manualBlock[i] = -2;
+}
+
+function applyManual(out){
+  const man = state.manual, mb = state.manualBlock;
+  if (!man) return;
+  const blocks = PALETTES[state.palette].blocks;
+  const lookup = new Map();
+  blocks.forEach(function(b, j){ lookup.set(b.id, j); });
+  for (let i = 0; i < out.length; i++){
+    if (!man[i]) continue;
+    const a = mb[i];
+    if (a === -1){ out[i] = -1; continue; }
+    if (a < 0) continue;
+    const src = ALL_BLOCKS[a];
+    let j = lookup.get(src.id);
+    if (j === undefined) j = findNearest(src.lab[0], src.lab[1], src.lab[2], blocks);
+    out[i] = j;
+  }
+}
+
+function computeIdx(){
+  const n = state.N, total = n * n, src = state.src;
+  const blocks = PALETTES[state.palette].blocks;
+  const out = new Int16Array(total);
+  const cache = new Map();
+
+  function pick(r, g, b){
+    const key = (r >> 2) * 65536 + (g >> 2) * 256 + (b >> 2);
+    let v = cache.get(key);
+    if (v === undefined){
+      const lab = rgbToLab(r, g, b);
+      v = findNearest(lab[0], lab[1], lab[2], blocks);
+      cache.set(key, v);
+    }
+    return v;
+  }
+
+  if (!state.dither){
+    for (let i = 0; i < total; i++){
+      const p = i * 4;
+      if (src[p + 3] < 128){ out[i] = -1; continue; }
+      out[i] = pick(src[p], src[p + 1], src[p + 2]);
+    }
+  } else {
+    const buf = new Float32Array(total * 3);
+    for (let i = 0; i < total; i++){
+      const p = i * 4;
+      buf[i * 3] = src[p];
+      buf[i * 3 + 1] = src[p + 1];
+      buf[i * 3 + 2] = src[p + 2];
+    }
+    const add = function(x, y, er, eg, eb){
+      if (x < 0 || x >= n || y < 0 || y >= n) return;
+      const j = (y * n + x) * 3;
+      buf[j] += er; buf[j + 1] += eg; buf[j + 2] += eb;
+    };
+    for (let y = 0; y < n; y++){
+      for (let x = 0; x < n; x++){
+        const i = y * n + x, p = i * 4;
+        if (src[p + 3] < 128){ out[i] = -1; continue; }
+        const bi = i * 3;
+        const r = Math.max(0, Math.min(255, buf[bi]));
+        const g = Math.max(0, Math.min(255, buf[bi + 1]));
+        const b = Math.max(0, Math.min(255, buf[bi + 2]));
+        const k = pick(r, g, b);
+        out[i] = k;
+        const c = blocks[k].rgb;
+        const S = 0.5;
+        const er = (r - c[0]) * S, eg = (g - c[1]) * S, eb = (b - c[2]) * S;
+        add(x + 1, y, er * 0.4375, eg * 0.4375, eb * 0.4375);
+        add(x - 1, y + 1, er * 0.1875, eg * 0.1875, eb * 0.1875);
+        add(x, y + 1, er * 0.3125, eg * 0.3125, eb * 0.3125);
+        add(x + 1, y + 1, er * 0.0625, eg * 0.0625, eb * 0.0625);
+      }
+    }
+  }
+  if (state.despeckle) despeckle(out, n);
+  applyManual(out);
+  state.idx = out;
+}
+
+function despeckle(out, n){
+  const src = state.src;
+  const blocks = PALETTES[state.palette].blocks;
+  const copy = Int16Array.from(out);
+  const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  for (let y = 0; y < n; y++){
+    for (let x = 0; x < n; x++){
+      const i = y * n + x;
+      const k = copy[i];
+      if (k < 0) continue;
+      let same = 0, cnt = 0;
+      const tally = new Map();
+      for (let d = 0; d < 4; d++){
+        const nx = x + nb[d][0], ny = y + nb[d][1];
+        if (nx < 0 || nx >= n || ny < 0 || ny >= n) continue;
+        const nk = copy[ny * n + nx];
+        if (nk < 0) continue;
+        cnt++;
+        if (nk === k) same++;
+        tally.set(nk, (tally.get(nk) || 0) + 1);
+      }
+      if (same > 0 || cnt < 3) continue;
+      let bestK = -1, bestC = 0;
+      tally.forEach(function(v, key){ if (v > bestC){ bestC = v; bestK = key; } });
+      if (bestC < 3) continue;
+      const p = i * 4;
+      const lab = rgbToLab(src[p], src[p + 1], src[p + 2]);
+      if (labDist(lab, blocks[bestK].lab) < 11) out[i] = bestK;
+    }
+  }
+}
+
+/* ================= 渲染 ================= */
+function fitCell(){
+  const wrap = $("#canvaswrap");
+  const availW = Math.max(120, wrap.clientWidth - 42);
+  const availH = Math.max(120, wrap.clientHeight - 42);
+  return Math.max(1, Math.floor(Math.min(availW, availH) / state.N));
+}
+
+function render(){
+  const n = state.N;
+  const dpr = window.devicePixelRatio || 1;
+  const cell = state.zoomPx > 0 ? state.zoomPx : fitCell();
+  const size = n * cell;
+  const zv = $("#zoomVal");
+  if (zv) zv.textContent = cell + " px/格";
+
+  board.width = Math.round(size * dpr);
+  board.height = Math.round(size * dpr);
+  board.style.width = size + "px";
+  board.style.height = size + "px";
+
+  const ctx = board.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, size, size);
+
+  const blocks = PALETTES[state.palette].blocks;
+  const bevel = state.texture && cell >= 9;
+  const dim = state.focus && state.selected >= 0;
+  const real = state.realTex && !state.dragging && cell >= 5;
+  ctx.imageSmoothingEnabled = false;
+
+  for (let y = 0; y < n; y++){
+    for (let x = 0; x < n; x++){
+      const k = state.idx[y * n + x];
+      const px = x * cell, py = y * cell;
+      if (k < 0){
+        ctx.fillStyle = "#f2f2ee";
+        ctx.fillRect(px, py, cell, cell);
+        if (cell >= 6){
+          const h = cell / 2;
+          ctx.fillStyle = "#e2e2dc";
+          ctx.fillRect(px, py, h, h);
+          ctx.fillRect(px + h, py + h, h, h);
+        }
+      } else {
+        const b = blocks[k];
+        const skin = real ? texOf(b.id, b.tex) : null;
+        if (skin && skin.img){
+          ctx.drawImage(skin.img, px, py, cell, cell);
+        } else {
+          ctx.fillStyle = b.hex;
+          ctx.fillRect(px, py, cell, cell);
+        }
+        /* 方块质感：上左提亮、下右压暗，让每一格看起来像有厚度的方块 */
+        if (bevel){
+          const t = cell >= 40 ? 2 : 1;
+          ctx.fillStyle = "rgba(255,255,255,0.24)";
+          ctx.fillRect(px, py, cell, t);                 /* 上沿高光 */
+          ctx.fillStyle = "rgba(255,255,255,0.13)";
+          ctx.fillRect(px, py, t, cell);                 /* 左沿弱一点 */
+          ctx.fillStyle = "rgba(0,0,0,0.17)";
+          ctx.fillRect(px + cell - t, py, t, cell);      /* 右沿暗边 */
+          ctx.fillStyle = "rgba(0,0,0,0.28)";
+          ctx.fillRect(px, py + cell - t, cell, t);      /* 下沿最暗 */
+        }
+      }
+      if (dim && k !== state.selected){
+        ctx.fillStyle = "rgba(12,14,10,0.55)";
+        ctx.fillRect(px, py, cell, cell);
+      }
+    }
+  }
+
+  if (state.grid && cell >= 4){
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(0,0,0,0.12)";
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++){
+      const v = i * cell + 0.5;
+      ctx.moveTo(v, 0); ctx.lineTo(v, size);
+      ctx.moveTo(0, v); ctx.lineTo(size, v);
+    }
+    ctx.stroke();
+    if (n > 16){
+      ctx.strokeStyle = "rgba(0,0,0,0.26)";
+      ctx.beginPath();
+      for (let i = 0; i <= n; i += 8){
+        const v = i * cell + 0.5;
+        ctx.moveTo(v, 0); ctx.lineTo(v, size);
+        ctx.moveTo(0, v); ctx.lineTo(size, v);
+      }
+      ctx.stroke();
+    }
+  }
+}
+
+/* ================= 统计 ================= */
+function counts(){
+  const blocks = PALETTES[state.palette].blocks;
+  const c = new Array(blocks.length).fill(0);
+  let empty = 0;
+  for (let i = 0; i < state.idx.length; i++){
+    const k = state.idx[i];
+    if (k < 0) empty++; else c[k]++;
+  }
+  return { list: c, empty: empty };
+}
+
+function updateStats(){
+  const n = state.N;
+  const r = counts();
+  let used = 0;
+  for (let i = 0; i < r.list.length; i++) if (r.list[i] > 0) used++;
+  $("#s1").textContent = n + "×" + n;
+  $("#s2").textContent = String(n * n - r.empty);
+  $("#s3").textContent = String(used);
+  $("#nbtSize").textContent = n + " × " + (state.orient === "flat" ? 1 : n) + " × " + n;
+  const tiles = Math.ceil(n / STRUCT_MAX);
+  $("#nbtTip").textContent = tiles <= 1
+    ? "结构方块上限 48×48，这个尺寸可以直接载入"
+    : "超出上限，会拆成 " + tiles + "×" + tiles + " 块打包成 zip";
+  return r;
+}
+
+/* ================= 调色板 ================= */
+function buildPalette(){
+  const blocks = PALETTES[state.palette].blocks;
+  const r = counts();
+  const q = ($("#search").value || "").trim().toLowerCase();
+  const onlyUsed = $("#onlyUsed").checked;
+  const box = $("#palGrid");
+  box.innerHTML = "";
+
+  const fams = [];
+  blocks.forEach(function(b){ if (fams.indexOf(b.fam) < 0) fams.push(b.fam); });
+
+  fams.forEach(function(fam){
+    const list = [];
+    let famSum = 0;
+    blocks.forEach(function(b){
+      if (b.fam !== fam) return;
+      if (onlyUsed && r.list[b.i] === 0) return;
+      if (q && (b.zh + b.en + b.id).toLowerCase().indexOf(q) < 0) return;
+      list.push(b);
+      famSum += r.list[b.i];
+    });
+    if (!list.length) return;
+    const h = document.createElement("div");
+    h.className = "famhead";
+    h.textContent = (FAM_CN[fam] || fam) + (famSum ? " · " + famSum : "");
+    box.appendChild(h);
+
+    const grid = document.createElement("div");
+    grid.className = "palgrid";
+    list.forEach(function(b){
+      const el = document.createElement("div");
+      el.className = "slot" + (state.selected === b.i ? " on" : "") + (r.list[b.i] === 0 ? " zero" : "");
+      el.title = b.zh + " · " + b.en + " · " + b.id + " · " + r.list[b.i] + " 块";
+      el.innerHTML = '<span class="c" style="' + slotStyle(b) + '"></span>' +
+        (r.list[b.i] ? '<span class="n">' + r.list[b.i] + "</span>" : "");
+      el.addEventListener("click", function(){ selectBlock(b.i); });
+      grid.appendChild(el);
+    });
+    box.appendChild(grid);
+  });
+
+  if (!box.children.length){
+    box.innerHTML = '<div class="note">没有匹配的方块</div>';
+  }
+  buildHotbar();
+}
+
+/* 物品栏：9 格固定，先选格子再放方块，可以重复，不会互相挤掉 */
+function hotBlockIndex(slot){
+  const e = state.hotbar[slot];
+  if (!e) return -1;
+  const blocks = PALETTES[state.palette].blocks;
+  let i = blocks.findIndex(function(b){ return b.id === e.id; });
+  if (i < 0) i = blocks.findIndex(function(b){ return b.hex === e.hex; });
+  return i;
+}
+
+function selectBlock(i){
+  const b = PALETTES[state.palette].blocks[i];
+  if (!b) return;
+  state.selected = i;
+  state.hotbar[state.hotSlot] = { id: b.id, hex: b.hex, zh: b.zh };
+  if (state.tool === "picker" || state.tool === "eraser") setTool("brush");
+  buildPalette();
+  render();
+}
+
+function selectHotSlot(k){
+  state.hotSlot = k;
+  state.selected = hotBlockIndex(k);
+  const e = state.hotbar[k];
+  if (e && state.selected < 0){
+    $("#modeHint").textContent = "这格方块不在当前色系里，换回对应色系或重新放一个";
+  }
+  buildPalette();
+  render();
+}
+
+function buildHotbar(){
+  const box = $("#hotbar");
+  box.innerHTML = "";
+  const blocks = PALETTES[state.palette].blocks;
+  for (let i = 0; i < 9; i++){
+    const e = state.hotbar[i];
+    const el = document.createElement("div");
+    el.className = "hb" + (i === state.hotSlot ? " active" : "");
+    el.innerHTML = '<span class="k">' + (i + 1) + "</span>";
+    if (e){
+      const bi = hotBlockIndex(i);
+      const c = document.createElement("span");
+      c.className = "c";
+      if (bi >= 0){
+        c.setAttribute("style", slotStyle(blocks[bi]));
+        el.title = blocks[bi].zh + " · 第 " + (i + 1) + " 格（右键清空）";
+      } else {
+        c.style.background = e.hex;
+        c.style.opacity = "0.4";
+        el.title = (e.zh || "方块") + " 不在当前色系里 · 右键清空";
+      }
+      el.appendChild(c);
+    } else {
+      el.title = "空格子 " + (i + 1) + "：点它选中，再点上面的方块放进来";
+    }
+    el.addEventListener("click", function(){ selectHotSlot(i); });
+    el.addEventListener("contextmenu", function(ev){
+      ev.preventDefault();
+      state.hotbar[i] = null;
+      state.selected = hotBlockIndex(state.hotSlot);
+      buildPalette();
+      render();
+    });
+    box.appendChild(el);
+  }
+}
+
+/* ================= 编辑 ================= */
+function snapshot(){
+  return {
+    idx: Int16Array.from(state.idx),
+    man: state.manual ? Uint8Array.from(state.manual) : null,
+    mb: state.manualBlock ? Int16Array.from(state.manualBlock) : null
+  };
+}
+
+function restoreSnap(sn){
+  state.idx = sn.idx;
+  if (sn.man){
+    state.manual = sn.man;
+    state.manualBlock = sn.mb;
+  }
+}
+
+function pushHistory(){
+  state.history.push(snapshot());
+  if (state.history.length > 50) state.history.shift();
+  state.future.length = 0;
+  updateUndoBtns();
+}
+
+function updateUndoBtns(){
+  $("#undoBtn").disabled = state.history.length === 0;
+  $("#redoBtn").disabled = state.future.length === 0;
+}
+
+function undo(){
+  if (!state.history.length) return;
+  state.future.push(snapshot());
+  restoreSnap(state.history.pop());
+  afterEdit();
+}
+
+function redo(){
+  if (!state.future.length) return;
+  state.history.push(snapshot());
+  restoreSnap(state.future.pop());
+  afterEdit();
+}
+
+function afterEdit(){
+  buildPalette();
+  updateStats();
+  render();
+  updateUndoBtns();
+}
+
+function setTool(t){
+  state.tool = t;
+  document.querySelectorAll("[data-tool]").forEach(function(b){
+    b.classList.toggle("on", b.dataset.tool === t);
+  });
+  const map = {
+    brush: "左键绘制 · 滚轮缩放 · 空格拖动",
+    eraser: "左键擦成空格 · 滚轮缩放",
+    picker: "左键吸取方块 · 滚轮缩放",
+    fill: "左键填充同色区域 · 滚轮缩放",
+    replace: "点画面里的方块 → 全图同种都换成当前选的",
+    pan: "左键拖动画面 · 滚轮缩放"
+  };
+  $("#modeHint").textContent = map[t] || "";
+  updateCursor();
+}
+
+function updateCursor(){
+  const wrap = $("#canvaswrap");
+  let c = "crosshair";
+  if (state.tool === "pan") c = "grab";
+  else if (state.tool === "picker") c = "copy";
+  else if (state.tool === "fill") c = "cell";
+  if (spaceDown) c = "grab";
+  if (panState) c = "grabbing";
+  board.style.cursor = c;
+  wrap.style.cursor = (state.tool === "pan" || spaceDown) ? c : "";
+}
+
+function cellFromEvent(e){
+  const rect = board.getBoundingClientRect();
+  const x = Math.floor(((e.clientX - rect.left) / rect.width) * state.N);
+  const y = Math.floor(((e.clientY - rect.top) / rect.height) * state.N);
+  if (x < 0 || y < 0 || x >= state.N || y >= state.N) return null;
+  return { x: x, y: y };
+}
+
+function applyBrush(cx, cy, k){
+  const n = state.N;
+  const b = state.brush;
+  const half = Math.floor((b - 1) / 2);
+  let changed = false;
+  for (let dy = 0; dy < b; dy++){
+    for (let dx = 0; dx < b; dx++){
+      const x = cx - half + dx, y = cy - half + dy;
+      if (x < 0 || y < 0 || x >= n || y >= n) continue;
+      const i = y * n + x;
+      if (state.idx[i] !== k){ state.idx[i] = k; markManual(i, k); changed = true; }
+      if (state.mirror){
+        const mx = n - 1 - x;
+        const mi = y * n + mx;
+        if (state.idx[mi] !== k){ state.idx[mi] = k; markManual(mi, k); changed = true; }
+      }
+    }
+  }
+  return changed;
+}
+
+function floodFill(sx, sy, k){
+  const n = state.N;
+  const total = n * n;
+  const start = sy * n + sx;
+  const target = state.idx[start];
+  if (target === k) return false;
+  const seen = new Uint8Array(total);
+  const done = new Uint8Array(total);
+  const stack = [start];
+  let changed = false;
+  while (stack.length){
+    const i = stack.pop();
+    if (seen[i]) continue;
+    seen[i] = 1;
+    if (state.idx[i] !== target) continue;
+    state.idx[i] = k;
+    done[i] = 1;
+    changed = true;
+    const x = i % n, y = (i - x) / n;
+    if (x + 1 < n) stack.push(i + 1);
+    if (x > 0) stack.push(i - 1);
+    if (y + 1 < n) stack.push(i + n);
+    if (y > 0) stack.push(i - n);
+  }
+  /* 镜像只复制真正被填到的格子（旧版会把扫过但没填的也镜像过去） */
+  if (changed && state.mirror){
+    for (let i = 0; i < total; i++){
+      if (!done[i]) continue;
+      const x = i % n, y = (i - x) / n;
+      const mi = y * n + (n - 1 - x);
+      state.idx[mi] = k;
+      done[mi] = 1;
+    }
+  }
+  for (let i = 0; i < total; i++) if (done[i]) markManual(i, k);
+  return changed;
+}
+
+let painting = false;
+
+board.addEventListener("pointerdown", function(e){
+  if (e.button !== 0) return;
+  if (state.tool === "pan" || spaceDown) return;
+  const cell = cellFromEvent(e);
+  if (!cell) return;
+
+  if (state.tool === "picker"){
+    const k = state.idx[cell.y * state.N + cell.x];
+    if (k >= 0) selectBlock(k);
+    return;
+  }
+
+  const target = state.tool === "eraser" ? -1 : state.selected;
+  if (target === null) return;
+  if (state.tool !== "eraser" && state.selected < 0){
+    $("#modeHint").textContent = "先在右边点一个格子，再点方块放进物品栏";
+    return;
+  }
+
+  if (state.tool === "replace"){
+    const from = state.idx[cell.y * state.N + cell.x];
+    if (from === state.selected) return;
+    pushHistory();
+    let hit = 0;
+    for (let i = 0; i < state.N * state.N; i++){
+      if (state.idx[i] === from){ state.idx[i] = state.selected; markManual(i, state.selected); hit++; }
+    }
+    if (hit) afterEdit(); else state.history.pop();
+    return;
+  }
+
+  pushHistory();
+  state.dragging = true;
+  let changed = false;
+  if (state.tool === "fill"){
+    changed = floodFill(cell.x, cell.y, target);
+  } else {
+    changed = applyBrush(cell.x, cell.y, target);
+  }
+  painting = true;
+  board.setPointerCapture(e.pointerId);
+  if (changed) afterEdit(); else state.history.pop();
+});
+
+board.addEventListener("pointermove", function(e){
+  const cell = cellFromEvent(e);
+  if (cell){
+    const k = state.idx[cell.y * state.N + cell.x];
+    const bl = PALETTES[state.palette].blocks;
+    const nm = k < 0 ? "空格" : ((bl[k] && bl[k].zh) || "方块");
+    $("#hover").textContent = "第 " + (cell.x + 1) + " 列 · 第 " + (cell.y + 1) + " 行 · " + nm;
+    if (painting && (state.tool === "brush" || state.tool === "eraser")){
+      const target = state.tool === "eraser" ? -1 : state.selected;
+      if (applyBrush(cell.x, cell.y, target)){
+        updateStats();
+        render();
+      }
+    }
+  } else {
+    $("#hover").textContent = "-";
+  }
+});
+board.addEventListener("pointerup", function(){
+  if (state.dragging || painting){
+    painting = false;
+    state.dragging = false;
+    buildPalette();
+    render();
+  }
+});
+board.addEventListener("pointerleave", function(){
+  if (state.dragging){ state.dragging = false; render(); }
+  painting = false;
+});
+
+/* ================= 上传 ================= */
+function loadFile(file){
+  if (!file || !/^image\//.test(file.type)) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = function(){
+    if (state.image && state.image.src && state.image.src.indexOf("blob:") === 0){
+      URL.revokeObjectURL(state.image.src);
+    }
+    state.image = img;
+    state.imageName = file.name || "粘贴的图片";
+    $("#fileline").textContent = "已用：" + state.imageName;
+    $("#fileline").classList.add("on");
+    refresh(true);
+  };
+  img.src = url;
+}
+
+$("#drop").addEventListener("click", function(){
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = "image/*";
+  inp.onchange = function(){ loadFile(inp.files && inp.files[0]); };
+  inp.click();
+});
+["dragenter", "dragover"].forEach(function(ev){
+  $("#drop").addEventListener(ev, function(e){ e.preventDefault(); $("#drop").classList.add("over"); });
+});
+["dragleave", "drop"].forEach(function(ev){
+  $("#drop").addEventListener(ev, function(e){ e.preventDefault(); $("#drop").classList.remove("over"); });
+});
+$("#drop").addEventListener("drop", function(e){
+  if (e.dataTransfer && e.dataTransfer.files) loadFile(e.dataTransfer.files[0]);
+});
+document.addEventListener("paste", function(e){
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (let i = 0; i < items.length; i++){
+    if (items[i].type.indexOf("image") === 0){ loadFile(items[i].getAsFile()); break; }
+  }
+});
+
+/* ================= 真实材质 ================= */
+/* 内置原版方块贴图（Minecraft Java 1.21.4 assets，仅供个人使用） */
+const VANILLA_TEX = {
+  "acacia_planks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEXCbT+6YzetXTKgVjCZUCuPTCqIRyhX8/nHAAAAcElEQVR42g3CARVCIQwF0DctwMYvsM0AfkYDpQHQgPWPoPdcSAH+L7B9lI0DyurR9MKYI9fJjfLGE2Q3VFpvyoJQe7F4INfIXHOjkIGACmH2cO8gizCLipwjz9gJKlTxIMA4/GYxeJPOHoGzz3eczB9ikBUCOPdNbQAAAABJRU5ErkJggg==",
+  "amethyst_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEX+y+bIkPCmePGNasx6W7VkR55dOppI3xRrAAAAeklEQVR42g3LwRGDIBAF0D+mASdkvBuhAbKbuy5rAfLpQOi/hOTdHyi+Y+MXtlHyMEX1Gq8eHdThvEKBvXoz6o388LLK2TBP0Y2twhKjmCuYcnDWhGJRhx0BJYeTWRT2fqqtm+P6t3b0CH6WdhcGuCXffZ/QKWWWe/kBljEdyt/kygIAAAAASUVORK5CYII=",
+  "andesite": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEWoqpqcnJyKio5/f390dHRoaGiVw0gLAAAAb0lEQVR42gVACxHDIAx9VEETZoCXVgAhAigfAb3b/FvZIR7Gmy1QD5fjnhWLsmfVBtmjnGoXPOVGxgOaafyGwmuKN5HI3F2NBVwfLVYPXFpadCXosbuw4cuZshtRVIzhFxLJk6uB9xQzTxhh7i72B5/VE568GfX/AAAAAElFTkSuQmCC",
+  "bamboo_planks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAHlBMVEXv2X7jzGrZwl7Tu1DCtU7IsU23q0m7qEyZh0GQfjp8w4zJAAAAfklEQVR42hWMwQ3DIBAENyX4kgYMDVhCpAJcAZx486EDREq4qwDoNljznNGghvqpIVSY4/2ik074+CXnmLFk/WQNRW+5cS4ZZI7NdSBG59NdLHSIrDkEW7fGvWFrMrtCKjbdjiNkNzp0oeUeuOT+fMhcdIKd51Csw9Slc4j+AQbvKXVHeJccAAAAAElFTkSuQmCC",
+  "basalt_side": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAD1BMVEVcXFxPS086O0gyMz0bJjJg13CmAAAAZ0lEQVR42h3HwRWDMAxEwa/QwEqmAGRSAMJpAJL+a4oftxnWlJAXn/Gg8y2Bwvk5SKfz1mz3m/2wrmg349iSaMlo3W1pQSmM5XbKDThhTMiuCRnJteCyKMudapkV6lS+aLE5qxtmaX9RWgsu2U1pqQAAAABJRU5ErkJggg==",
+  "bedrock": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAAAAAA6mKC9AAAAcElEQVR42jWPMQ0DQBSFvpazgBgEPFHYbdKmCwth4AZgM0E8ttai9pDjwQNCzZ1tPlMAvEcAwmrjUFF4X3A190e8U/EnkXkrQVeruq8TmUC7LVY8qsE9FVy51TuBCQsAby2fwMPVbcI/An9zNdwD9wFD0lUf95ycGwAAAABJRU5ErkJggg==",
+  "birch_planks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEXXy43XwYXIt3q4qHWun3allGeei2GOL9VAAAAAcElEQVR42g3CARXDIAwFwM/DAAk1kGQCVoKDDQeAA+JfQnvvwAV4XyD9CSk5hMS8yYUxR6wTG+WLjKQ3hFtvQgwX/RCbI9aIWHOjJMWrgonMzTqSuqt6RcwRZ+xALqkiJ0DJ7WZWWONO5o6zz3+ciAdixhUFVj2uwQAAAABJRU5ErkJggg==",
+  "black_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAADFBMVEUKDBEJCxAICg8HCQ5GCpt0AAAAW0lEQVR42mNpVtn+mWU9tw4HS9WGtnyWnZ1JriwtsW9VWRQ/ZPuxnHxxSozlS7dfJcvZ42LzWLwV355mKWdSymHpV0rpYWHs323IMiXeVY6FYU70TZaHZqs/AADNlR6Ejkkl5wAAAABJRU5ErkJggg==",
+  "black_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAYFBMVEUnGRMnGRInGREmGRIoGBEmGREnGBInGBEmGBImGBEnFxIlGBEnFxAmFxElFxMmFxAlFxElFxAlFw8lFhElFhAlFg8lFg4kFhAkFg8jFhAlFQ8lFQ4jFg4kFRAkFQ8jFQ8CkFywAAAAqUlEQVR42hXEUUICMRAD0KlId8NaSTTjVJR6/1sK7+OFq8psqBd4reWwe7u8y9IJ067gtzzXNHiQ5+tHDDDXqjfZkjKDfcf4WzdXazIdnWDqiWPQPQDS5UuWr8DI2O0CCpssEYgdx/K0zQ1bDwXkOcsl2cfR9khx3lv74mhdcsXdj8XPrWEMQOEHZTlePVNi8DjAU07nb6XOPUT+LGeZY3gmgk/oz/O2zH+7CxBeh26GYAAAAABJRU5ErkJggg==",
+  "black_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAZlBMVEUlJSkiIiYhICUeHiIcHCAbGx8aGh4ZGh4ZGR0YGBwXGBwXFxsWFxsVFhoVFRkUFBkTFBgSExcREhYQEhYQERUPEBUODxQNDhMMDhIMDRILDRELDBEKDBEKDBAJCxAJCg8ICg8HCQ7sjdmYAAAAwUlEQVR42g3LR4LCMBAEwIZt2QpYVvCMkHHQ/v+TcKpT4S2fnqam3t57jPuFNQDGltovrf+nZBjW/ORSLZ17wAasMrNKYivkKiBCbus030OjHtO03zhHYxtvaUPqpX0DYOaUcjTwBbALRH54sutMH0hYdyp9E616pfI5oGUz4y6vFoDsAJDWgr9kagxpX7G310tkcr1pGGMLEBk3n8dIU3RAuOD8A7SxjuyYM4Hn31oYwwyjujjpuBqXLnxk8ezN8Av+gQ6Fk6kklQAAAABJRU5ErkJggg==",
+  "blackstone": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEVOS1Q8OUcxLDYnIhwgExwWDxDY/pChAAAAdUlEQVR42hXGwRGDMAwEwBvSACIUEMtQANLRgGU1EJv+W8lkX4vKPEapDVa1a9kmpjNU3onQ2mTlDSvCz6vfEFm87+NBwUne34DysWr7P1GOGQHvjAwlmua8RE6Y1DRsDpWNVAZkPQdbb1iXnCP6BT+eke72A4yWF+8FcBD4AAAAAElFTkSuQmCC",
+  "blue_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAADFBMVEUuMJAtL5AsLo8sLo4a/XV9AAAAW0lEQVR42gFQAK//AGqlmokAlpqZSQDRVZjqAKmpZp4ACWlpRQBaWmmpAMph1noAqlWpZgBmdclVAKqtlFUAZaaa2QBlZhlaAFmp7pUAWaZVqQArtmqlAKkpabg7UCEMDMyluQAAAABJRU5ErkJggg==",
+  "blue_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABTUlEQVQ4EQXBAYEgNxADMHmSK6ln8BTKn0RvM66Uv3/+bVsAESbmhK2369yh7FvdAsjEhSTmjATLa7zviQp2ayZyRruSgLYusapvRbWlCBIzY8suSjJy8UrqZriJXWwpQIzYLVAE6AcF0xLMMGfMPQqtt6ulrXPHOQNABnHP8JaELu2aGQBAvFcJmWjROmdMS4YCEtqCI7Ta0tJKmJCJ71u36Cuq5ZwB763eGGNfQUtfSSTMGRdmYoXveVu6ZLxXgYkJAEQS73su7FYh6CJAS8KuJyAT1Alzxu0uIqLQuP8cwe/vL7mSOEMb+5bwvmrrdslAyaDetySSa4aEXahMJCi7XIkiCASttiSSI7u6qwUyoUjcTAgwYRuZ8D3tel8pzxojUOYnslwtCcu+TxNmKAQhcWdAt2rtfzFnXEIR/FxBMIlXFKHFrrbAxJb/AZZY8gkLi4GRAAAAAElFTkSuQmCC",
+  "blue_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAclBMVEU+TbI8RKo8Q6k7Qqg7Qac7QKY6QKY6P6U6PqQ5PaM4PKI4O6E3OqA3Op82OZ82OJ01OJ01N5w0N5s0NpozNpozNZkyNZgyNJgyNJcxNJcxM5YwMpUvMpQvMZMuMZMuMJIuMJEtMJEtL5EtL5AsL5AsLo/Hb5GnAAAAx0lEQVR42g3FWWKEIBAFwKexIWyKKCgNjgvm/lfM1E+h5k8NqrDVz+H9cWF2gNQx1YvT35lXSEpLT1PSZEwH7TBnRWkPVCLRnCHg1jIr9bzs+VTqeHC2QuWtubw53Vw3AL8qhNVL2AjoCTl/syQqK7JuENDmZGHLzonvED8nOG6yPXEsDlgMADFoDdJ2kMm7cMw4yjjmXZla2LW2Oey5PaI/36C8AdwNYzsI7VNbDK0LAf3PHMk7Bck8mb3iKmKqO3VrtqIWSf9BBhDS7lUFRwAAAABJRU5ErkJggg==",
+  "bone_block_side": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAADFBMVEXp5tTm4tLh3cre2sVvaf4UAAAAOklEQVR42jXJsREAEBREwWeGvq4PgQIu0JTS6OAXYBiSTZZQNiE6k88Cf5IZFyUzlS+VJdrZR6jUgzeQkBaaZQrhhAAAAABJRU5ErkJggg==",
+  "bricks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAG1BMVEV8RTaplI2ihn3GaFGxYk2LbmebVkOPUD9zPzGgdN/HAAAAbklEQVR42k2OQRLEIAzDRCBO/v/iHaelszkgLrLNOcq99zlH4RepgpKGkqB7dVfRHV1AZqzIzIyHWNf4w4TRCcpHQAlwDg4KPv/5LNzvHRq+O0o+hmDPOr1w7O2/e9Dbvx8GSPrPoQH7l3x+DNYPOiAEBGQstBIAAAAASUVORK5CYII=",
+  "brown_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAD1BMVEVhPSFhPCFhPCBgOx9fOx+h9e5GAAAAXElEQVR42gWAARHCMBRDcyChBtjLBNDkC+A6/544nTrnupYwTmP56QEseh/qR2ndYhkTfGtnb7oQmB8sQZ4kR+8rnk+qYE+Jkpk9rb47rMTikzi14hncaJcDff0BCOQVcdJ2VuUAAAAASUVORK5CYII=",
+  "brown_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABSElEQVQ4EQXBAQEkNxADMHmSZ1IEz6P8ufQ240r59+8/rQKIMMwMrffWuQP2W7sLJCZxIZh7BJYn3vukJOzWTOSEjglQXOGVvielrSKQmMRit2AmcrBF3YQ/Z+yWVqGYmMQWBQzQhwK3GEzCEPF9j/JahHDvAe8txYTlnom3FbS0dc4BAPB2BQkNlnPHdCuhgKAt5QittiyQiQkZvm/dir4FxZmAt9VhjN1SWvpKCGbiwpyxqr/1oCXxXgWGmZDSkIh477nULm0laEkACFpvCzJonTPmjNstiSTaIu49gt/vxxwR50TFviX1fk9xW6IkJOC9JSTHJBJ2i0rIhMRuXShSAkGrBTJH3tOtLQmBItycAJgZu5U7/J623u8Dn3UyAo25pHEVQdn/PotZQIIQ/uSAbrVrfzHDBRDcYxDMjLcFUNhqq0hY/A9VQumzqjaVKgAAAABJRU5ErkJggg==",
+  "brown_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAclBMVEWDVDKCUzGBUjGAUjB/UC9+UC98Ty58Ti57TS16TSx4TCx4Syt2Sit2Sip1SSpzSClxRyhwRidvRSdvRSZtRCZsQyVrQyVrQiRqQiRpQSRoQSNoQCNnQCNnPyJmPyJlPiJkPiFjPSFiPSBiPCBhPCBgOx/Z8JFGAAAAxklEQVR42g3FS2KEIBQEwB5jE+Ujok+RMDii5P5XTGpTeMdPCUNOVt+n92fF7AClRUpN8nvFFYqydPSiacwL2mGOI2UPzELOEYRb8zyMdzt8uobhvHE9P8ztHXOLUlPZAHyPIaxewQqgPWL8z5IljbSuJ7S5Dtq8H5JqkM+FQzbVbpmyAxYDgL3WoLa9Eu/COePM0xT3wZR8uOfZHPbYbnZXC4M3gKsw9gVqL20xXBcC3dcs9G6ESoc3e0HN9GXna42WJSv+AQTzEGOJgegjAAAAAElFTkSuQmCC",
+  "calcite": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEX////w9fTt7ObZ29fJycSzs7Mm1OZyAAAAcklEQVR42hXNwRGDMAwEwDNpAMsNhBMFYEn5Z5DdAfTfSsJvfwux1LE2Qn36d1GDxp1v4R/zyq2KI2aySkvkZd6534B60j6JjZHqw6BH2fvLKpzrng2C5BZGcRjNhC1A7VhcB1LP8jQ4yll9Xo5Ck4jRfxoKFWVvj8dvAAAAAElFTkSuQmCC",
+  "cherry_planks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEXnysXnwrvnurTms63hqKHdnZfNhYCx8SuFAAAAcElEQVR42g3CARXDIAwFwM/DAAk1kGQCVoKDDQeAA+JfQnvvwAV4XyD9CSk5hMS8yYUxR6wTG+WLjKQ3hFtvQgwX/RCbI9aIWHOjJMWrgonMzTqSuqt6RcwRZ+xALqkiJ0DJ7WZWWONO5o6zz3+ciAdixhUFVj2uwQAAAABJRU5ErkJggg==",
+  "clay": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEWvudasrr2hp7Gao7OcoayUmaS9OQzkAAAAcUlEQVR42gVAwRWCMAz9qANAqnfzE+6SlgEocQFg/1l4OEdRo87QmS02drC3Kv5S5LIM/OyEsTAPNlCvKlwr1l2kPw9CwjgnC+yR1nTs8JRTwgPbUlb1eGOzn2QocTXR8GmA9anIZAWuNb/+DwwmZLDfvqkUEC0phh0AAAAASUVORK5CYII=",
+  "coal_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAD1BMVEUpKCgfHh4VFRUNDQ0FBQVHylqaAAAAYUlEQVR42h3MARECMRADwIACegpoUgX5U9CLf03MsAIWiz5XMSjltheUYUKi51s8bMSLioJDKhliSj0mcdneLzbuM7vYQexSVyBRuTKqZcUbuc+nvIjMfmf/5+qhAlM0Oz9ZChZ2KYB3/gAAAABJRU5ErkJggg==",
+  "coarse_dirt": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAA51BMVEW5hVy4hFu2g1qvfVeufVaHh4eoeFOjdVGidVChdFCYbUuWbEqVa0qUakmTakiQaEeLZEVsbGyJY0OIYkOHYUKGYUJnZ2eCXkCAXD9jY2N+Wz5+Wj59Wj15Vzt5VTp4VDl3Uzl1VDl2UzhyUjh0UTdzUTdwUDdxTzZuTzdvTjVuTTRUVFRmSDBkSDJlRzBjRS9hRC5aRDReQy5fQi1eQi1cQSxZPSlYPChXPChWPClUOyhVOidSOyhTOSZSOSdPNyVONyVMNCNKMyJIMiJHMSFFMCBFLyBELh9CLh88KRs7KRs3JhkwIRbDSzqpAAAAy0lEQVR42g3I6yICUQCF0Z27NsothG9wiDAjZY5QIZcOev/n0fq5JK+DBi6ZknQr4WGbnUacJcuOUXplslYm8lQyfBRyQ8+OD9XjgMmNNt52ay/u4XF7k9oPyr5t/BvjeUZJO5eAm7NMyupz1yaoQHnYvkzuNzOwtXcyCrSYdI58BzEJf5H6EWCpohSUnGnhSf6sy2HQQE2wV4vugQ8nsUsUY9Pa18WIIqNTqYrwUdxjl3/zYxSCzLt6U2K+wlZKtsyVT8tFBoYQUvwHZHwhD+cESWEAAAAASUVORK5CYII=",
+  "cobblestone": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEW1tbWmpqaIh4hubW1hYWFSUlLm8qFQAAAAcUlEQVR42gVAARGDMAz8MAMjh4CSLwIWIgDSIGAD/1p2iPk5pTfFOW3QLR3nGrrGQxSLTL1wp2TJ3PF6W/yaOjSV9eEB2y3a4omQPSerG4f6biMXkP0a8X2DMdpytQkuIWuY49CuziJmclhoIcsjUvgH41gVHD61kt4AAAAASUVORK5CYII=",
+  "copper_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEXjgmzWe1vIdFbCa0yyYkenWkCaUDiQSTE/4tshAAAAeUlEQVR42hXMwQ3CMBAEwN0tILlLAYgg8QcBDVjQP/xBchrANuLN4XznMQJpwHSRdkenzy4stZgeEFM02yYKz+rSUBUBszlMKKTGBYrW4Y2scE5jHiCao0MRaWOOqIKjcD15tzrE18VUPNfUZdN+gVfIP6f9+XY9/AEjBS3TYVj+zAAAAABJRU5ErkJggg==",
+  "crimson_planks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEWGPlp+OlZqNEtcMEJLJzdEITE/Hi1M/JxbAAAAcElEQVR42g3CARXDIAwFwM/DAAk1kGQCVoKDDQeAA+JfQnvvwAV4XyD9CSk5hMS8yYUxR6wTG+WLjKQ3hFtvQgwX/RCbI9aIWHOjJMWrgonMzTqSuqt6RcwRZ+xALqkiJ0DJ7WZWWONO5o6zz3+ciAdixhUFVj2uwQAAAABJRU5ErkJggg==",
+  "crying_obsidian": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEWDCORgBqs7J1QnHj0rAXgQDBwGAwsAAAGmUsK4AAAAhklEQVR42gVAuxaCIBj+XGqtk5c98gUsda2OxqohfzMqMHsBXr8DGz60VhOD1TvPVUEI13oqO+HxLkWij4pja5szvEkhI2cUMxwnXdxsne2wXxnxZa0R2FM8slKizboLJTrG8DrMJvQb3NzrkckGY77LIh0Id0qdjHmFTVGlftyDFi8GM5s/YNgljucAtu4AAAAASUVORK5CYII=",
+  "cut_sandstone": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEXt68vn5Lvj27Da0qPVxJbRuorGrnFYg2saAAAAcElEQVR42h3KyxWDMBBDUUEHfCqwwAWgSfaxB3fgdJDpv4T4oI0W9wGYpmVZVtDcVeXw3vs3IjDoMyhjJlUOe2E2jVnGJsqlDFqhkQ27RElv7FUa1rDVQ6zWUJRUqYz1op7mOa8n0s2k+zrxi+gREX9TRhjUnf9DjAAAAABJRU5ErkJggg==",
+  "cyan_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAD1BMVEUXeIkWeIkVd4gVd4cVdodQeJ8KAAAAYklEQVR42gVAARECMQzLBgaSq4A11MBPwTrwr4mD8246G7VFOQMpuuyAmqs4iWnPlAs+7ieXwFDpBPHKj78louQK3YtzvfO0QGVNvwfSD90eqHvbvxTEHqIXVHQ1jbAcbP8BhZYQN7AdVYEAAAAASUVORK5CYII=",
+  "cyan_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABg0lEQVQ4y21TWbYlIQhzjfe2A6Bl7X8TPhKxXnWf/uA4QQgBU1FbWfSxIrZq70vntWSMlVV9P5ZcYxXff2ul/WmN5wQAbPS6ls25rE8HuFc25X3xtXZb4iBtdA+Ufa87YSrW1weHCMiO/HXLkUGcTXmb+7fp1gHcVmp+CXqgXUQY/K2N6GrODqZhPc68AxMHQKA5AOpFNgB+osZM21RtXrQagEwIDSyyt6CXnQWcqr2ymT0+sB1sTJyYdcSl9UccOthgWefcICbZbiAkcw3GX6oCUPiodFQv7dHhP2wIgPqrO1O86ARX1adeAMm1193ym2Bp126/gW13IJ9SmFV/AaOddvugXRODJCFYf1SH2sOHKrdKZySxuTPTt78GCQE41MNCNJwg6KaM4PaqG6VIaEOAU+sZ3aM87u2+14ieY4yhPBmEmKlEX2tMJCnfk5N2xhmAHynx2XbJcu8BTOXQdQ1qKfxpZPPqP+f/DBvFbHwXMrB/PssR7fyPF0OCOqvzlfH2Awx7C9oNf77fAAAAAElFTkSuQmCC",
+  "cyan_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAbFBMVEUWm5wWmpsWmpoWmZkWl5gWlpgWlJcVlJYVkpUVkJQVj5QVjpMVjZMVjJIVi5EVipEViZAViJAVh48Vho8VhY4VhI4Vg44Vg40Vgo0VgY0VgIwVf4wVfosVfYsVfIoVe4oVeooVeYkVeIkVd4gsypw2AAAAw0lEQVR42g3FSWKEIAAEwNbYhE0RBUXAUcj//5ipS6GmT/WyZKPa7dz9YrWAUCHWN8e/J+0QjNvIJSpqPUBZrEkynp4lkGsCYfeyStn65fIj5d3wtMLSayo9xTfXA8Cv9H53AiYAakFK3wxZs6SxE6H0c9GU84r59eHz4AqH6C3MxQKbBsBJKVCZSURn/b3iLvOcTqlruWxrh8WZeuP4dC+dBuwLbQZQudg3zX0jMP6sgc5KiHwt+qx4C5d6ctiTYS2C/+atECaMkIyrAAAAAElFTkSuQmCC",
+  "dark_oak_log": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEVYRChKOB4/MR0zJxUwJRMpIBFZE/4LAAAAaklEQVR42hXGQRHDMAwEQI1VBJINwLoTgLgEaiHohD+YOPtaoaXl3BBqas6C5DeVPBkgkOXSkVDQxKpT+8kqX2ZvbrvCYcJ/XHA3iV8sdLslJhI84UnLVvIJH5qxpJXRGSG2Y5D7TXXGxgPEiBE7ybf/RAAAAABJRU5ErkJggg==",
+  "dark_oak_planks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEVTOBpPMhhJLxc+KRI6JBEwHg4pGgyUw7h6AAAAcElEQVR42g3CARXDIAwFwM/DAAk1kGQCVoKDDQeAA+JfQnvvwAV4XyD9CSk5hMS8yYUxR6wTG+WLjKQ3hFtvQgwX/RCbI9aIWHOjJMWrgonMzTqSuqt6RcwRZ+xALqkiJ0DJ7WZWWONO5o6zz3+ciAdixhUFVj2uwQAAAABJRU5ErkJggg==",
+  "dark_prismarine": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEU7gmg/bVw4YlE0VkgxUEEnPjbGGPxZAAAAYklEQVR42i2NsQ3DMBADaeTTy6YGiBD/ACm4gbiB9p8llmUc2BF3KLFHucCmBeiv2Gl49O7hgV+86h44gSz5UXuDOkTzhIfXZzra7clNmKPoVg/Bfb3QokzqbOXToph3a/EH6w4S7a/HaWkAAAAASUVORK5CYII=",
+  "deepslate": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAD1BMVEV5eXlkZGRRUVE9PUMvLzfdbkGmAAAAZUlEQVR42hXJQRHEMAwDQIVBLAS1FQA3VhA04Y/ppvtdjCoHVdC1syzE4LpnG005EcQpd8wQkPVGVmJwuXwbtGfoFCQ/pBu+ldX7gGztU0BoQuoB+gm6A95v6Fx/t3/MCZDriYo/+sYRXDxJGR4AAAAASUVORK5CYII=",
+  "diamond_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAG1BMVEX////V//ae/utw+/Bl9eNL7eY94OUVwsYOur1j/GYQAAAAeklEQVR42hXLsRHCMBAEwPsf5dw5JxB0QAfMQAnUSStEhIALsF8iBj3D5msXKIz5Lp/rLmza3kueFuzrAkfOhnjRp6C4GhzNlE8dS4DxdcFhYK9oLloaMhxgYw642+jATcX42G/Gvw+X5hpuvTLE5nlQNq29TOycFOcf/6MxqUgMRiYAAAAASUVORK5CYII=",
+  "diorite": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEXp6enOzs++v8GkoqKLi4t7e3uHPalNAAAAcUlEQVR42gWAyxGDIBBAH58CEClgxzV3WPBuJKkg9F9LhtmlHyHD9fTHJ3cSJS4lG4Gz+qEVmfkWrYEklMPE8JrCm/KjnWaJMNFL2XSrLIZES4WWv0+W+IK4tn5Poe5OXFdjWJ7OibJ/GMmPRhBK2yd/hHEP7nIAWagAAAAASUVORK5CYII=",
+  "dirt": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEW5hVyHh4eWbEpsbGx0WER5VTpZPSnqDkA3AAAAbklEQVR42hXLwQnDQAwEwOVA7uDyNgq6AtJD/mLD6m0Muv5LCJ7/YES6OhNsvjLGhpXJtA1vW+nMQJy31o+Ncu4uJUwzDSQE13I5giyGGuxqCQTTxnX4RPDkJ+5ChZskgPp6HemIqwp8+ojp8voDZ2EdYwBe7AYAAAAASUVORK5CYII=",
+  "dried_kelp_side": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAIVBMVEWQloCBhnMsOCApNR0jLxcoKh0gKhYbIhUTIRMYHRQVGhMViAsdAAAAg0lEQVR42h3KMQrCQBAF0H8UHT1AYKJYSvYj8Rghy5AT2AdDmO1ci5DtrDynwVc/kLqbjUQJp1ea2CJoqEif4GbjkNYCoez/R47seLMG52id3U2wmOclekLQy/isWeN9sE/ZwESvkUG301fWq0Mb2U1aE548z6YtlCU/YhR8B89e1vQDywYvehk7TqcAAAAASUVORK5CYII=",
+  "dripstone_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAD1BMVEWgjXGSeWWDY1ZzVFBjSkeKzPSNAAAAZUlEQVR42gVAARHDMAh8MgM8qYACMxCYghb/mna4JXLcDQqznFaMg/1jw9VpDw3tV0cH4ZLFIwv6Kd/BjUd44l5fHARNcUGx5w0bFNRGJeCWneUbAsamCkYh8zKQx9IqG6G6sot/G0gOdIVp4CAAAAAASUVORK5CYII=",
+  "emerald_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEWC9q1B84QX3WIXxUQarjUcmCkR/ex7AAAAaklEQVR42iXJyxXCMAxE0SGH7G2OXUCEstcvDQTTAfTfCop5q6sR/F9AgFKWrUPyfHl0qOJG1HK5pmhrQlDvvENFKjU+oCplQlQpIvKVGHzhlIdxO2DnyBIqi3vlHTZmHWZPI99WvL+zzw+IFhXpkE2SQAAAAABJRU5ErkJggg==",
+  "end_stone": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEX2+r3u9rTe5qTV2pTNxovFvou4FkreAAAAd0lEQVR42g3L4RGDIAwG0E/bAQzRAWI6gAQYgAsuUNL9V6l/392DGtnh2VHEaZglCIcxqSBycxnLDr9Y93n9UGWxvYrD2Dd6JihGXjkYr+b6vYuAPnY4u6F15XI+MgutEiejJO6H64kk79ssb+hbmyapoUpRDYk/AkIVZmdrsdgAAAAASUVORK5CYII=",
+  "exposed_copper": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEXOjYO6gneYjGl6mGmod2KUdmF/cld5ZFTSdFWLAAAAgUlEQVR42g3KQQ6DIBBG4V8zuq4TdF2Q6rreADPAug1yggr3v0HZvbx8QNc9gGkGnVaL3ip6es+OqUXQFx8hglbvzCvtzTgl+bOB0iT+5gVD4jamiMHZdK+2Yfb+a9QCMkmcOjP6w4qS54aRflaYdozh1I5jxVAN85ULllJrKbX8AeGzF9R4KkK6AAAAAElFTkSuQmCC",
+  "glowstone": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEX/////8Nr72nTMhlSIaDmFUClzTiZvRSL4eflzAAAAhElEQVR42gVAMQ6CMBR9eAL9HVzFL7qKseksCKwkBboaU+0BWn6vT8AushnVBDJ/m2oysGkWHzhhaNl9rvkNuR9MqTxhLal66NcOIZ6N8/aGS7CSqi6CptWPJCcoTc9apQY68hwrGZC7VA7m18Oz7DmRQ1McG/0tDFrSkjst6HmhJWS/AZj7Ijq1nAKuAAAAAElFTkSuQmCC",
+  "gold_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAG1BMVEX+/73//ZD/7E/+4Ej/2D71zCf5vSPTljLMjidMMDrkAAAAeklEQVR42hXLsRHCMBAEwPsf5dw5JxB0QAfMQAnUSStEhIALsF8iBj3D5msXKIz5Lp/rLmza3kueFuzrAkfOhnjRp6C4GhzNlE8dS4DxdcFhYK9oLloaMhxgYw642+jATcX42G/Gvw+X5hpuvTLE5nlQNq29TOycFOcf/6MxqUgMRiYAAAAASUVORK5CYII=",
+  "granite": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAHlBMVEXjwK/Jl4G0m5G0iHepd2Sfa1iSYlF/VkZfQDRNNSz2zedeAAAAfElEQVR42gVAyw2CQBScm5VIByYW8IAzn9m3RzWw6H1npQBIbEBs1+A8K/B7GRG2Ti4viAyTTnFADLyOTSGKL59HnRzMje+pFzS2dGvecJ5fqylhmN3aQsEm5XbwEVbtunPNsFj7j/nAUUQtvCGYnsVmorNlC9YLxipJzH8KCi7lmqTpEAAAAABJRU5ErkJggg==",
+  "gravel": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEWwrq6xoqKXl5eWjo6JgX6Bf39ya2lkW1tYVrIwAAAAe0lEQVR42g3GwRECIQwF0D/MWIENODtk7YC7DOFulqQANFCAsvXrOz18Uxd3MZBptVUydNZCbf+HueveFO9ncp3CWK+zUCBD/Wjo8VRsHKkNjYjkra6bo41gxMbwHKcY36ExXwaLwVjlkTZBmdIONULmMo4yM/zqyuz+A5MJJSnE6Mt8AAAAAElFTkSuQmCC",
+  "gray_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAACVBMVEU4Oz83Oj42OT0EFlGzAAAATElEQVR42g3GwQ2AIAxA0T+OizhCm9CzNKn7lAh3SGRKfadH0VlwC2ONMZHXA4994J6btL0QbYqO0mkqN6k9qWnJH+UMeSi1Tq685AOmCh1950HYVwAAAABJRU5ErkJggg==",
+  "gray_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABJklEQVQ4EQXBwYHQMAAEMY2TUnjRwfVfFhcvUj9//8wGgHToxObeOU+Me2d3QFReKDpH4XLlfh+AXTp0snECNl74cO4FNkNQThl2gYoHd2re4i0b7lwYypGNAUTwAcMLQTg58n0XczcEnveA+81QMd4Td8CGzXMOAIB7B0TYeE7OhgAQ28CBzTYbUBTF9807uDMY50TcO3uSuAzGhoBOXugE7u91h41y75DiBACp3O96YZeZwoaAUWyzARWm6OS1IYQhz3vA9/tLj+QctuyO5n6z8W7UJCvG/UboURT3woiKcHlhgLCw2RD16F7bbAQHi3g7AahseNJ3bfN9n8Z1HUew9NLlNRaG7zOxo0HI4ukBNnP5FyfvEMSeRwjn5I4hgDszQzH8BzMg0qwbvocnAAAAAElFTkSuQmCC",
+  "gray_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAbFBMVEVHT1JGTlFGTVBFTE9ES05DSk1DSUxCSUxCSEtBSEtBR0pARkk/RUg/REg+Q0c+Q0Y9QkY9QkU8QUU8QUQ8QEQ7QEM7P0M7P0I6P0I6PkI6PkE5PUE5PEA4PEA4PD84Oz83Oz83Oj42Oj42OT1QhdxMAAAAxUlEQVR42hXLS2KEIBAFwGe6o0CLKAyfgCNi7n/HZFa1KrT0bm6uxahxWnt2bAKw8qH1En57OsAU9onWoEjrCUqwpYVCdFQ90ZbAkKNu8zKebMs1z+dAHz9Un5bqk8Jd2gvA9+LcYRnGA2pFSv8Y4lYWMkIMpXtmU2MO5Xb+fSH7F4/hpQqwawBMSoE+KVhx54aziqQ461azjPESxDQGT9fjZqsBuaHNBFY2jF3TsRMwfW2erCzgklcdG3rltUWajmS4VaY/NdUO3P23YP0AAAAASUVORK5CYII=",
+  "green_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAD1BMVEVKXCZKXCVJWyRJWiRIWiTL7okLAAAAYUlEQVR42hXLwQ2EMBADQJNrADsUgM02sOkguv57QnxHGsTx4hlMDdkitphD1w0zunsUfk/PMEakizYhJW4ZNaPHbkiUQyORyATe0kgWtvOnvUGnyXxdVpGosFpZ6POjIy/dXw4Jr5SseAAAAABJRU5ErkJggg==",
+  "green_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABUUlEQVQ4EQXBwQEcNxADMHCkatxKfu6/Et9qGCD//f1TCoDIjJloa99z7lHs97QFQsSFiLlHYHnivY+WsLtmxpzjvWcEVF2J1+p7tKgiICaj2C1IRg62qDthzuiW1qIliZPYVgsYgj60iikGk8iMMwdUva4W6t7jzgEtZhD3TLytiC26zgwAIN6uIAmhW/ces1tJFABtKcfQaqtblIlJzMT3PZfoW1UwM2B37dQ4dldLi7eaiJg5LuQMeN/HFouxr6jMOIOgSES897nQXS0TWARQSbTP24BMaJ0z5hy3+0hIKMS9F3zfP3KNmBMV+x7h/Z6qW6QkVYN675HgmkTCLqwkMtFg1yUKJWjQaovIHHnP7iqCCEXiZgIgE93KHX6fWt/vJ1hrjECZO1KuVhOK30/FbgUE0cTNgG61a3+VGbciEHquYMQMb6mKqLKrqogo/gcV6vrcd5o15AAAAABJRU5ErkJggg==",
+  "green_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAdVBMVEVlhhlefBZdexZdehZceRZceBZbeBZbdxdadhdZdRdZdBdYcxhYchhXcRlWcBlWbxlVbhpVbRpUbBtTaxtSahxSaRxRaB1QZx5QZh5PZR9PZB9OYyBNYiBNYSFMYCFMXyJLXyJLXiNLXiJKXSNKXCRKXCNJWyRhyn6IAAAAyElEQVR42g3FWWLDIAwFwJc0gtosMcZWZIjiBdr7H7Gdn8FbPpqHWoJrmpJemCNgHbNehX8PWWGJlztN7Mj7G1zELCOxZKpMNAsM4lrnYWx9S2UfBm04WqXa31K78Fn0BeB7zHlNFoEBN0Hkv0BGy0ghPgycPzYTqmxczsyfHRu/bG/8rBFYPADzcA7kwsNyillnaH0+RQavdYvt5xUh0pu57z0PyQPxhA83GJe4L57WhYD718yU4ghbtsmL4qpmUqHbKsFotfQHdEsRNM2GfwgAAAAASUVORK5CYII=",
+  "hay_block_side": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAG1BMVEXLtjC/qzGrkiWUgB6KcyCkUSulSSySQSOHNRx2q/RqAAAAaklEQVR42i2M0Q3DMBBCGeWuXcDQDmBzWSEjRJnASsevIwUJhN7Hw2AnkwGyUUyjcqjsF465X7+5T0jWaoHJbsnIYMsQ1wnGGsQTRIsbEJ3SmyNx7edx3p76blWqgjfZnzJkDsodZmeP1v7eJxw54PNYCgAAAABJRU5ErkJggg==",
+  "honeycomb_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEX/5H//zl36qxzojAjYeAPIaggd8KJEAAAAcElEQVR42iXMsRXDIBAE0UV2AQIasAXk1mE14IMKdNt/Kz49BZNM8KGpULdi2A/p4qHwjFdotNCowY8uZcgC6Z+v9NeBc31Mj7BYae9G6Janpk7I3G8nU2Oe7lQbodLcGe5Qb+d3Obo+aXBnxEZLjX8RSBjbbrKJkwAAAABJRU5ErkJggg==",
+  "iron_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAIVBMVEXy8vLs7Ozq6urm5ubg4ODc3NzW1tbRz8/BwcG5ubmxsLCiWbjLAAAAUklEQVR42mOoaC8vL6/oaGdoYGAQFDI2tmBoNgYDS4aloaGhLm5pWSApRkGgCIqUi0saSIpRUNAYXSo0xAWmSxhNKgRiIFgGWaqjo6NzxsyZMwEQ+CRmFxowEQAAAABJRU5ErkJggg==",
+  "jungle_planks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEW/jmu4h2SqeVSfcUqXakR4VDdoRi9pw/u1AAAAcElEQVR42g3CARXDIAwFwM/DAAk1kGQCVoKDDQeAA+JfQnvvwAV4XyD9CSk5hMS8yYUxR6wTG+WLjKQ3hFtvQgwX/RCbI9aIWHOjJMWrgonMzTqSuqt6RcwRZ+xALqkiJ0DJ7WZWWONO5o6zz3+ciAdixhUFVj2uwQAAAABJRU5ErkJggg==",
+  "lapis_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAJ1BMVEU3Z5IxYYsmWasrVo0gUJwdSpUgSooeQoUeQHwcOJAbNYgZNYQUMnG/fqakAAAAkElEQVR42g3LsRGCQBAAwDOiAStABzrAWB2ewArMmT/wDZl7Dvv48xhjx6cBAyyBomTzhX2anjZlWYI51i0pOci2laUh9JDXNtQsPWQd+nDmBnbWeinaB2QF0SD4hBzFH6J8IBFm5HcDiXYta3SQj8EIjg4qmkQNr4tvcSR8gUHVKN7BFb2y0h0u8/z9TcvyBxxhOAXulRujAAAAAElFTkSuQmCC",
+  "light_blue_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEUmisglisgkisgjiccjicYjiMYjiMUjh8VX0JBrAAAAgklEQVR42g3JMQ7CMAwF0C8qwdxYZYZYSefWirvDCdwoYiWKyAFA3B/e+kAnaXm3ERemlSwWcF2LHsijt81N5p6QOarIOkD1nJWmI2x0ohYYxJznaAwLL4q7FEhw33v4V2mDmz/VQ/w1vNkrtuS6pAdhuMWwyCLYiVPPviIpyzLG/AMFzhlgE8vGpwAAAABJRU5ErkJggg==",
+  "light_blue_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAhFBMVEV2b452b4x0cIt1b411b4x1b4t3bop0b4x1boxzb4x1bot0box0botyb4pzboxzbotzbopybotybop1bIxybY11bIpybYtybYpwbopybYlybIpwbYpybIlwbIpya4lwbIlvbIlwa4pwa4lwa4dva4lsbIpwaohyaYdvaolvaohsa4dtaohaWsybAAAAv0lEQVR42hXBC1aDQAwF0KCoI63NED/B175JwVhB9r8/j/cKM3P+6PX6oLFtWwhR+vLGCHvSBFL4zcg1o7o5X/xTTL2te76DPAOXEC+Havt2m7PrQA8prlzwz82cRaqOjMRrS7oe6yInRNaadQABV5WTjjuT5Dgch3IPUTAzmQjSrDvIBcy1677c+gJHygow4Rx6NTsqZCYRLSmPkYvDxc10er5ktN9suCuCiT8bW5JWcW1V6D5NWsbz6O22wf8AE88YaUKUaYUAAAAASUVORK5CYII=",
+  "light_blue_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAhFBMVEVOxedNxOdMxOZLw+ZKwuVJwuRIweRHwONGv+JEvuFDveFCvN9Bu98/ud4+uN09t9w7tds6s9o5sdk4sNk3rtc2rdc1q9Y0qdUzp9QyptQxpdMwotIvodIun9AuntAsm88sms4rmM0qls0plMwok8snkcsnkcomjskljckkjMgki8gjiscAuYysAAAAz0lEQVR42g3FSWKEIBQFwNfGD1EGRRQUCY3tbO5/v6Q2hXf4ZFulqMS5GLPs6DTAhfN5j/53CwM4+b6g1guS8gWh0YWa/GQpOaIugEEPqavq85lNXKtqObFdP5Sed0hP8EfMI4Dv2trBcCgHiBYh/KeI5ViT0iWDkNvMVJpmHw/rPitmN/L7dE3SQC8BsFIIkFAl90bbpcOSmiZMlcxp1tc1akzhPlmxPrYyEtAHpHqBCePvXtLQE1B8dY6MrsHj3MopY0+szRO9hqBYTpz+ABYyElCxUJm2AAAAAElFTkSuQmCC",
+  "light_gray_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAACVBMVEV+fnR9fXN8fHK14QTQAAAAWUlEQVR42mMQY+1UYlAVXdbA0BgY5MEgGBCoyJAUFTaVQXFlSAiD19JQRQZRMbFUhsBIziCGJWIhLAycrgKJDJ0ijbMYVjq5qTAkqYV2MkydKCLJMDUxTAQA96QThvYQOAsAAAAASUVORK5CYII=",
+  "light_gray_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABbElEQVQ4EQXBwYEUQRADMLl6FuLkSyLkfDtdRsq/v3+6LYARZpwTWt97fZ5Dufe6WyCcxAOTOOdIsLyN977SmnB3nTlyDr1OArb1SLyt7pXWliJIOBm33F3KmZGDWxMm4fcZEUqhBSfjFi1bFPTSlvK0JHEmhOD7XtS7F6Pq1+cB770UGbqeZ8a7K4mW7nrOAAIi3rsSkii0nvOYdmWigITd0ngMu3aXljKJM5GJ7/t61ui9qC2fMw6+d/Vw5rClVdwtSGLO8cA546Lf17vVVhLvrSgzzgQAkcR7r4e6W20l0RZAW5mh17sBmaCejDPj6V4SSbQFvz6P4Of7g5GM54yWuxe877WtZ8tAKom23nsRyeNMJHG3qCQmAbaeiCIlyGBrVRLJkb2665ZBJwh4MiHASdxWPmPe17be90v5sR4jgHMijQdAud+vmzhTChAmfmdAt7ble50zHlDA53EQcRJvS0uiLbuqChm3/Adh0QxpUC0MxwAAAABJRU5ErkJggg==",
+  "light_gray_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAe1BMVEWdnZecnJabm5WampSZmZOYmJGXl5GWlpCVlY+UlI6TlI2SkouRkouRkYqPj4iPj4eNjYaNjYWLjISLi4OKioKJiYGIiICIiH+Hh3+Ghn6Ghn2FhXyEhXyEhHuDg3qCgnmCgniBgXiBgXeAgHeAgHZ/f3V+fnV+fnR9fXOgL/syAAAAyklEQVR42g3FW2KDIAAEwLVZqjwiohCREkxUSu9/wmZ+Bs/4Kq7PScu6W7ufmAwgpA/lTOHviAsEw9xxDJJKdZAGUxwYVsfsySmCMEue+qG2zaZ33+8VR/1hbs+YWwxXKg8A34NzixXQHpAjYvykyZIGanMjpDo26rxuIV3Ov97Y/EO06u/ZALMCwJuUoNQ3Eaxx+4Q93+9x7VXJm6m/D4M1tsru3VxvFWAuKN2B0oY2Ky4zge5r8rRmgEjbqNaCM3MsK7slapYs+A8lFRCQ7MAzWgAAAABJRU5ErkJggg==",
+  "lime_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEVgqhtgqhpfqhpfqhleqRheqBhdqBhdpxjEAqRqAAAAgUlEQVR42gVAQQ6CMBCcBOMHNHzAD4CL7Rl2uz2bmHhFW8pZ2rTfNwgXx9NeBKKyHEYqYv6xLfsDg8oQrNwh3eJYKaHGqnnzPbw7bm8KFr5fNDeyaC6PqbMnmJmuHx6f2HjiwJOHIR9tLS8EoXlVUXx5LY3rjPMWUig0oEWtxjP9AXn3JaeDd/VpAAAAAElFTkSuQmCC",
+  "lime_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABlElEQVQ4T1VTW47CMBDLkdi+AnsbdqsmVYsQtChQDp8dzyNlP6yQktie8cSFR5P7tS4Ia5Nj8nnejnmitX/UeX75PBEC/f97/2L0BOwdCID5dRSkIxGc8oDvICSCmBomGJ9EuNTZ7vRC0OUzqdqFfqlIoeIV+yl1OXyCzsetY9KYquwifQQ7VrFYiUX6PT9autAWxZAa3bfsLKxKwDWSPahh/3OTGgdgEasXKg+ISmaCblb1kRoGewN9xCE52BZEJTdI33x2UEVzohKEkkZLJfh9z6otl4t0xiRiTpSbchCEAP9+UnlP/9GH3c3IJF4IwAgHaN5AiSABrIAoeyaCOlaOezsxmTpoy0UGqfOerUvHC6HGecGgEZHjQWF7nVy+S8evdGBYDnyYk9pEOZY4dZBwIWjXTVUOydCw5U3qtQSskVwCcrZaBXVpKL5ftu981cwxxui8DRTInFk0ZuxHsg8iG2fgvB40XnE4vb3MATfJZvx24CQ+Yw3aH4mu09r3d8KP6d9j0YxlQr02cX8rgz1l7dMf0XYRIXf8xs4AAAAASUVORK5CYII=",
+  "lime_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAb1BMVEWGzCZ/xh5+xR18xBx8wxt7wxt6whp5wRp4wBl3vxl2vhl1vhh0vBhzvBhyuxhxuhhwuRhuuBhutxhtthhsthhrtRhqtBhpsxhoshhnsRhmsBhlrxhkrxhjrhhjrRhirRhirBhhrBhgqxhfqhheqRiQCqUtAAAAx0lEQVR42g3FWWKEIBAFwGemIcqiiLI0g6NA7n/GTP0U3vlT/VzYqH45dzXsFpAqxNo4/j35hKR4TLRFRVpPUBZ7XigmTyUQ7RkC9iz7vPTBju95vjqeXqiMdy4jx8Y1AfhdvD+dhAmA2pDzN0Oi8kLGvgSUfliYkjhy8+Fzg0OSo4e1WODQAMRLKZAyLxmd9deOq6xrTrOuhW0fySLl0cV0Dz87DdgGbSYI5eI4NJ0HAdPPHsjZBZJ506miFbHVRNOZjahF0j8SFRB3KHqPyQAAAABJRU5ErkJggg==",
+  "magenta_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEWqMqCqMaCpMJ+oL56nL56nL51ExY+9AAAAb0lEQVR42g3JsQ3DMAwEwKcI9yIN9eQL6SN6gawgB9l/lfjaA027czmsI3x5QmjNygR9Nd1VCc4z2nU02Ps+nErgfurHF6CfpNMgpyuXBoAon7ExchTdnpKZ7XttHNpjpjuGMBhGZJbNCAGN1Nz5B7hSDbwl/gk8AAAAAElFTkSuQmCC",
+  "magenta_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABmklEQVQ4EQXBgQEDNQwEMJ2TPjAhS7AOu9J+YiPl37//mZ4BUCKr7FV62nuuPz5L4/6u0w0SVsqGSnw+W+Dyit95pUcV57a1lvos+bEqoGdsKW+3OUd69IxGIYlVyx1OD8NaS23cFmNX+PMpfRlXwwxVPlXeHmaAguiDGYYaLLEq1l6evc0w0373mDt6xvPZnrXFMCO1EPuz4r0joZvp6/ksMAIi3tuCpAjT7Xm2uj1SzADB7TEdj6Jbd5tujCxWUVW+v2OP6HOZ0fjsZeE9113xWct7hxk9OCOJhLWXDWuXRn9f58RMS8p5W0Kq7BUTMkiJ+J1jM+4d06MSM00CxkjKzPV7A7KLac8qey+775WEKnMb8efzEfz3/Y8sZdlPjDjnmPD7tZ6xu6kiaUkZ4z3HpKQenyKJ08OMpKzFFO7YETNAQsL0aFdE6pF79LnuUKGFiSR2dkmAKu6l/ih+r+72+37B1/XJEmRYn6iJbcYIQ39/TmL3YpCQkPJXFuhut9t8x9rLJkCY57FRYVe8dwyCwdxrpg1UucP//RIainkyfC0AAAAASUVORK5CYII=",
+  "magenta_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAeFBMVEXWYNHSW8vRWsrPV8fLU8LKUsHJUL/HTr3GTbzFTLvFS7rDSrnDSbjBSLfBR7bAR7W+RbS+RLO8Q7K7QrG6Qa+5QK+4P663Pq22Pay2PKu1PKu0O6qzOqmyOaixOKewN6avNqWuNaStNKOtNKKsM6KrMqGqMaCpMJ+BQQvFAAAAy0lEQVR42g3FSWKEIBQFwKfxQ5RBEQVFaJwg979hujaFT7iy7VNUopzGnA9mDXDhfH6i/7vDCk5+aWnygqRsIDTmMJDfLSVHNAcw6DXN/VDqYeLV92fBXRKl+gmpBv/GvAH4HaxdDYdygJgQwjdFLMeBlO4YhLwPptJ++Phad1043MZrcWPSwCIBsE4IkFAd90bbc8aZxjHsvczp0KVsGnuohbVXtb2RgH4hVQMmjK+LpHUhoP2ZHRk9gMdjknvGk9iUd2rWoFhOnP4B3ccR7P3hW8IAAAAASUVORK5CYII=",
+  "magma": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAwBAMAAADqcedkAAAAHlBMVEX7qln4nkT0hSL1fBfmZBDKTgZyMjJlKChQGxtBFhaKs8JxAAABUklEQVR42hXQzW6jMBSG4W81F4Aaqlmm4ieXMSDA2TZy6s6SEZO4yzIYjpdTtRx538Zwt8X7cz49evFFS299Tbi4daBbykAz1dxyieZNqnJHBkdT09RZxm+fuYUzgp3v9XrblVDXqKJenZHKJyNqGkDC8km5Hpy7ZbD+HreItmmf4/kqXM9aIOXjVJQ7A1Ptows1jHc1Zo5PFp8Unk46eDryFePXj/GBB642z2MsS23wbE56al/mzdO4Zc41LB9o9VUKQcl20UR4SFQbS+pAjZ0TETzKLZ3dGL6m1ZBvcJiE+8taoeDDeCcTgzaV+yvFjA8xPbn58WXzhD4pYXTrK/ld8EwpvwbPf5mXKQ04/DvTNFjGz+BhEfrkW59UQlAtqY1L1JUa1F73CH1k4wZw7BZjvcDtTof0GY5T5v7wNUbCx7GIig6mPhcXnTHe883K0n4DpeqUdOVgS2kAAAAASUVORK5CYII=",
+  "mangrove_planks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEWLTTp/QjR3OTR1MTZvKi1kJCNdHB5hJCK6AAAAcElEQVR42g3CARXDIAwFwM/DAAk1kGQCVoKDDQeAA+JfQnvvwAV4XyD9CSk5hMS8yYUxR6wTG+WLjKQ3hFtvQgwX/RCbI9aIWHOjJMWrgonMzTqSuqt6RcwRZ+xALqkiJ0DJ7WZWWONOpo6zz3+ciAdiCxT0LIjv6QAAAABJRU5ErkJggg==",
+  "moss_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEVwki1sgDFkcjNQaSxJXidCVS3IKXzgAAAAeUlEQVR42g3JQRbCIAwFwA+vB9CoewnpntJ0Dwnd6yv3P4vOdtBnV1MveKW6XPJkTJqmm35wHYF3vwvOYov0mFEPlr6a4THqyW1VfH2ShXeDuycWjhi3au3hhi0OEp4R+8myiCnyJsGc/lWMBjWCHbTnkBgyYi6s6Qe+WRbFuV4qwgAAAABJRU5ErkJggg==",
+  "mossy_cobblestone": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAIVBMVEW1tbWmpqaIh4h6j1VzhVJubW1ieUFabUFhYWFSXTlSUlICJfMUAAAAkElEQVR42gVAMQrCMBR9ujlaxNkGfyV7LiCUiGtA2qxWWrMqiBntYjs20sSsQu8pMEsbxHWzwjDnd8lbhVeqZaMjoSO7Iy8jpt69u23eYCHS8rfObkh8QtbRABadzo1qoT/SZ/I5IRzqE3sEA6ptHAu/Bw+hOvZpgiC0uJRMoTpzqSgStkQjK52B64r4bWfZH4v7LTO2BwrJAAAAAElFTkSuQmCC",
+  "mud": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEVJSkxDREVGQD4+ODY6OD0zMjoyLTbNmEVsAAAAfklEQVR42g3JwRXCIBAFwB+fBQSDBYDbQMLiWSAUIOymgpD+S9C5DjZbWkl3hauNIqvCaNFzqR7bxx5f2ycEU8XtbsFGmilzx67icxkZwbeiPBEapdhne/zLvMjrgEs3nmoPsMLOnrziCJkuTYQrrs/2kAqVObr3qBDPymrkB/APHIll0hxTAAAAAElFTkSuQmCC",
+  "mud_bricks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAG1BMVEUAAABeSEFpUUZ+XUiMZ0+VcVCdeFyrhmGuj3E3l3raAAAAAXRSTlMAQObYZgAAAGRJREFUGBkFwYFRACEABLEcz9h/wcqabHejfu9G3S1iS3TWUbOYdqkpYhwqYfZ0ZbXKabUzUAf4lEiU7o/e37dRf992q22BzTvtWNKj7UxZnIPerdFW0I5Vr6Jq3yJSmj5hKqR/PVRhEKsAlUMAAAAASUVORK5CYII=",
+  "nether_bricks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAFVBMVEUwGBxEJCo+HiQ4GB4pFRkhERQZDRCSXrt5AAAAZElEQVR42l2LUQpEQQjDYmu9/5GXkRlYnhDTn6BSVFWSch6NxwB4tKID3ayBmSQz88z2diRZcpABmLpm3R1Dmw6vf8apcspebJhDrRfipbO7OfU/bFlVx+fBLW2Gve47WDOf+wF11gLnBCajwgAAAABJRU5ErkJggg==",
+  "nether_wart_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAD1BMVEWsICCUGBh7AABqBABaAACyBJICAAAAYUlEQVR42gWAgQ3CQAwDDSyAEAPQiyfIZ4DW3/1nQoJpTIn1dk1Ki8bko43nMk+dOL26dPG4YVsDm5+jylQfg3yn4EaG9alEmz0vdymeXqtO8W2zjcqdChEm5B1x1kWO/AEG8hYB4ypn/gAAAABJRU5ErkJggg==",
+  "netherite_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAHlBMVEVaV1pNSU1IRUhMQUNDQEM7OTs8MjIxKSovKCkkHh+pMMstAAAAg0lEQVR42g2KMQ6DMBAEjx9koYgoz8JClBY/cGz6IOyayqR1msgfiPyDyL/NTTXaWbqScKVCbxI6GuncGXZVInYFD15kMgb9tsjy4A7bTKezuCm9SHoCk5YPo2frJaFz1umZMoxzIUkaBn2E10h5V/6IVSSGWOv3TlkxGFiotF9pn9b+rZceswrqgj4AAAAASUVORK5CYII=",
+  "netherrack": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEWFQkJyMjJlKChXISFQGxtRFRVBFhZSHStNAAAAe0lEQVR42g3JsRGDMBAEwIMK9A8UcNKrABgPud6IHIzJ7VH/NdibLl6XSfwyYUm7j3esUF2vVI3oaDOH0xHUQy8l4UgHxKLiHD/Uyg7D7fpWB4xWo2TCgzZyujBTW5C9wYrdJbcHTi15O5j/FaZtCRNc+udORmwcubrEH0CdFhUpwFc0AAAAAElFTkSuQmCC",
+  "oak_log": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEWYeEmRcUJ0WjZfSitMPSY4Kxj0FtFUAAAAaklEQVR42hXGQRHDMAwEQI1VBJINwLoTgLgEaiHohD+YOPtaoaXl3BBqas6C5DeVPBkgkOXSkVDQxKpT+8kqX2ZvbrvCYcJ/XHA3iV8sdLslJhI84UnLVvIJH5qxpJXRGSG2Y5D7TXXGxgPEiBE7ybf/RAAAAABJRU5ErkJggg==",
+  "oak_planks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEXCnWK4lF+vj1WfhE2WdEF+YjdnUCyo+21oAAAAcElEQVR42g3CARXDIAwFwM/DAAk1kGQCVoKDDQeAA+JfQnvvwAV4XyD9CSk5hMS8yYUxR6wTG+WLjKQ3hFtvQgwX/RCbI9aIWHOjJMWrgonMzTqSuqt6RcwRZ+xALqkiJ0DJ7WZWWONO5o6zz3+ciAdixhUFVj2uwQAAAABJRU5ErkJggg==",
+  "obsidian": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAD1BMVEU7J1QnHj0QDBwGAwsAAAFbDTSxAAAAaUlEQVR42gVAARGAMAj8mUA3AzhYAOUJoED/TB68Ut/xNLiFb9wVhfPpaybePs3KHJ+sqmRCVpCNBbG9+ekJvySq3hPVZI7qgl56aBihTmPph+Cyu4ng3kJ2vRSHMoQ+8FGHLU9o5FwkfyEoFb7iY82bAAAAAElFTkSuQmCC",
+  "ochre_froglight_side": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEX+/+z8+s3677L335LpzobZuG7XpljJnlFOdWAKAAAAZ0lEQVR42g3IsRGDQAxFwfePm3GIZDKHdODi3KdDIkjJpA6EZrPV7+K03Pblc9bx0q0ZEZXKGERmJdcMoGeZRZKiRlJFGwUINACD1YYSoMdMmLwHlwzvcSFnehfV45ur2Xx/+a97+AOIXCX3u5fK5AAAAABJRU5ErkJggg==",
+  "orange_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAHlBMVEXhYwPhYwLhYgLhYgHhYQHhYQDgYQDgYADfYADeYABcZ7U/AAAAkElEQVR42gVAOw6CMBj+YtKkzC6MpAbQFVLEC3iAlh/qyIApmzGpjw3FIq4OntcglNrXa3Jwh0i4cp6QWml6X2dY2GdMU/DAfPLtYLRCtVrecx0PIM2TPpEN2CCJ5fkFjc+srH4KprDyu9sf8fpYfU1phOGtGWexAUVxyM1tgtmeO+6og1kwJcq3REFBTYqJP2c1Jw0caP6aAAAAAElFTkSuQmCC",
+  "orange_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABlklEQVQ4EQXBgWElNQwFwJHsTY5CqIgG6ZLke63HTP37z99JAqCU7raelhvnvr6eLeE9r8kASlfZsIq1H13F5aR8Pr8qVHHvtda2nmUOu4AbNuU3sd+jQpBQBey1zHBnGLpafRXnWsVeXXZvc4eMN0SU8lS7N0a4KFrJJ2DCTmJrtZZ0ecLvOYJPLlXgz9cDznkNupqM/azl3Ku63BvJ+FoLUADOe1WV6taJSXw/j74ZtUoCFG5CymORcTMmIVFdVpfV5eccO1reY0Lw7AXOe/Uuy+YdIxLyDkV12XvZ0Gsjznmd9wI456oq3e3pRlAo3e18js2YGzejqwAAtDJz3QusvRCNtbede1GqWjKEP9+PqvLf7w+1rFr2bjPc96Xi3OuGfYfV0bhQnPNSrWpbq3SX9w6hunWTFHdsxQ1VrGIgcXNB95e+x32vQWEFaYq9etEBXcvMqL2tz8cNv78/Gh/XY1mQsr5L37YlJhi8v6aLiQ6gyih/9UJkxk34ubLZg05RzNejsarsamZMoqskYcZNBLrM8D9CeRkEUcYAMAAAAABJRU5ErkJggg==",
+  "orange_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAflBMVEX5kyv5kCj5jif5iiX5hSH5hCD5gh75gB35fxz4fRv4fRr3exn2exj1eRf1eBb0dxbzdhTzdRPxcxLxcxHwcRDvcQ/ucA7ubw7tbgzsbQzsbQvrawrqawrpagnpaQjoaAfnaAfnZwbmZgXlZgTlZQTkZAPjYwLiYwLiYgHhYQDuMk9lAAAAzUlEQVR42g3FW2KDIBQFwKP1QpWHIgqKlGBUSve/wWZ+Bq/wzrZPUYlyGnM+mDXAhfP5if7vDis4+aWlyQuSsoHQmMNAfreUHNEcwKDXNPdDqYeJV9+fBXf5oVRfIdXgn5g3AN+DtavhUA4QE0L4pIjlOJDSHYOQ98FU2g8fH+veFw638VrcmDSwSACsEwIkVMe90faccaZxDHsvczp0+d009lALa69qeyMB/UCqBkwYXxdJ60JA+zU7MnoAj8ck94wnsSnv1KxBsZw4/QMHxxI2mhVChwAAAABJRU5ErkJggg==",
+  "oxidized_copper": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEVuxZ9ZspJPq5BToXhMlIQ+gWs5blk7ZlVrxa4LAAAAeUlEQVR42g3FwQ3CMBAEwN0tILmzKACE+PIJ+WMkCqeEFIBIBbZP/G2YzwiEAWkV7XzzdHLhWzu5Qcij4phDLNY8CsRhrUwD6tiBCBOqI81sQoO1WqF/0YNDdMzwK0R6S8FdtplxfrmYaTZlqHzgZu+hw2O5LOvz/gP0jyol1vB87AAAAABJRU5ErkJggg==",
+  "packed_mud": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEWngVqbd1uVcVCJZU19W0V1VEjjoiZPAAAAbklEQVR42hXEwQ3CQAwEwL104AsNxBv+sdcp4Ljkj0T/vQAaaaB5drlumC616oWlOo0M+GEU74kKhksXqErqMDxnY6zZ8YtjT2JslZI+YMloCkT/GwuSs94+HFdNW5mOs60b9SIe5qrGAJPGvscX5QEUfNZTuHQAAAAASUVORK5CYII=",
+  "pearlescent_froglight_side": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEX//v359PPv5uHi09PUv8jCpMO3lrywirt71EIyAAAAZ0lEQVR42g3IsRGDQAxFwfePm3GIZDKHdODi3KdDIkjJpA6EZrPV7+K03Pblc9bx0q0ZEZXKGERmJdcMoGeZRZKiRlJFGwUINACD1YYSoMdMmLwHlwzvcSFnehfV45ur2Xx/+a97+AOIXCX3u5fK5AAAAABJRU5ErkJggg==",
+  "pink_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEXWZ5DWZpDWZo/WZY/VZI7UZI7UZI3TZI2dzLZ5AAAAfUlEQVR42g3HMQ7CMAwF0I9C90a2OnOEWnbCWsspM1U5QCPgAEjcX/C2h3fmiSI3hFdaVM4QWybdi0MKc9xHRQtZiS0hVJvpVuFzXvk/pJMpf9sHQocJK0E9UUtxxdALS30aYnbJPTaEWe6kBDJjcX7B7KF998ARA40Xvv0A1nMY3+6doQkAAAAASUVORK5CYII=",
+  "pink_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABpElEQVQ4y1VT7XKDMAzL63WQD8LerteSS4B1T+lZckK7HzoI2LJsK674INvsL5Q5SIuLnDnLviyyea/vi+yKou/Pr4nYpolnB4KqQMIPkLISrFJCYEAJXloKcgzCaWZ87YVdCVHuehgJCHgq8MR5T0lqVPQn4ltOWgRKZ3FNf0Bei1HqbMkPSFT2U4OrAioJTar9W/UoAAJNhPRjyawGwsfokTCpL40BWjAy5HEGSMZhTwvlFVWBIOCqBtka03oBSw4s7FAVw2mDwNs2qldlIbMtbqdXRbuHxu/JiilB5kRHIgkVfF+SnBo85vCpBooBElCBAr3TF9xAuAB1IDqyPW3lK8kcWEaFra9vSGYr+Bf8RcZ1Kl5rpjcc1sHJaqARvCdepi/uHoPDwM6+hRo/jIQEHMZ68NGC1DQ6SEhGMpSOLaCVvc/GYc+XPDrS/5v8a/2W35Qul2LytRsKw3QmMRK8MHiumU4bdgbhfb7ZTLpPjtWUOQ4JOwXj7cabRjUfKviP643Wu5LjP9bNy8TLgp6TkaFfOhTmogPfdwX2hs15IzXnDznsPf714rSBAAAAAElFTkSuQmCC",
+  "pink_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAh1BMVEX0ssn0sMf0r8b0rMT0qMH0p8D0pb70orz0obv0nrn0nLf0mrX0mLT0lbL0lLH0krD0kK30jqzzjKrziqryiKjxh6fwhKXvg6TtgaPtgKLsfqHqfJ/pe57neZ3meJzldZvkdZricpjgcZffb5bebpXdbZTcbJTaapLZaZLZaJHYZ5HYZ5DXZpCMOy9bAAAA0ElEQVR42g3FWWKDIBQF0BvrgyqDIgqKlGCcUu3+19ecn4NneGVbpajEuRiz7Og0wIXzeY/+bwsDOPm+oNYLkvIBodGFmvxkKTmiLoBBD6mr6vOeTVyrajmxvX8o3c+Q7uCPmEcA37W1g+FQDhAtQvikiOVYk9Ilg5DbzFSaZh8P614rZjfy63RN0kAvAbBSCJBQJfdG26XDkpomTJXMadbv31FjCtfJivW2lZGAPiDVA0wYf/WShp6A4qtzZHQNHudWThl7Ym2e6DEExXLi9A8arhJZyTQ/VwAAAABJRU5ErkJggg==",
+  "polished_andesite": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAG1BMVEW0sqykpZyKkJCLjZyGiId8f4Bzd3NqbXNaXVowdEzaAAAAgElEQVR42hXMQQ6CQBQD0BrHuCXECzBAZK0nEPpxtppp9AAYWZsQrzDHZmh3L2lRFACK3R5OkZMtAY60h+cbp18pY7PJODRSwCGaRuqVpe391eYs0vfDO9xlYl+VHVy03CGv+qqVZ8CRpKef4XxtWm4dHCXW26GeDS0GnFPOP6UVz4cexT02MdAAAAAASUVORK5CYII=",
+  "polished_deepslate": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEVubm5YWFhLTE9BQUE4NzctLS0kJCSCr1nNAAAAdUlEQVR42hXJwQ2DMAwF0G+zgH8Q58qO6LlAWAB1hbJBs36bCWiqd3wApLMJwnyQMSvEzPCBDDcxmjQog0zcVZ905MMxljWvETuYnVx6NZO/r2p42kZfMPQpnu4Kg1zApZrKxpQfINPWd9YGhAAN0/mq73rWH4SxE7baQdPiAAAAAElFTkSuQmCC",
+  "polished_diorite": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEXm4ubZ2NnIyci6u8CprKmLjYt7fYNiZWJ6sU8KAAAAfklEQVR42g3KMRKDIBAF0L+QpGYXJ2mBdbRVcLSHnCFHiDcg14+vfgA5gJ0F5Si0xR1MhYNtM0TeVXLZ4cYWfM0PkGZ3a/EFw0Sp+Rl2ESN+PDAkTqtpE4Q1iy5P8NZEha/sakIsE0yQzazDARs1+GoP3EtijTrh07+/fvbzD/ctEPz876ZoAAAAAElFTkSuQmCC",
+  "polished_granite": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAG1BMVEXJl4G0m5G0iHepd2Sfa1iSYlF/VkZfQDRNNSwnu1gxAAAAe0lEQVR42hWLMQ7CMBAEVyj0FKFHJOYDtujDrc816A56ZMQTzBPybJxtdqWdAXA4nXfThMFpiZ4xjpJYbwUDq1t07YPi5BMX63U3xV7Sg+Rru9QkKYJ+GOkBM7Nlo+LInnnTF2eldjiSkrwgWH7T5Npho3Mp+La1/Vpb/0o3IMgH3y1dAAAAAElFTkSuQmCC",
+  "polished_tuff": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEWFg3p2d29scWtjbG1bYl5SWlFLUUVFSkI63WUqAAAAb0lEQVR42hXLURXCQAwEwGQR0E0w0BQHhwT8I6GHgianILz+z4Ai9PAXlo/nOOjQ8G1q7Ogs33MJHkd0CRe6rszKglBLg7dJP1iNnuRVJrBR2WcW1v1ZBU6N1FDQwmibQPr8Lv0Z6IPRRsD8Q3/vf4NdMzBZ9G59AAAAAElFTkSuQmCC",
+  "prismarine": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAABABAMAAADhU+qlAAAAMFBMVEWby795t6t5s7d5t5RepJZepI5enqRehaROhqNoc5ZGiXRGepVBgWosh1VZZYkmekux6woXAAAB8klEQVR42g3GPYiycAAH4N9fl/f7TRARp6NF3IJwFO7ASRwODkfxbhHB5bhFXKSWCFqiRVokwSkcriWElguapCEQx/BoCZc4iEbpeqYHGtHSVvLBQNdmv4iwYbFZE+1B/5MAOasmM3YLRp+rOaPNwGrsNtEgYBPrsbAmKfR83iIb4R4aWKLOdYJ7NmY1bFXEaq7O2DhHqpMkVmcEwgeTCilRoa7VNQT2ljmrk4ckxba10XJVB0zarDrlVxeWuftLKxcZlzNtPln/S6CRjXInX9G19kbTNXeQTflamlBwKaxCOdMVrGbfoS/KI0zItLG3aDzKhWziaqAwGmMnFw0qiy4LY0dD+epWSkUbMM7GGYp8y1626KeywrVzMRvDAnzKj+7CzzYCf/yTko4ijgfKfwv+hUAteuFYPKEdTL267Y8h+uIp9CHhOAkm0oGKENTTO+oovcKHSHnTgMKrOBF9nDxMvNobi5MaUUCFE29MQfpsR1JEefAO3gGSeMtUDKi3MMLp7ujXXgA4xBm1Bu8MXKf3g/BLDssFcV7c3wMg4+xBj1uBcYd2xjg9cA63Gjjgsey7fX5BRnCzYYss+Wc44Ig9dAmeuT7nYGWjb2d2j+tnGLlk0Ld7BPw7M+JHxIa9sBfguVuGnEteBiOsWksns118A5XT0GCLoB2cAAAAAElFTkSuQmCC",
+  "prismarine_bricks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEWVz8eCxbxuua5ar6RhpZpSmYNGiXRBgWriEtp4AAAAfElEQVR42gVAsQ3CQAw83wDk/AvkEyQaGqKIhopVWYENKKhhAyJoETgMgCNWgIJt+Or7/W/diYA+MJ9ZrUgZlbl6FKSSkyGOyjsddqhG0c1OV6kyYqv3kBODZ8/LDZQsTNERalxisMEsfyKJcHz/jbGUFn0ZWg67cSztqAXsBCaFMdvwgwAAAABJRU5ErkJggg==",
+  "pumpkin_side": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEXjpkvjih3EbxSrYRKgVgt+PQ4lU0gnAAAAZElEQVR42kWJwQ2AMAwDHfNGTRkAlaoLgNh/B1ZgAMgEBEqRsB8+nZlLLkteC0/zI1hvdAunH2KcXV2wX0SQiGhKtDjhjT6jL/xGMYKQp/BqtF1SSTQS3faskIOmDFKIRHBCugHIDxd0QHyP3wAAAABJRU5ErkJggg==",
+  "purple_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAD1BMVEVlIZ1lIJ1kH5xkH5tjH5tIWwSYAAAAZUlEQVR42hXGwQ0DIRADQEMF2EcB2KIClALCKv3XFN28Bop266OB4/TaS3hmYotQjeByYjD6HRJmm54JoLBHQm9XIhZ6na3n84VM5lp4lukoKGfdruDY0xxChcOyoHqzLmx6ifoDrGINqmnYTMAAAAAASUVORK5CYII=",
+  "purple_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABo0lEQVQ4EQXBgZUkNQwFwPqyew8ecZECoZA6N9O2RFX+/fufudMAlpJV9ioz43NefzyPGc55ndsgiVWxYSWe/RA0Z8rnfNSMFU5fq5baW+ZYCbgztsRnRt9XzbgzZkiQ2LWc4XQzrFqycds2doq/st1u09cMBokn5e1hAAXMwQzYhoRVRQi+31eGz72kjPHnzw94zzFDapm+9q5yuiXRTff1szcYAPHeS1CRYXo8+1EzLRUDqHC6zfBYdLvdpocZK2VV1IrP+9qt9DkYd/i1l43PufaOZz3cyzDDuVcSSey9bdh7u8Z8Xt/bZlpSvqeVkVV2YowIQsp7vjbj3NYzUsw0AmaGiunjMwG1CvwUe22775GUSrnTTPz560fw3/c3WZLlVxUT5x6T8f22O2PfZtVISMoY7zkmUXk8VYTbYzQVO0WFe+0kGjUUFNPtIonUo+7rvdcdgllhIoldqyTAynKm1bP4ft1p3+9vho+2lUIm1k/JjW3GJDT3/Thhr2EgKCr+qCXo285c87vtvWzCIMyvx0aJlSUzZkYSZvS9egaoOMP/wvYjD0JM3CEAAAAASUVORK5CYII=",
+  "purple_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAflBMVEWXQ82NNryJMriIMbeHMLWGMLWFL7SEL7OELrOCLbKCLbGALLB/LK9+K659Kq18Kq17Kax6Kat4KKp3J6l2J6h1Jqh0JqdzJqZyJaVxJaVxJKVvJKRvJKNuI6NtI6JsI6JsIqFrIqFqIqBpIZ9oIZ9nIZ5nIJ5mIJ1lIJ1kH5w2XdAIAAAAzUlEQVR42g3FSWKEIBQFwNfGD1EGRRQUCY2NA7n/BZPaFN7hk22XohL3YcxxYtIAF87nM/rfEhZw8nNDoxck5QtCYwo9+c1SckRTAINe0tT1d91NLF133CjPD6X6DqkGf8W8AvjurV0Mh3KAGBHCf4pYjj0p3TIIWXam0rb7eFn3KdjdyuvthqSBWQJgrRAgoVrujbbHhCMNQ9g6mdOun2fV2EK9WVOq7YwE9AWpXmDC+DpLWmYCmq/JkdE9eNxHuWWciY15o9cSFMuJ0x8EkxIy3xhT2AAAAABJRU5ErkJggg==",
+  "purpur_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEXHqMe6lbqyhrKse6ykcqOdb5yQZZD/TDgUAAAAWUlEQVR42iXM0QnCUBQE0dmr5NdZkXSoVduC8KwgEjwFHIJ7ypa7XD5ynRAQZwW/yICFOLbYMJEjkTyXOVgFu8Xs5/N4n8+SBWHS3JI4pYAOwVUYMCJ58fcDNuQONofdg70AAAAASUVORK5CYII=",
+  "quartz_block_bottom": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAACVBMVEXu6ubu5t7q4trgnWDIAAAAS0lEQVR42g3HoRGAMBBFwXfiqAuDj+Ayw3kMVVBCVDQmDPwqYd2C58mSj1HVHA0qI7v+5kugAIsVOwr0hgOTwHXBtkMMnLtYZcb0AU6eE3ybLEbAAAAAAElFTkSuQmCC",
+  "quartz_block_side": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEXy7+3u6ubu5t7q4tri3tDd2csPbMi3AAAAXklEQVR42i3BQRXCUBRDwftOsyfBATjAv5eeYqApBvhsmBF/mgfhe2yaMesgimnHiBJ/PKrNFRBr50k3rTIFxMQt0uS2A9Y6T7h7BCTwFsTXqjRJC1amZbz0yrog/AC3SiHCsw1aXQAAAABJRU5ErkJggg==",
+  "red_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEWPIyOPIiKPISGOICCNICCMICD2TKWaAAAAbElEQVR42gVAARGEMAwLh4HfigDWIICmewHbFIB/MRy4OGaoQVqDdnQ8iuUaiU7LrD0Rad61OVTlNrmB7FaSL552vd0a0f3+1VzCZlLebUA61yhOHHtxDwbOqis0BzyiZs4TtOr3vhJeppN/fhSrFNuFnA/jAAAAAElFTkSuQmCC",
+  "red_nether_bricks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAFVBMVEVEBQdzFxprExdWDhA5BAU0AQMuAAHb7fpzAAAAZElEQVR42l2LUQpEQQjDYmu9/5GXkRlYnhDTn6BSVFWSch6NxwB4tKID3ayBmSQz88z2diRZcpABmLpm3R1Dmw6vf8apcspebJhDrRfipbO7OfU/bFlVx+fBLW2Gve47WDOf+wF11gLnBCajwgAAAABJRU5ErkJggg==",
+  "red_sand": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEXZezDSdSvLbiS/ZyGyYB+sVxIB2LIzAAAAZklEQVR42gVAwQ3CMBCzQPyRukEcBqjP/dNzWAC6/ywIm0y2GrH72h47eJ1VdqDpOdqF3FuqCK7BzApOv7N+Nlyx126E+nQYbKl1uCYOWcVLWMWMlSDdfnIJ5EtSBdKN5LdADrnIP0wTGY7btIheAAAAAElFTkSuQmCC",
+  "red_sandstone": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEXZezDSdSvLbiTAaCKyYB+sVxKfTgum4QGIAAAAeElEQVR42gVAwRWDIAz9HSFSHMCU3jXgAMrrHSgZQEv2H6EPwONBRBM45iynZJh1G2qGuRIV0oIUo18kCda+KPPbQZJai3pD1ou+lRRtsATmGfoTZ1E2bC+XqHKC7FqivwZacfcp+4EwBSdHeyItnxJsCKRXX33uf6s5HEM0ovNAAAAAAElFTkSuQmCC",
+  "red_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABl0lEQVQ4EQXBgaHcNgwFMDxKvp8ukwkyY9dtzrbIAvvfP79nBoCgVlmrzIznPT57GbzPcfqAJCplQ8K1twjNK+73libF6aNqW1fpe1QFzLAlnh5zXmlmRqMgsau8Q08z1Cprh9PG2Cuxr9LdWmvMDFWuiqeHGaAgzjvMMOwxlqKWSqzh7/2YafeBIvy6NnjOq4eq0mfsXcvbRxKnx3T7uRZoAfD0EZGUyugen2vbPS0V00DEaSI+tdz9GNFhFakSBN/nsUc578swuHaB52292rW25zQzzuC0CknsvWzYe2nj/r68mCHxPC2hqqxVxoggknK/j017z5geK2GGBIBETzsPkF0YP8Ve2z7nqERXzBnEr2tL4r/vX3JZYn3KDOe8OnzvNsOeji4q4yTgOa9OSW1XRRKnmyEpu1DxnrZhhkaC0D1Gg6ot53G/rWckRJiosLNLZUClvN3Wz+Xct2m+3y/G7biyxaihrqgu24yGwfN1EnoYJAQp/2RhnOb06O+xNxsIoT+XhZVYKW+3NkqM0afNjEGqvMP/JIsZ4BY+9IwAAAAASUVORK5CYII=",
+  "red_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAbFBMVEW4NCyvLiavLSWuLSWtLCSsLCSsKySrKySqKyOpKiOoKiOnKSOmKSKlKCKkKCKjJyKiJyKhJyKfJiGdJSGcJSGbJCGaJCGZJCGYIyGXIyGWIyGVIiGUIiCTIiCSIiCSISCRISCQISCPICCOICAm0KgWAAAAxUlEQVR42g3FW2KDIBAF0JvUgSoPZQBHwKjQ/e+xOT8HTT6N51qc6WcI5wP2gDYpt6fkv1siNOX4pi0bsvYF48GyUBammohYoOBj5Xnp4wjlmuez4+6V6mhSh+SntB3A78Icg4ZLgNkg8s2RamUh5ycFY+9DuSpHLg+nz4Uj7Xr0tFYPRAtATcaAjJt0Dp5PxlnXVWS2rR6+991DZHT1vgbPwQL+gXUvKBPyiJZiJOD9w4mCX6DLsVlpeKramtArilOtavoHGXsQkBhgHNAAAAAASUVORK5CYII=",
+  "redstone_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAD1BMVEXmIAi9IAikGAiUFABzDABFTPGwAAAAWklEQVR42l3FsWHDABDEMNx7/40jMYU7syD8NtOMNDrY7rsxs86ke2tss7r0MtsG+Ls6roA+Y24GKO/RG5DlJHkTcfiYe0wys1kTe5qNgfCemieWZMaXIAAA/7Y+Nw+vnOTbAAAAAElFTkSuQmCC",
+  "rooted_dirt": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAG1BMVEW7l4m5hVytfWWHh4eWbEpsbGyQV0B5VTpZPSktFEtCAAAAhElEQVR42gVAsQrCMBB9lkAdjQhdVYLpH7jWED0/oxRRxyScvVsLYn5bsKPFpZozSst9bp49uuPWdEknXDf9GFMmUDDz/eMqNJpfVcloxWdveY/ZGgnRB9CUlINU8GuudDsweNU9vAYPKpfxRF+FUmyKeIsiMug7RQyLFsvFgBydncT1H9gfJx7eEXkMAAAAAElFTkSuQmCC",
+  "sand": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEXt68vn5Lvj27Daz6PVxJbRuopf1Q47AAAAZklEQVR42gVAwQ3CMBCzQPyRukEcBqjP/dNzWAC6/ywIm0y2GrH72h47eJ1VdqDpOdqF3FuqCK7BzApOv7N+Nlyx126E+nQYbKl1uCYOWcVLWMWMlSDdfnIJ5EtSBdKN5LdADrnIP0wTGY7btIheAAAAAElFTkSuQmCC",
+  "sandstone": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEXt68vn5Lvj27Da0qPVxJbRuorGrnFYg2saAAAAeElEQVR42gVAwRWDIAz9HSFSHMCU3jXgAMrrHSgZQEv2H6EPwONBRBM45iynZJh1G2qGuRIV0oIUo18kCda+KPPbQZJai3pD1ou+lRRtsATmGfoTZ1E2bC+XqHKC7FqivwZacfcp+4EwBSdHeyItnxJsCKRXX33uf6s5HEM0ovNAAAAAAElFTkSuQmCC",
+  "sculk": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAABABAMAAADhU+qlAAAAGFBMVEUp3+sAkpUFYl0ZRkgDQVAFKjIRGyENEhfnTduNAAAArUlEQVR42qXQwanCUBQE0LuwhJ8SbOF3kLhNFN5twDvTgG+mfZHoQjQQsIPDCRtVRobLAhvClzT6EYEOF7OiAMpWCDV1mOEGnlNTOM2iEHW0ZGaosUAxVBaZCl4S7KMD3fp3YxRtWg5Z6nYL+4pz1hhfPPPDM+z0nJ6e6+HlGT88SyKfnj68PLnbs+zzzO+ev23PnGAf1p9p+2f5zbPs8pzWH94Oq6d52vLMWeMd5nrOtElYCH0AAAAASUVORK5CYII=",
+  "sea_lantern": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAABQCAIAAACfyWJaAAAKFUlEQVR42i1X2XYbxxHtvWcGIAGSIi1uEmUSlCzJJ+fEkn3yHU6+JnFeE39SnpPX2Nkk2+IiiaZoSiS4YJmtt9wauYEzGEx3bbfqVgH867/+McaYWCqMLetKaoP76ENmbBtDCt4o3bo2Md43WeRMSZ48C3v7j7eGi3WIT7bu17P59trd1vnxfMoZU0a/uXh/cnl+dHAQYlDOuf1HjzeWl54/GA2kiZybpVWY5DZbKQrBWB3CRn8hec9G/OCnHxT2tpbvPN/ZzaQVQhQwiQ+GxQXjPgV8q1z75ehROvzxZetUluWbvcVCW8NFZjRLDU8pMp6wBIM6LW2Khge3u77JlVVCaJ7hI2XQzVpoNiJPIpG7XLWsYsln1oQm1nULy6JqZjxEKQRnHPBoZROZ4DwpPDAyxx2DRXwk7kMQWuXry3cIWZzHc3IGGlxK2E0xxcgSwsDe+nCYZz3cc8m5wOpOB2DfBcCxOqvYT6SKuabBvnBtOy6npIrhWBR0KiAwxqAHsYjofYwkP67mOCKQ4PntrHYJMokx5xvsKYlLhN4mlFxIDvXB28xUdQUcEtfKsehCkFILHtpQIx7JxEf/mZAuMs1FU8Elqdq2OZ1creRFzOwwK6BPCctYwqLUsRiiqNtq0rQnN2PkRSHnJ+MPwbvnOw+v23pRKcYCznNBFiIXiqdxWf3n7O3ZzRW8UcDszatDPtr97vT1ZDYBNJ/vPLhT9AHOTT2rm1YbffDL2fnt9fHhYZ4Z/vVfvqkQPgIUTGnlXYRyHglbKfG1LfKCCYEzRd533ilsmMzGFPo2L+syyy2LPHifZ5mLXnKGN/igtcmlspIAjIGFh6jwwbDy7sm9B35ebtz5BPm5mE8RurXmzeWHNx/OXx8dxOiJD3uPnm4MBs8e7A+MTghrsIKcwL/lXg+utiFuLg54Qvwf+cD4xtLwqwf7uTTIkJWOpcCVQLIALF5KmrJtoS7E+LJx4EC+3R/0jDVKZMILqZXSCJdBIdWY0rE1QoFce3fXhSY+SG6sZEF3sHCRJM+pqDrKuVBCg/WOJ13VDjrAh7kiIIVGplgEZvCb46zgWEb1eFeGPJE95xohhVlbWk6MKEZKheyIUnpfsiSogKEmUvLvDge9fEEoJSVRgrhPihPVbMSFrhFqYfAjZ1zjQgrC+3BdzRink3RhDNTXsqcFyEWSBFen5bqekXCh1fRmMmtj1yzAywp7xGMeyZ9Yw5/Y8VVZ2zinavDaKJ98k0CL1ijjQsU4FgxAVMZQM7lgmGvrBraUC+7kerxiC1YUC8aCP4LcEiE68DymkPhC45qbujm5uoQtBXTOrq/g5xf3RhPhBkgUI3rSCslHYaS7Kst/nr4+A4GYUHD0+PCAj0ZcgA/ovvHJzu7d/gBmbut53TRa66P35x0fjorC8j98+818PmXkBlfGeOc479jMklIgsOsVfaBdVmWeFcQHnDTWImOFMZgPedEnbFyb2dxF6oggQNM2RlM5mYwaKjWj3YefbS4uVDE+3tz283pjdQ26r8DEGIVWb8YXpzQfDkPrVNM0o8dP7w4Wnu08XDRGMscHA2qYynxSGGRjFuT94dI/uo5wdPBSIZObw+WvdkcZN5p7o3KqCCo4wEt86LG68fL5g31I/PDfoIyyW/2FXGrLXabgogSYPAnYgB3Kui4Yq2Pgn65vMC0UVtLGsNKqBWrSFJHC0U5AIHzk24L9oq7KWiTwoZ1LBkpq6MSbC4mriyWo0xEDMAbk0AcmlYkJWMtsfWkZZ2E9EIE4Cg6kI7r5UqhMMhUSZX+tv4DWJIijUkYqmgDXyfdEBCAF+E58IBMcZpsWXBLOt1fllHMuu9aLbS2L2k1dmGvVY4levOPTZT2jzpzrbHozrX3stFB5Qjg3i2BzohUhQUIpoClWrhJN8KB6k2TrgV0gB6KHGN64SWQhdKpsaByh1AZ3enMxn1fXjlWhTUT55LFC6k4zELkK6WJWHo/f47tixAc49/rZzv5MGemxy2kxLCDmGbfjsvzu56Nfbq/xRDGGCnmR9va/Pz2elZMY5ef3768toJzEdTXxzjEpXl+cn01ujl4dFXnGf//tn8vZhAlJBDDaO0/Rp0DjTEvftEXRg2MV+GBzn4KCzwYDLoZ+lpfVPMssBEIIVunAkuTUQXzrjDGZUoEjbyyG5B49frqxsFiG8Jvte76uPllehTPXdQkEolInl5cnlxfHBz+SBQc+PPn87nDpS8wHiHPJBl23s/lybwF3pW/uD1f+HgMbPTr46X+KSbW9svpsZ5eqh6uMGuevxUrp6tqeC+6LnVFMr17UrTDa3uv3CsEzrXvUaJngdIwLEJopZF3RxMgl2yM+gNiCK5tryQ2VNtVT14zr4Ouu7HzioSd1Jq1vGgWwMYmRO2gkL1KEUIw4CtcKsELCYyFgNCTYVC5EAXOrg6EgP0imdTMuctnVvOL9EOtIodDm2uJiP+uRF10ZkDMBr8SwcD50vaxrCBCgp8gGtoUP7rapqL1DMnKjezEhH97jTZQoGKct5PeqnHAI5NqUt7PSQ5jswr4UeYgVZ43SBc2xDlpcdZZXTYPy9k6qyELpWxJhMMSUyJQsQnAdYp4KiydQAF6rNoR3k6s7eRFy8rTHTMe7JGgOGeDWRkDbjMv259srBpCic6fjS3Dtt9ufCuE6BCKNEkRNclymdDlvvjs5OpuAD0ilEMcHB2m0ByBnZdnTarS9tZL3UozTtvatjxLz4ez97AbNuMitAt5VVb/4979eSiwNv/+W4LAnclmN1pLnPaQFM6To9dHSyYK1OnLd6/4/mKKIxGaZadNGiAotkM1GG1SHtrlQkoXI0/7+/sZguUnx0cZWqJr1ldXW+atyRsATHy7eXr7HZAPFVeP96LMnG0vL9P9BGcJ1iYCH3VUUMUtViJuDAZBAll799JLqb2u48rvdfcsNUq2lUthkvy5BJEHsHvMBjr5onLIm2+wPjNCK+VxlnAfOItBnNFMMY6QiRgbS795dBw4UtMyM4d4Iy5LrmnsyaiHE4EPJubTSJuBHg7TFFXyokFiF6KnCA6dSzSlBwFj3OY/gEO4Dg2bV/X+Qdm2wnOB2okYnZd51PerCnVgvRpdo0e+lIgOXOQxy2qcyxg1dEUQiZgPyCFQgj3OubuGCwB79XqKjKXDV+gmZwgvx4kmcg7SQwe64muA76ljPbmalSz6RKi2zxk0YeRe9nylhIIcVQ7BZXqM02hRwKpDX3keJXEhhPBSDA9Kw1E0ZRtRvm4aiQgm8uxmvFX2vzTC3RJ6kIJNSp6MbFy7SL6C34w8JeLIQTq+v8PSLnb1b5wapm12AoJsmPkUl5OV0+v3Z23e31zCn8BR/DNLep+JUTedTnH56f2eVuiq/beZ165WWR+fn727HxweHuTWYD38qQVYeEZww4IMnHDvWKyvbqukXfSZ4WVWZtSGl/wPaaoRxrwu2MgAAAABJRU5ErkJggg==",
+  "shroomlight": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEX99LT+3Z//xn/+rG3+hzjkcgXXUQu2Lwmeh+DsAAAAfElEQVR42gVA3Q2DIBD+EicANwA7gBzwbvB4b8MxgPIzQNO4foPZG8+vyvhJJb7WDS05G09n0ZPSgZJH3ZftNj6g75QdVkYbJjoQg1Uv1xo8kj40m0xgeyyvfHuUYmijIDg/YsJbRbCmMvZFcNlgIp0VxYvNIhPSa336eP6XBR9Lz8ODSAAAAABJRU5ErkJggg==",
+  "smooth_basalt": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEVpaWlcXFxPS086O0gyMz0bJjImUw6+AAAAcUlEQVR42hXMwQ3DMAwEwQOC/H2MGyCZFKAzK5DkCuz030qU3wIDLJJHRByELMUagezl9uoOK5FPEaHlZzNUDt9vBeZbUZcduERV5w65ZTo/CHKfbVEL5hieSN9siobaHlNthfK8FwesvoNOx/9invwBabgTRpzrC4EAAAAASUVORK5CYII=",
+  "smooth_stone": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAAAAAA6mKC9AAAAfklEQVR42jWOsQ0EQQwCXbRzSqCCjSYhpMTX7d1bAlsCI0Yr7doXsmZD0rbJgXiWcyAASbKjtiS5HvA4AUJ6lZ1tvuFw0Pi6uQ83w5xH4VKrUZte8aF6Nu/d9sFbjH+X4FHyNu1dHgNpP1s8aiBJ31TNQj5/gB2tLdnW7sr6ASmPnq/09qD7AAAAAElFTkSuQmCC",
+  "snow": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAgMAAABinRfyAAAACVBMVEX////3/v7w/f0woW3VAAAAWElEQVR42mNwEHEQZWBga3BhYMhqAjJWcDkwcE3RZGCIcpFkYXBMcOFkYFkioMXA2Dghg0HKbckSBi+mSaIMAmyzHBkYokIZGBgzA7kYnJY6aDKEhDIsBQBKGA/Cl7AK4AAAAABJRU5ErkJggg==",
+  "soul_sand": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEV5YVJqUkRbRThJNyxCMSc1KSLA3kmkAAAAd0lEQVR42gVAMRKEIAxcHa93gtcLgf4IoVfRB0DG/3/lBjENtqd7UNzn+5Uvej4XftqGU+jntCSM7A7X9ALL1jkHRbVIJc6M8grLuiQwl1v8mkAW6jV1QRUXzF0C8w9pYsOYOqnUCjpXd7cq+PgltmA7nJEOzccfetIW7VmI180AAAAASUVORK5CYII=",
+  "sponge": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAD1BMVEXh41HNzkrBvE63rE+djzm0uI/hAAAAZ0lEQVR42gVAARGEMAxLwUATEEDLBDxjBtbhX9MfeNYhDcel0GIjnnblh0zMUCSeAxUmY5ywCGdpA4vseokr36Avx3OMDFCIvXKSCWV3rq3QQvAegdaN0k9ItjbFAbe8y/TB97KsvP8ywg8M0kq5gQAAAABJRU5ErkJggg==",
+  "spruce_log": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEVVOh9NMxc7JxMxHgsuHAouFghYuIiyAAAAaklEQVR42hXGwRHDIAwEQA1RBUIUgO70D+rATArIuP9ijPe1AkvLuSjQ1JxFyV8qcDIIMsulM6mEiVWH9pNdvs3e3HaF0wT/uOhuEt/Y7HZLTCZxgpOWreQTPjRjSyuDI0JsxQDWm+qIxQe5ohDitQJk1AAAAABJRU5ErkJggg==",
+  "spruce_planks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEWIZTmCYTp6WjRwUi5hSy5aRCRVOh/7MrZ8AAAAcElEQVR42g3CARXDIAwFwM/DAAk1kGQCVoKDDQeAA+JfQnvvwAV4XyD9CSk5hMS8yYUxR6wTG+WLjKQ3hFtvQgwX/RCbI9aIWHOjJMWrgonMzTqSuqt6RcwRZ+xALqkiJ0DJ7WZWWONO5o6zz3+ciAdixhUFVj2uwQAAAABJRU5ErkJggg==",
+  "stone": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAAAAAA6mKC9AAAAZElEQVR42jWNsQ0AMQjEGJcB3HsEr/xSkncBOgkfUyXIguoo4mEXGdkFFvBdlGmpwKCAWIWOeYFladCK4n2BXZZn6vR3dsXRfLnKWfFoXmtUrX81AiboaZ9u4I1G8KdqPICl6AdyLn2NfcJFIAAAAABJRU5ErkJggg==",
+  "stripped_birch_log": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAh1BMVEXTxIfSw4bSwobRwYTRwITRwIPQvoLPvYHPvIDOvIDNvIHOu3/Oun/NuH3MuH3MtnzLtnvKtnvLtXrHtn7KtHrJtHnKs3nGtHzJs3jHs3jIsnfHsXfHsXbIsHbHsHbGsHbGr3TGrnTErHLDrHLAq3K6qHS4qHW+pm26omm1oGq0oGq2nWWxmGCYq98xAAAAvUlEQVR42h3N3VbCQAwE4IhLYyxRDMUfELVTo1l23//5yGkucs58czHUYWIwFstDD+qIBNnJWsCpIuIC4aIXMU/wv3CcS6EVlqB6hUOJEsw4GrUrwxkEVVNfEn4ZA08/ygr1cPLvwKATlM/y9hItoWN4mEQVUmSp5OaH4T5BJyrkjep/HDbltP/UKSgSegRt7k57qMaH957gTo/vO0Dh8Eot/9M8b49QVbRcccE8P2/5qGZI6Clfr+PI45rrDfEsGLuj7vmlAAAAAElFTkSuQmCC",
+  "stripped_oak_log": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAb1BMVEXBombCoWa/n2O/nmK/nmHAnWK+nV+9nF+8m126l1q5lVi2k1izk1i2klW0kVizkFewjlWujlKtjVetjVKsi1KniU+jg0mjgkmjgUqigUmigEuggEidgEebfEeafEWZfEObekWYe0WYekSTdUSRdUHJhwd1AAAAqElEQVR42g3DS07DMBQAwPFzfk0EZcENuP/J2BSVNH8bRpr81dXW/cp5kIcppqCH1F5OujF2PlLVKD1jpHBjUsDJHCfMN4WmfvuMcd2W+aSe5fBGGKmUwthnr6CvGv/PHm3sr6wme3tWHvmIblvbyJjMtG2knlsqTV8u0RL70wJ60zmsVxje7Y60mQzDvUSXL0lqPJpt4ArjFjSHBuvPGHWZFw78ejz5A6qfR5OHsZUOAAAAAElFTkSuQmCC",
+  "tuff": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAD1BMVEWgopeFg3tqbm9dXVJNUEZq5j8MAAAAaUlEQVR42hXLQQHEIAwEwK2DbnoGkmAAFgMl+Nd09DefwYh8Uy5YiG2lwy2erUHcTK0Ygh+4VUP8dPwGctFtcsI6Q5kdOSPJ01Wm+/rWoKNV4YqHbctBmxUxiH7+lW6YcjwVQg3Ovbr9AT4uEqanfu7KAAAAAElFTkSuQmCC",
+  "verdant_froglight_side": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEX4/fjr+ezX7tW94beg05uTxYSIt394plzlkQyRAAAAZ0lEQVR42g3IsRGDQAxFwfePm3GIZDKHdODi3KdDIkjJpA6EZrPV7+K03Pblc9bx0q0ZEZXKGERmJdcMoGeZRZKiRlJFGwUINACD1YYSoMdMmLwHlwzvcSFnehfV45ur2Xx/+a97+AOIXCX3u5fK5AAAAABJRU5ErkJggg==",
+  "warped_planks": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAFVBMVEU6jow5g4IocGcuX1EfV1IeQ0ARODVV1y7AAAAAcElEQVR42g3CARXDIAwFwM/DAAk1kGQCVoKDDQeAA+JfQnvvwAV4XyD9CSk5hMS8yYUxR6wTG+WLjKQ3hFtvQgwX/RCbI9aIWHOjJMWrgonMzTqSuqt6RcwRZ+xALqkiJ0DJ7WZWWONO5o6zz3+ciAdixhUFVj2uwQAAAABJRU5ErkJggg==",
+  "warped_wart_block": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAD1BMVEUUtIURm4UWfoYYb2kZY2fRBVE8AAAAYUlEQVR42gWAgQ3CQAwDDSyAEAPQiyfIZ4DW3/1nQoJpTIn1dk1Ki8bko43nMk+dOL26dPG4YVsDm5+jylQfg3yn4EaG9alEmz0vdymeXqtO8W2zjcqdChEm5B1x1kWO/AEG8hYB4ypn/gAAAABJRU5ErkJggg==",
+  "weathered_copper": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAGFBMVEV6t5lmqXdkoHeNh3Bsl1x0jVdqcUdJcWTDH/pIAAAAf0lEQVR42hXIQQ6CMBAF0N+G2dOJYT/DJK6xegCg0LUahhvIDfT66u7lASG0AM+INqY+FUekxPlEjsYlDovvoHvLtmwVUZIWfe6IiXWyvCP8o9wqwJZNrSLofJWWV8SplDHKD4uaqHVo6DH0FzqDXDiLV9Ammkdb0flxfN7H6ws3cxVGY8baiwAAAABJRU5ErkJggg==",
+  "white_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAElBMVEXR1tfQ1tfP1dbO1NXO1NTO09QIXJTIAAAAX0lEQVR42hXKUQHDUAwCQDoH8AwUoiDJ6t/a1vs+lA7DCOOTkYVRVW8v2nvt3IHIqmFwa/zsI0yaUQfZr6gULJ33IcdMzeA6k2036MmfMIfVVxbd9PojcCy1F3vYRfsHm9IQVBpHrRUAAAAASUVORK5CYII=",
+  "white_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAnFBMVEXUuaPVt6bVt6TUt6bUt6TUt6PTt6TUtqTUtqPSt6LTtqPTtqLWtKLUtKTUtKPTtKPTtKLStKPStKLStKHSs6bRtKLSs6PSs6LSs6HRs6LSs5/Rs6HUsaPUsaHSsaHSsaDRsaLRsaHRsaDRsZ/PsaDPsZ/Sr6DRr6HNsaHRr6DRr57Pr6DRrp/Pr5/PrqDPrp/Nr57Orp/SrJ7OrZ+PainVAAAAzklEQVR42g3NW1bDMAxFUREaYszDjiEovG4tAQ5BdU1h/nNrzvdZa5OY2fK0C5+919aakmDY3T2K6kPvDTDK36K1VY2cOF/PL5Q8l3ayd4i8AvsPYudi+m+HxboOwkqOQ16BLU6JxVH0Y1bDWzGZ/X1cKUAtRrtxEIBDoBDGk1QRGZ1zwyUoQGo1MahISt1Ae+R67LofTv2AGUZHQAycXR9ScgG0iEA34uJWbZ3BtOl+utpXLb9WQI4w5b8m25JTxFeJlJmnKbjxeeRyaOAzi0cbIayXthYAAAAASUVORK5CYII=",
+  "white_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAeFBMVEX+/v79/f38/Pz6+/v6+vr5+vr4+fn3+Pj19/f19vbz9PXy9PTw8vLv8fLu8PHs7+/r7u7p7Ozo6+vm6erl6enk5+jj5ufh5ebh5OXg5OTe4uPc4eHb4OHa3+DZ3t/Y3d7X3N3W29zV2tvU2tvT2drS2NnR19jQ1tczQ8RuAAAAy0lEQVR42g3FWWKEIBAFwGemIcqiiILSYXBwIfe/YVI/hXf6FN9nNuo+nDtOzBaQKsRycvytaYWkuHQ0RUVad1AWcxoo7p5yIJoTBOya5364GzuufX/cqM8P5fZOuaV4cdkAfA/er07CBEBNSOk/Q6LwQMa+BJSuLEzeOfLlw6eCwybbHcZsgUUDEC+lQMq8ZHTWHzOOPI5p73XJbJ9ns9hTu0VXm++dBuwFbToI5WJbNK0LAd3XHMjZAZJ50nvBmcVUdurWZETJkv4AY2cRClVT2JcAAAAASUVORK5CYII=",
+  "yellow_concrete": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAHlBMVEXysRjysRfysRbysBbysBXxsBXxrxXwrxXwrhXvrhXD2HPkAAAAkklEQVR42gVAsQqCQBj+oLC5FMzZF1AMxa3hursHcGlLOH51VdPaFERrPBLRtw2I8ZNb1o3jerfnZzcEsM5FTFGRomzmZFmTGoodjUvGWrj88HacvIMhH27bmhxuSpyIQsRe+ZWvLAbtNzUKkSEizXSgJ/xk7620mQhthyWW3KGpJhr7iTDMOVfa91GflqJSIvwD1c0raxpGM6gAAAAASUVORK5CYII=",
+  "yellow_terracotta": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABnElEQVQ4EQXBgYFjNRQEMI3thKUOWqUpOrtNvt8g5b9//2lbABHZyznRqe9zvV9b8XyumQHCynJgJc5ri3D5iu/3y1QWzx1nb/u1zaf2WmBaR+Iz1ecy1VYRJHHWcsszQ1l7ywtPLbVW+Pu9JBFVTEvitZY7dKq3qoJ+6YxeTrFEVjSkfD6PdnzvYGvq533A57lasjZ3nNdevnesxB3M9XptQEDE544gCaFT7/exZsZaMQWImTLxsphrZnQK1o6zYq/4fL5OLfNcbRWvs8D3GbM5+3hutdVynxJWYp/jwD7LxfP7lSfakSzPt6SyltcOQZFIlu/3cah7q1M70Q4JqFpZ2uv7DcgJrffhnO3MfchihQvx8z4kfv/8IcuynL+Wlue5hM/vNa0zE2uRlCxVn+eSsF7Oiqy4t9pKYu/owq0T0QIJghkjItZ+yfP1eca0VqhFQzg5IcBe8dxaP5vfj5n6/fMr6uN65YhSzjsycZRCub+/JoupFAmJZvnJFszUzHj+jH22UwRC328LO7HX9r1VFVHVe7VVWNst/wNrkyZMsPR95AAAAABJRU5ErkJggg==",
+  "yellow_wool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAflBMVEX+2T/+1zv+1zr91jn91Db91DX90zT90jP80TL80DD8zy/7zi37zSz7yyv6yir6yin5yCf5xyb5xSX4xCT4wyP4wiL3wSH3wCH3vyD2vh/2vR/2vB72ux71uh31uhz1uRz1uBv0txr0thr0tRnztRnztBjzsxfzshfysRbysBWUIgadAAAAzUlEQVR42g3FW2KDIBQFwBPrhSoPRRQUKcEoSve/wXZ+Bu/wybZLUYn7MOYomDTAhfO5RP97hQWc/NzQ6AVJ+YLQmEJPfrOUHNEUwKCXNHX9XXcTz647blzPD6X6DqkGX2JeAXz31i6GQzlAjAjhP0Usx56UbhmEvHam0rb7WKz7nNjdyuvthqSBWQJgrRAgoVrujbbHhCMNQ9g6mdOun2fV2EK9WXNW2xkJ6AKpXmDC+DpLWmYCmq/JkdE9eNxHuWWUxMa80WsJiuXE6Q8IyBI4cBbSywAAAABJRU5ErkJggg=="
+};
+
+function loadVanillaTex(){
+  const keys = Object.keys(VANILLA_TEX);
+  let left = keys.length;
+  if (!left) return;
+  keys.forEach(function(k){
+    const img = new Image();
+    img.onload = img.onerror = function(){
+      if (img.width){ state.texFiles[k] = { img: img, url: VANILLA_TEX[k] }; }
+      left--;
+      if (left === 0){
+        updateTexNote();
+        buildPalette();
+        render();
+      }
+    };
+    img.src = VANILLA_TEX[k];
+  });
+}
+
+function texOf(blockId, texKey){
+  const base = String(blockId).replace("minecraft:", "");
+  const keys = [base, texKey, base + "_side", base + "_top", base + "_bottom"];
+  for (let i = 0; i < keys.length; i++){
+    const t = keys[i];
+    if (t && state.texFiles[t]) return state.texFiles[t];
+  }
+  return null;
+}
+
+function slotStyle(b){
+  const skin = texOf(b.id, b.tex);
+  if (skin && skin.url){
+    return "background-image:url(" + skin.url + ");background-size:cover;background-position:center;image-rendering:pixelated";
+  }
+  return "background:" + b.hex;
+}
+
+function allBlockIds(){
+  const seen = new Map();
+  Object.keys(PALETTES).forEach(function(k){
+    PALETTES[k].blocks.forEach(function(b){ if (!seen.has(b.id)) seen.set(b.id, b); });
+  });
+  return Array.from(seen.values());
+}
+
+function updateTexNote(){
+  const list = allBlockIds();
+  let hit = 0;
+  list.forEach(function(b){ if (texOf(b.id, b.tex)) hit++; });
+  const files = Object.keys(state.texFiles).length;
+  const missing = PALETTES[state.palette].blocks.filter(function(b){ return !texOf(b.id, b.tex); });
+  let msg;
+  if (!hit){
+    msg = files ? "载入了 " + files + " 张，但没有一张对得上方块 ID" : "未载入材质，现在显示的是平均色";
+  } else {
+    msg = "已对上 " + hit + "/" + list.length + " 种方块";
+    msg += missing.length ? "，当前色板还缺 " + missing.length + " 种" : "，当前色板材质齐全";
+  }
+  if (hit && !state.customCount) msg = "内置原版材质 · " + msg;
+  $("#texNote").textContent = msg;
+  $("#texNote").title = missing.map(function(b){ return b.id.replace("minecraft:", "") + ".png"; }).join("  ");
+}
+
+function addTextures(files){
+  const list = Array.prototype.slice.call(files || []);
+  const jobs = [];
+  list.forEach(function(file){
+    if (!/\.png$/i.test(file.name || "")) return;
+    const base = file.name.replace(/\.png$/i, "").toLowerCase();
+    const url = URL.createObjectURL(file);
+    jobs.push(new Promise(function(res){
+      const img = new Image();
+      img.onload = function(){ state.texFiles[base] = { img: img, url: url }; res(); };
+      img.onerror = function(){ URL.revokeObjectURL(url); res(); };
+      img.src = url;
+    }));
+  });
+  if (!jobs.length){
+    $("#texNote").textContent = "没读到 png，文件名要以方块 ID 命名";
+    return;
+  }
+  Promise.all(jobs).then(function(){
+    state.customCount = Object.keys(state.texFiles).length;
+    updateTexNote();
+    buildPalette();
+    render();
+  });
+}
+
+function openPicker(multiple, dir){
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = "image/png";
+  if (multiple) inp.multiple = true;
+  if (dir) inp.webkitdirectory = true;
+  inp.onchange = function(){ addTextures(inp.files); };
+  inp.click();
+}
+
+$("#pickDir").addEventListener("click", function(){ openPicker(true, true); });
+$("#pickFiles").addEventListener("click", function(){ openPicker(true, false); });
+$("#texdrop").addEventListener("click", function(){ openPicker(true, false); });
+["dragenter", "dragover"].forEach(function(ev){
+  $("#texdrop").addEventListener(ev, function(e){ e.preventDefault(); $("#texdrop").classList.add("over"); });
+});
+["dragleave", "drop"].forEach(function(ev){
+  $("#texdrop").addEventListener(ev, function(e){ e.preventDefault(); $("#texdrop").classList.remove("over"); });
+});
+$("#texdrop").addEventListener("drop", function(e){
+  if (e.dataTransfer && e.dataTransfer.files) addTextures(e.dataTransfer.files);
+});
+$("#chkRealTex").addEventListener("change", function(e){
+  state.realTex = e.target.checked;
+  render();
+});
+
+/* ================= 刷新 ================= */
+function refresh(rebuild, keepManual){
+  if (rebuild){
+    buildSource();
+    if (!keepManual) resetManual();
+    state.history.length = 0;
+    state.future.length = 0;
+    state.selected = hotBlockIndex(state.hotSlot);
+  }
+  computeIdx();
+  buildPalette();
+  updateStats();
+  render();
+  updateUndoBtns();
+}
+
+function recalc(){
+  computeIdx();
+  buildPalette();
+  updateStats();
+  updateTexNote();
+  render();
+}
+
+/* ================= 控件 ================= */
+document.querySelectorAll("[data-tool]").forEach(function(b){
+  b.addEventListener("click", function(){ setTool(b.dataset.tool); });
+});
+document.querySelectorAll("[data-brush]").forEach(function(b){
+  b.addEventListener("click", function(){
+    state.brush = parseInt(b.dataset.brush, 10);
+    document.querySelectorAll("[data-brush]").forEach(function(o){ o.classList.toggle("on", o === b); });
+  });
+});
+/* ---------- 色系切换 ---------- */
+function syncPalButtons(){
+  document.querySelectorAll("[data-p]").forEach(function(o){
+    o.classList.toggle("on", o.dataset.p === state.palette);
+  });
+}
+
+function activatePalette(p){
+  const newList = PALETTES[p].blocks;
+  if (!newList.length) return false;
+  state.palette = p;
+  syncPalButtons();
+  /* 换方案一律用新色板重新匹配原图；手画过的格子由 applyManual 保住 */
+  computeIdx();
+  state.history.length = 0;
+  state.future.length = 0;
+  state.selected = hotBlockIndex(state.hotSlot);
+  $("#palNote").textContent = palNoteText();
+  buildPalette();
+  updateStats();
+  updateTexNote();
+  render();
+  updateUndoBtns();
+  return true;
+}
+
+document.querySelectorAll("[data-p]").forEach(function(b){
+  b.addEventListener("click", function(){
+    const p = b.dataset.p;
+    if (p === "custom" && !customIds.size){ openCustom(); return; }
+    activatePalette(p);
+  });
+});
+$("#openCustom").addEventListener("click", openCustom);
+document.querySelectorAll("[data-n]").forEach(function(b){
+  b.addEventListener("click", function(){
+    const v = parseInt(b.dataset.n, 10);
+    $("#size").value = String(v);
+    document.querySelectorAll("[data-n]").forEach(function(o){ o.classList.toggle("on", o === b); });
+    state.N = v;
+    state.zoomPx = 0;
+    refresh(true);
+  });
+});
+
+loadCustomPalette();
+syncPalButtons();
+$("#palNote").textContent = palNoteText();
+$("#nval").textContent = state.N + " × " + state.N;
+
+let sizeTimer = null;
+$("#size").addEventListener("input", function(e){
+  const v = parseInt(e.target.value, 10);
+  $("#nval").textContent = v + " × " + v;
+  document.querySelectorAll("[data-n]").forEach(function(o){
+    o.classList.toggle("on", parseInt(o.dataset.n, 10) === v);
+  });
+  clearTimeout(sizeTimer);
+  sizeTimer = setTimeout(function(){
+    state.N = v;
+    state.zoomPx = 0;
+    refresh(true);
+  }, 110);
+});
+
+let toneTimer = null;
+function toneChanged(){
+  clearTimeout(toneTimer);
+  /* 调色只改底图，不丢手画过的格子 */
+  toneTimer = setTimeout(function(){ refresh(true, true); }, 90);
+}
+$("#contrast").addEventListener("input", function(e){
+  state.contrast = parseInt(e.target.value, 10);
+  $("#cval").textContent = (state.contrast > 0 ? "+" : "") + state.contrast;
+  toneChanged();
+});
+$("#sat").addEventListener("input", function(e){
+  state.sat = parseInt(e.target.value, 10);
+  $("#sval").textContent = (state.sat > 0 ? "+" : "") + state.sat;
+  toneChanged();
+});
+
+$("#chkGrid").addEventListener("change", function(e){ state.grid = e.target.checked; render(); });
+$("#chkTexture").addEventListener("change", function(e){ state.texture = e.target.checked; render(); });
+$("#chkFocus").addEventListener("change", function(e){ state.focus = e.target.checked; render(); });
+$("#chkDespeckle").addEventListener("change", function(e){ state.despeckle = e.target.checked; recalc(); });
+$("#chkDither").addEventListener("change", function(e){ state.dither = e.target.checked; recalc(); });
+
+$("#btnMirror").addEventListener("click", function(){
+  state.mirror = !state.mirror;
+  $("#btnMirror").classList.toggle("on", state.mirror);
+});
+$("#undoBtn").addEventListener("click", undo);
+$("#redoBtn").addEventListener("click", redo);
+
+$("#search").addEventListener("input", buildPalette);
+$("#onlyUsed").addEventListener("change", buildPalette);
+
+/* ---------- 缩放 ---------- */
+function currentCell(){ return state.zoomPx > 0 ? state.zoomPx : fitCell(); }
+
+function applyZoom(cellTarget, clientX, clientY){
+  const wrap = $("#canvaswrap");
+  const cur = currentCell();
+  let cell = Math.round(cellTarget);
+  if (cell === cur) cell = (cellTarget >= cur) ? cur + 1 : cur - 1;
+  cell = Math.max(2, Math.min(64, cell));
+  if (cell === state.zoomPx || (state.zoomPx === 0 && cell === cur)) return;
+  const hasAnchor = typeof clientX === "number";
+  const before = board.getBoundingClientRect();
+  const offX = hasAnchor ? clientX - before.left : 0;
+  const offY = hasAnchor ? clientY - before.top : 0;
+  state.zoomPx = cell;
+  render();
+  const after = board.getBoundingClientRect();
+  if (!hasAnchor || !before.width) return;
+  const ratio = after.width / before.width;
+  wrap.scrollLeft += offX * ratio - offX + (after.left - before.left);
+  wrap.scrollTop += offY * ratio - offY + (after.top - before.top);
+}
+
+/* ---------- 拖动画面 ---------- */
+let spaceDown = false;
+let panState = null;
+
+function endPan(){
+  if (!panState) return;
+  panState = null;
+  $("#canvaswrap").classList.remove("panning");
+  updateCursor();
+}
+
+$("#zoomIn").addEventListener("click", function(){ applyZoom(currentCell() * 1.25); });
+$("#zoomOut").addEventListener("click", function(){ applyZoom(currentCell() / 1.25); });
+$("#zoomFit").addEventListener("click", function(){
+  state.zoomPx = 0;
+  render();
+  $("#canvaswrap").scrollLeft = 0;
+  $("#canvaswrap").scrollTop = 0;
+});
+
+$("#canvaswrap").addEventListener("wheel", function(e){
+  e.preventDefault();
+  const f = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+  applyZoom(currentCell() * f, e.clientX, e.clientY);
+}, { passive: false });
+
+$("#canvaswrap").addEventListener("pointerdown", function(e){
+  const wrap = $("#canvaswrap");
+  const wantPan = state.tool === "pan" || spaceDown || e.button === 1;
+  if (!wantPan) return;
+  e.preventDefault();
+  panState = { x: e.clientX, y: e.clientY, sl: wrap.scrollLeft, st: wrap.scrollTop, id: e.pointerId };
+  try { wrap.setPointerCapture(e.pointerId); } catch(err){}
+  wrap.classList.add("panning");
+  updateCursor();
+});
+$("#canvaswrap").addEventListener("pointermove", function(e){
+  if (!panState) return;
+  const wrap = $("#canvaswrap");
+  wrap.scrollLeft = panState.sl - (e.clientX - panState.x);
+  wrap.scrollTop = panState.st - (e.clientY - panState.y);
+});
+$("#canvaswrap").addEventListener("pointerup", endPan);
+$("#canvaswrap").addEventListener("pointercancel", endPan);
+
+document.querySelectorAll("[data-orient]").forEach(function(b){
+  b.addEventListener("click", function(){
+    document.querySelectorAll("[data-orient]").forEach(function(o){ o.classList.remove("on"); });
+    b.classList.add("on");
+    state.orient = b.dataset.orient;
+    updateStats();
+  });
+});
+
+$("#reset").addEventListener("click", function(){ refresh(true); });
+
+document.addEventListener("keydown", function(e){
+  const tag = (e.target && e.target.tagName) || "";
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+  if (!$("#customModal").hidden){ if (e.key === "Escape") closeCustom(); return; }
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && k === "z"){ e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
+  if ((e.ctrlKey || e.metaKey) && k === "y"){ e.preventDefault(); redo(); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (k === " "){
+    if (!spaceDown){ spaceDown = true; updateCursor(); }
+    e.preventDefault();
+    return;
+  }
+  if (k === "0"){ state.zoomPx = 0; render(); return; }
+  if (k === "+" || k === "="){ applyZoom(currentCell() * 1.25); return; }
+  if (k === "-" || k === "_"){ applyZoom(currentCell() / 1.25); return; }
+  if (k === "b") setTool("brush");
+  else if (k === "e") setTool("eraser");
+  else if (k === "i") setTool("picker");
+  else if (k === "f") setTool("fill");
+  else if (k === "r") setTool("replace");
+  else if (k === "h") setTool("pan");
+  else if (k === "m"){ state.mirror = !state.mirror; $("#btnMirror").classList.toggle("on", state.mirror); }
+  else if (k === "["){ state.brush = Math.max(1, state.brush - 1); syncBrushUI(); }
+  else if (k === "]"){ state.brush = Math.min(3, state.brush + 1); syncBrushUI(); }
+  else if (k >= "1" && k <= "9"){
+    selectHotSlot(parseInt(k, 10) - 1);
+  }
+});
+
+document.addEventListener("keyup", function(e){
+  if (e.key === " "){ spaceDown = false; updateCursor(); }
+});
+window.addEventListener("blur", function(){
+  if (spaceDown){ spaceDown = false; updateCursor(); }
+  endPan();
+});
+
+function syncBrushUI(){
+  document.querySelectorAll("[data-brush]").forEach(function(o){
+    o.classList.toggle("on", parseInt(o.dataset.brush, 10) === state.brush);
+  });
+}
+
+let resizeTimer = null;
+window.addEventListener("resize", function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(render, 120);
+});
+
+/* ================= 图片导出 ================= */
+function downloadBlob(blob, name){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+}
+
+function exportPng(withAxis){
+  const n = state.N;
+  const px = withAxis ? 24 : 16;
+  const margin = withAxis ? 30 : 0;
+  const size = n * px + margin;
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const ctx = c.getContext("2d");
+  if (withAxis){
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, size, size);
+  }
+  const blocks = PALETTES[state.palette].blocks;
+  for (let y = 0; y < n; y++){
+    for (let x = 0; x < n; x++){
+      const k = state.idx[y * n + x];
+      const dx = margin + x * px, dy = margin + y * px;
+      if (k < 0){
+        if (withAxis){ ctx.fillStyle = "#f4f4f2"; ctx.fillRect(dx, dy, px, px); }
+        continue;
+      }
+      ctx.fillStyle = blocks[k].hex;
+      ctx.fillRect(dx, dy, px, px);
+    }
+  }
+  if (withAxis){
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(0,0,0,0.13)";
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++){
+      const v = margin + i * px + 0.5;
+      ctx.moveTo(v, margin); ctx.lineTo(v, size);
+      ctx.moveTo(margin, v); ctx.lineTo(size, v);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(0,0,0,0.34)";
+    ctx.beginPath();
+    for (let i = 0; i <= n; i += 8){
+      const v = margin + i * px + 0.5;
+      ctx.moveTo(v, margin); ctx.lineTo(v, size);
+      ctx.moveTo(margin, v); ctx.lineTo(size, v);
+    }
+    ctx.stroke();
+    ctx.fillStyle = "#667";
+    ctx.font = "11px ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (let i = 0; i < n; i += 8){
+      ctx.fillText(String(i), margin + i * px + px / 2, margin / 2);
+      ctx.fillText(String(i), margin / 2, margin + i * px + px / 2);
+    }
+  }
+  const tag = withAxis ? "-施工图" : "";
+  downloadBlob(dataURLtoBlob(c), "方块像素画-" + n + "x" + n + "-" + PALETTES[state.palette].label + tag + ".png");
+}
+
+function dataURLtoBlob(canvas){
+  const bin = atob(canvas.toDataURL("image/png").split(",")[1]);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: "image/png" });
+}
+
+$("#expPure").addEventListener("click", function(){ exportPng(false); });
+$("#expBoard").addEventListener("click", function(){ exportPng(true); });
+
+$("#expCsv").addEventListener("click", function(){
+  const n = state.N;
+  const blocks = PALETTES[state.palette].blocks;
+  const r = counts();
+  const rows = ["方块,英文名,方块ID,类别,数量,占比"];
+  const order = [];
+  for (let i = 0; i < blocks.length; i++) if (r.list[i]) order.push(i);
+  order.sort(function(a, b){ return r.list[b] - r.list[a]; });
+  order.forEach(function(i){
+    const pct = ((r.list[i] / (n * n)) * 100).toFixed(1);
+    rows.push([blocks[i].zh, blocks[i].en, blocks[i].id, blocks[i].fam, r.list[i], pct + "%"].join(","));
+  });
+  if (r.empty) rows.push(["留空", "Air", "minecraft:air", "-", r.empty, ((r.empty / (n * n)) * 100).toFixed(1) + "%"]);
+  const blob = new Blob(["\ufeff" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  downloadBlob(blob, "方块像素画-材料清单.csv");
+});
+
+/* ================= 结构文件 ================= */
+const STRUCT_MAX = 48;
+const NBT_VERSION = 3953;
+
+function NB(){ this.b = []; }
+NB.prototype.u8 = function(v){ this.b.push(v & 255); return this; };
+NB.prototype.i16 = function(v){ this.b.push((v >> 8) & 255, v & 255); return this; };
+NB.prototype.i32 = function(v){ this.b.push((v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255); return this; };
+NB.prototype.str = function(s){
+  const x = new TextEncoder().encode(s);
+  this.i16(x.length);
+  for (let i = 0; i < x.length; i++) this.b.push(x[i]);
+  return this;
+};
+NB.prototype.bytes = function(){ return new Uint8Array(this.b); };
+
+function buildStructure(ox, oy, w, h, useAir, wall){
+  const n = state.N;
+  const blocks = PALETTES[state.palette].blocks;
+  const pal = [];
+  const map = new Map();
+  function idxOf(id){
+    if (map.has(id)) return map.get(id);
+    const i = pal.length;
+    pal.push(id);
+    map.set(id, i);
+    return i;
+  }
+  let airIdx = -1;
+  if (useAir) airIdx = idxOf("minecraft:air");
+
+  const cells = [];
+  for (let y = 0; y < h; y++){
+    for (let x = 0; x < w; x++){
+      const k = state.idx[(oy + y) * n + (ox + x)];
+      const state_i = (k < 0) ? (useAir ? airIdx : -2) : idxOf(blocks[k].id);
+      if (state_i === -2) continue;
+      /* 一律用块内局部坐标：块本身是 w×h 的完整长方体，
+         整幅图靠摆放时的相对位置拼起来（坐标写在文件名和说明里） */
+      if (wall) cells.push([x, h - 1 - y, 0, state_i]);
+      else cells.push([x, 0, y, state_i]);
+    }
+  }
+
+  const w2 = new NB();
+  w2.u8(10); w2.str("");
+  w2.u8(9); w2.str("size"); w2.u8(3); w2.i32(3);
+  w2.i32(w); w2.i32(wall ? h : 1); w2.i32(wall ? 1 : h);
+  w2.u8(9); w2.str("palette"); w2.u8(10); w2.i32(pal.length);
+  for (let i = 0; i < pal.length; i++){
+    w2.u8(8); w2.str("Name"); w2.str(pal[i]);
+    w2.u8(0);
+  }
+  w2.u8(9); w2.str("blocks"); w2.u8(10); w2.i32(cells.length);
+  for (let i = 0; i < cells.length; i++){
+    const c = cells[i];
+    w2.u8(9); w2.str("pos"); w2.u8(3); w2.i32(3);
+    w2.i32(c[0]); w2.i32(c[1]); w2.i32(c[2]);
+    w2.u8(3); w2.str("state"); w2.i32(c[3]);
+    w2.u8(0);
+  }
+  w2.u8(9); w2.str("entities"); w2.u8(10); w2.i32(0);
+  w2.u8(3); w2.str("DataVersion"); w2.i32(NBT_VERSION);
+  w2.u8(0);
+  return w2.bytes();
+}
+
+let CRC_TABLE = null;
+function crc32(bytes){
+  if (!CRC_TABLE){
+    CRC_TABLE = new Int32Array(256);
+    for (let i = 0; i < 256; i++){
+      let c = i;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      CRC_TABLE[i] = c;
+    }
+  }
+  let c = -1;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 255] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+
+function gzipStored(data){
+  const out = [];
+  out.push(0x1f, 0x8b, 8, 0, 0, 0, 0, 0, 0, 0xff);
+  let i = 0;
+  if (data.length === 0) out.push(1, 0, 0, 255, 255);
+  while (i < data.length){
+    const len = Math.min(65535, data.length - i);
+    const final = (i + len >= data.length) ? 1 : 0;
+    out.push(final, len & 255, (len >> 8) & 255, (~len) & 255, ((~len) >> 8) & 255);
+    for (let k = 0; k < len; k++) out.push(data[i + k]);
+    i += len;
+  }
+  const crc = crc32(data);
+  out.push(crc & 255, (crc >>> 8) & 255, (crc >>> 16) & 255, (crc >>> 24) & 255);
+  const sz = data.length >>> 0;
+  out.push(sz & 255, (sz >>> 8) & 255, (sz >>> 16) & 255, (sz >>> 24) & 255);
+  return new Uint8Array(out);
+}
+
+async function gzipBytes(data){
+  if (typeof CompressionStream !== "undefined"){
+    try{
+      const stream = new Blob([data]).stream().pipeThrough(new CompressionStream("gzip"));
+      const buf = await new Response(stream).arrayBuffer();
+      return new Uint8Array(buf);
+    }catch(e){ /* 回退 */ }
+  }
+  return gzipStored(data);
+}
+
+function zipStored(entries){
+  const enc = new TextEncoder();
+  const parts = [];
+  const central = [];
+  let offset = 0;
+  const le16 = function(v){ return [v & 255, (v >> 8) & 255]; };
+  const le32 = function(v){ return [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255]; };
+
+  entries.forEach(function(e){
+    const name = enc.encode(e.name);
+    const crc = crc32(e.data);
+    const size = e.data.length;
+    const localHead = [].concat(
+      le32(0x04034b50), le16(20), le16(0x0800), le16(0), le16(0), le16(0),
+      le32(crc), le32(size), le32(size), le16(name.length), le16(0)
+    );
+    const head = new Uint8Array(localHead.length + name.length);
+    head.set(localHead, 0);
+    head.set(name, localHead.length);
+    parts.push(head, e.data);
+
+    const cdHead = [].concat(
+      le32(0x02014b50), le16(20), le16(20), le16(0x0800), le16(0), le16(0), le16(0),
+      le32(crc), le32(size), le32(size), le16(name.length), le16(0), le16(0), le16(0), le16(0),
+      le32(0), le32(offset)
+    );
+    const cd = new Uint8Array(cdHead.length + name.length);
+    cd.set(cdHead, 0);
+    cd.set(name, cdHead.length);
+    central.push(cd);
+    offset += head.length + size;
+  });
+
+  let cdSize = 0;
+  central.forEach(function(c){ cdSize += c.length; });
+  const eocd = [].concat(
+    le32(0x06054b50), le16(0), le16(0), le16(entries.length), le16(entries.length),
+    le32(cdSize), le32(offset), le16(0)
+  );
+  const out = new Uint8Array(offset + cdSize + eocd.length);
+  let p = 0;
+  parts.forEach(function(part){ out.set(part, p); p += part.length; });
+  central.forEach(function(c){ out.set(c, p); p += c.length; });
+  out.set(new Uint8Array(eocd), p);
+  return out;
+}
+
+function safeName(s){
+  const t = (s || "").trim().toLowerCase().replace(/[^a-z0-9_\-]/g, "");
+  return t || "pixelart";
+}
+
+function tilesNote(base, n, tiles, wall, pieces){
+  const L = [];
+  L.push("方块像素画 · Java 版结构");
+  L.push("画幅 " + n + "x" + n + "，形态：" + (wall ? "立面（站在墙前看）" : "平铺地面（从上往下看）"));
+  L.push("共 " + pieces.length + " 个文件，每块都是完整的长方体，用结构方块的「相对位置」拼起来");
+  L.push("");
+  L.push("载入步骤：");
+  L.push("1. .nbt 放进 存档目录/.minecraft/saves/存档名/generated/minecraft/structures/");
+  L.push("   没有 structures 文件夹就自己新建");
+  L.push("2. 游戏里 /give @s structure_block");
+  L.push("3. 放下结构方块，模式切到「加载」，结构名称填文件名（不带 .nbt）");
+  L.push("4. 相对位置按下面这张表填，再点「加载」");
+  L.push("");
+  L.push("文件                                相对位置(西东/上下/南北)  尺寸");
+  L.push("----------------------------------  ----------------------  -------");
+  pieces.forEach(function(p){
+    L.push((p.name + "                                  ").slice(0, 34) + "  " +
+      (p.at[0] + " " + p.at[1] + " " + p.at[2] + "            ").slice(0, 22) + "  " +
+      (wall ? p.w + "x" + p.h + "x1" : p.w + "x1x" + p.h));
+  });
+  L.push("");
+  L.push(wall ? "图案顶行在每块的最高处，越靠北的块要放得越高。" : "图案顶行在北侧，站在南边看是正的。");
+  return new TextEncoder().encode(L.join("\r\n"));
+}
+
+async function exportNbt(){
+  const n = state.N;
+  const base = safeName($("#nbtName").value);
+  const useAir = $("#nbtAir").checked;
+  const wall = state.orient === "wall";
+  const tiles = Math.ceil(n / STRUCT_MAX);
+  const files = [];
+  const pieces = [];
+  for (let ty = 0; ty < tiles; ty++){
+    for (let tx = 0; tx < tiles; tx++){
+      const ox = tx * STRUCT_MAX, oy = ty * STRUCT_MAX;
+      const w = Math.min(STRUCT_MAX, n - ox), h = Math.min(STRUCT_MAX, n - oy);
+      const raw = buildStructure(ox, oy, w, h, useAir, wall);
+      const gz = await gzipBytes(raw);
+      let name;
+      if (tiles <= 1) name = base + ".nbt";
+      else name = base + "_x" + ox + (wall ? "_y" : "_z") + oy + ".nbt";
+      /* 摆放位置：横向用 ox；纵向（墙）要把整幅图的高度对齐，
+         让第一块贴住最高处；平面则直接按 oy 往南排 */
+      const atY = wall ? (n - oy - h) : 0;
+      pieces.push({ name: name, w: w, h: h, at: [ox, atY, wall ? 0 : oy] });
+      files.push({ name: name, data: gz });
+    }
+  }
+  if (files.length === 1){
+    downloadBlob(new Blob([files[0].data], { type: "application/octet-stream" }), files[0].name);
+  } else {
+    files.push({ name: "载入说明.txt", data: tilesNote(base, n, tiles, wall, pieces) });
+    downloadBlob(new Blob([zipStored(files)], { type: "application/zip" }), base + ".zip");
+  }
+}
+
+$("#expNbt").addEventListener("click", function(){
+  exportNbt().catch(function(err){
+    console.error(err);
+    $("#nbtTip").textContent = "导出出错了，刷新页面再试一次";
+  });
+});
+
+/* ---------- 自定义方块方案 ---------- */
+let pendingSel = new Set();
+
+function openCustom(){
+  pendingSel = new Set(customIds);
+  $("#customSearch").value = "";
+  buildCustomGrid();
+  $("#customModal").hidden = false;
+}
+
+function closeCustom(){
+  $("#customModal").hidden = true;
+}
+
+function updateCustomCount(){
+  $("#customCount").textContent = "已选 " + pendingSel.size + " 种";
+}
+
+function buildCustomGrid(){
+  const body = $("#customBody");
+  const q = ($("#customSearch").value || "").trim().toLowerCase();
+  body.innerHTML = "";
+  let shown = 0;
+  FAMILIES.forEach(function(fam){
+    const list = famBlocks(fam).filter(function(b){
+      return !q || (b.zh + b.en + b.id).toLowerCase().indexOf(q) >= 0;
+    });
+    if (!list.length) return;
+    shown += list.length;
+    const h = document.createElement("div");
+    h.className = "cfam";
+    h.textContent = (FAM_CN[fam] || fam) + " · " + list.length + " 种";
+    body.appendChild(h);
+    const grid = document.createElement("div");
+    grid.className = "cgrid";
+    list.forEach(function(b){
+      const el = document.createElement("div");
+      const on = pendingSel.has(b.id);
+      el.className = "blk" + (on ? " on" : "");
+      el.title = b.zh + " · " + b.en + " · " + b.id;
+      el.innerHTML = '<span class="c" style="' + slotStyle(b) + '"></span>' +
+        '<span class="t">' + b.zh + "</span>";
+      el.addEventListener("click", function(){
+        if (pendingSel.has(b.id)) pendingSel.delete(b.id);
+        else pendingSel.add(b.id);
+        el.classList.toggle("on", pendingSel.has(b.id));
+        updateCustomCount();
+      });
+      grid.appendChild(el);
+    });
+    body.appendChild(grid);
+  });
+  if (!shown) body.innerHTML = '<div class="note">没有匹配的方块</div>';
+  updateCustomCount();
+}
+
+$("#customSearch").addEventListener("input", buildCustomGrid);
+$("#customAll").addEventListener("click", function(){
+  const q = ($("#customSearch").value || "").trim().toLowerCase();
+  ALL_BLOCKS.forEach(function(b){
+    if (!q || (b.zh + b.en + b.id).toLowerCase().indexOf(q) >= 0) pendingSel.add(b.id);
+  });
+  buildCustomGrid();
+});
+$("#customNone").addEventListener("click", function(){
+  pendingSel.clear();
+  buildCustomGrid();
+});
+$("#customUsed").addEventListener("click", function(){
+  const list = PALETTES[state.palette].blocks;
+  const r = counts();
+  const keep = new Set();
+  for (let i = 0; i < r.list.length; i++) if (r.list[i] > 0) keep.add(list[i].id);
+  if (!keep.size){ $("#customCount").textContent = "图里还没有方块"; return; }
+  pendingSel = keep;
+  buildCustomGrid();
+});
+$("#customCancel").addEventListener("click", closeCustom);
+$("#customModal").addEventListener("click", function(e){
+  if (e.target === $("#customModal")) closeCustom();
+});
+$("#customApply").addEventListener("click", function(){
+  if (!pendingSel.size){
+    $("#customCount").textContent = "至少选一种方块";
+    return;
+  }
+  const ids = Array.from(pendingSel);
+  setCustomPalette(ids);
+  closeCustom();
+  activatePalette("custom");
+});
+
+/* ================= 启动 ================= */
+setTool("brush");
+refresh(true);
+loadVanillaTex();
+updateTexNote();
+</script>
+</body>
+</html>
