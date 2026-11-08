@@ -28,6 +28,7 @@ withDefaults(
 
 <style scoped>
 .mc-switch {
+  position: relative; /* 隐藏的 input 必须相对本行定位，见下 */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -42,11 +43,18 @@ withDefaults(
   min-width: 0;
 }
 
-/* 视觉隐藏但保留可聚焦，焦点环画在方块上 */
+/*
+ * 视觉隐藏但保留可聚焦，焦点环画在方块上。
+ * 必须用 inset 把 input 钉在本行内：绝对定位元素若没有定位祖先，
+ * 会跑到最近的定位祖先（这里是整页容器），点击时浏览器为了让它可见
+ * 会把页面滚到顶部——那是「点一下开关，页面跳回顶上」的真正原因。
+ */
 .mc-switch__input {
   position: absolute;
+  inset: 0 auto auto 0;
   width: 1px;
   height: 1px;
+  margin: 0;
   opacity: 0;
   pointer-events: none;
 }

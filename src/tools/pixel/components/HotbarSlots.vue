@@ -23,7 +23,6 @@ const emit = defineEmits<{
       v-for="(item, index) in items"
       :key="index"
       class="hotbar__cell"
-      :class="{ 'is-active': index === activeIndex }"
       @contextmenu.prevent="emit('clear', index)"
     >
       <BlockSlot

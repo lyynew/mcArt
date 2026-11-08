@@ -33,7 +33,7 @@ const TOOLS: { id: ToolId; label: string; title: string }[] = [
   {
     id: 'replace',
     label: '替换',
-    title: '替换：点画面里某种方块，全图同种都换成当前选的；点空格则把所有空格填满（R）',
+    title: '替换：点实心方块，全图同种都换成当前方块；按住 Shift 只换相连一片；点空格不处理（R）',
   },
   { id: 'pan', label: '抓手', title: '抓手：拖动画面（H），任何时候按住空格或中键也能拖' },
 ]

@@ -15,6 +15,7 @@ import {
   sourceRevision,
 } from './buffers'
 import { discard, record, redo, resetHistory, undo, canRedo, canUndo } from './history'
+import { notify } from './view-state'
 import { loadPersisted, savePersisted, type PersistedState } from './persist'
 import { loadCanvas, loadSource, saveCanvas, saveSource } from './draft'
 import { debounce } from '@/shared/debounce'
@@ -297,14 +298,23 @@ function selectBlock(index: number): void {
 function selectHotSlot(slot: number): void {
   settings.hotSlot = slot
   const all = hotbar.value[slot]
-  if (all === null || all === undefined) return
+  if (all === null || all === undefined) {
+    // 空槽位只表示「接下来放东西的位置」，方块选择保持不动；
+    // 给一句提示，否则点了格子界面毫无变化，看起来像没响应
+    notify(`已选中第 ${slot + 1} 格（空）；点上面调色板里的方块放进来`)
+    return
+  }
   const index = blocks.value.findIndex((b) => b.all === all)
   settings.selected = index
 }
 
 function clearHotSlot(slot: number): void {
   hotbar.value[slot] = null
-  if (slot === settings.hotSlot) settings.selected = -1
+  if (slot !== settings.hotSlot) return
+
+  // 清掉的是当前槽位时，方块选择也跟着失效，需要明确告知
+  settings.selected = -1
+  notify(`已清空第 ${slot + 1} 格；再画请先选一个方块`)
 }
 
 /** 物品栏某格里方块的全表下标（不在当前色板就返回 null） */
@@ -403,7 +413,8 @@ function floodFill(sx: number, sy: number, k: number): boolean {
   return changed
 }
 
-function replaceAll(from: number, to: number): boolean {
+/** 全图同种替换；返回实际改动格数 */
+function replaceAll(from: number, to: number): number {
   let hits = 0
   const total = buffers.n * buffers.n
   const all = to < 0 ? -1 : (blocks.value[to]?.all ?? -1)
@@ -413,7 +424,43 @@ function replaceAll(from: number, to: number): boolean {
     markManual(i, all)
     hits++
   }
-  return hits > 0
+  return hits
+}
+
+/**
+ * 只替换与点击处连通的同种方块。
+ *
+ * 与「填充」的区别在语义：填充是「把这片区域换成新方块」，
+ * 这里是「把这片里同种的方块换掉，别的不动」，看起来像同一件事，
+ * 但在已经混色的区域里前者会覆盖掉其他颜色，后者只换目标那一种。
+ */
+function replaceConnected(sx: number, sy: number, from: number, to: number): number {
+  const n = buffers.n
+  const total = n * n
+  const seen = new Uint8Array(total)
+  const stack: number[] = [sy * n + sx]
+  const all = to < 0 ? -1 : (blocks.value[to]?.all ?? -1)
+  let hits = 0
+
+  while (stack.length) {
+    const i = stack.pop()!
+    if (seen[i]) continue
+    seen[i] = 1
+    if (buffers.idx[i] !== from) continue
+
+    buffers.idx[i] = to
+    markManual(i, all)
+    hits++
+
+    const x = i % n
+    const y = (i - x) / n
+    if (x + 1 < n) stack.push(i + 1)
+    if (x > 0) stack.push(i - 1)
+    if (y + 1 < n) stack.push(i + n)
+    if (y > 0) stack.push(i - n)
+  }
+
+  return hits
 }
 
 function pickCell(x: number, y: number): void {
@@ -433,7 +480,16 @@ function beginStroke(): void {
  * 在格子上执行一次操作。
  * 返回是否改动，调用方负责累积并在结束时交给 endStroke。
  */
-function strokeAt(x: number, y: number): boolean {
+/** 单次操作的可选修饰 */
+export interface StrokeOptions {
+  /**
+   * 替换工具专用：true 时只替换与点击处连通的一片。
+   * 默认 false（全图同种），与旧版一致；误触全图的代价太高，所以留了这个出口。
+   */
+  region?: boolean
+}
+
+function strokeAt(x: number, y: number, opts?: StrokeOptions): boolean {
   if (!hasImage.value) return false
   const n = buffers.n
   if (x < 0 || y < 0 || x >= n || y >= n) return false
@@ -447,10 +503,37 @@ function strokeAt(x: number, y: number): boolean {
 
   if (tool === 'replace') {
     const from = buffers.idx[y * n + x]!
-    if (from === settings.selected) return false
-    const changed = replaceAll(from, settings.selected)
-    if (changed) markDirty()
-    return changed
+    const to = settings.selected
+
+    // 替换是「全图同种批量替换」，目标不明确时一次点击就会波及整幅图：
+    // 没选方块时 to 是 -1，会把这种方块全部删光；点空格则会把所有空气一次填满。
+    // 这两种情况都不该执行，并且要告诉用户下一步该怎么做。
+    if (to < 0) {
+      notify('替换前先在调色板里选一个目标方块')
+      return false
+    }
+    if (from === EMPTY) {
+      notify('替换的起点必须是实心方块；要把空白填满请用填充工具')
+      return false
+    }
+    if (from === to) return false
+
+    const region = opts?.region === true
+    const hits = region
+      ? replaceConnected(x, y, from, to)
+      : replaceAll(from, to)
+    if (hits === 0) return false
+
+    markDirty()
+    const fromName = blocks.value[from]?.zh ?? '该方块'
+    const toName = blocks.value[to]?.zh ?? '目标方块'
+    // 批量改动必须给回执，否则「怎么全变了」会变成信任问题
+    notify(
+      region
+        ? `已把相连的 ${hits} 格「${fromName}」换成「${toName}」`
+        : `已把全图 ${hits} 格「${fromName}」换成「${toName}」`,
+    )
+    return true
   }
 
   const target = tool === 'eraser' ? EMPTY : settings.selected

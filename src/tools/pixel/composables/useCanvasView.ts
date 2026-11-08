@@ -1,11 +1,15 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
-import { ZOOM_MAX, ZOOM_MIN } from '../types'
+import { clampZoom, zoomStep } from '../zoom'
 
 /**
  * 画布视口：单格像素、滚轮缩放、适应窗口。
  *
  * 缩放时以鼠标位置为锚点：先把光标处的格坐标算出来，改完单格像素再反推滚动位置，
  * 这样「放大时盯着的那一格」不会跑掉——这是地图类编辑器最容易做糙的地方。
+ *
+ * 缩放步进用「加法 + 最小 1px」，不用「每次乘一个系数」。
+ * 早先按 2 的幂次相乘再取整：缩到 2px/格时，2 × 1.15 = 2.3 取整又回到 2，
+ * 于是无论滚多少次都停在 2，放大方向被取整彻底吃掉——用户看到的就是「缩到底之后动不了」。
  */
 export function useCanvasView(
   wrapper: Ref<HTMLElement | null>,
@@ -24,16 +28,20 @@ export function useCanvasView(
   }
 
   function recalc(): void {
-    cell.value = zoomPx.value > 0 ? zoomPx.value : fitCell()
+    cell.value = clampZoom(zoomPx.value > 0 ? zoomPx.value : fitCell())
   }
 
   /** 缩放锚定到视口里的某个点（通常是鼠标位置） */
   function zoomAtPoint(clientX: number, clientY: number, nextCell: number): void {
-    const el = wrapper.value
-    if (!el) return
+    const target = clampZoom(nextCell)
+    if (target === cell.value) return
 
-    const target = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(nextCell)))
-    if (target === cell.value && zoomPx.value === target) return
+    const el = wrapper.value
+    if (!el) {
+      zoomPx.value = target
+      cell.value = target
+      return
+    }
 
     const rect = el.getBoundingClientRect()
     const beforeX = (clientX - rect.left + el.scrollLeft) / cell.value
@@ -53,18 +61,22 @@ export function useCanvasView(
     // 触控板的横向滚动不算缩放
     if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return
     e.preventDefault()
-    const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15
-    zoomAtPoint(e.clientX, e.clientY, cell.value * factor)
+    const dir = e.deltaY < 0 ? 1 : -1
+    zoomAtPoint(e.clientX, e.clientY, zoomStep(cell.value, dir))
   }
 
+  /** 按钮与快捷键用：正数放大、负数缩小，实际步长按当前尺寸决定 */
   function zoomBy(factor: number): void {
+    const dir = factor >= 1 ? 1 : -1
+    const target = zoomStep(cell.value, dir)
     const el = wrapper.value
     if (!el) {
-      cell.value = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, cell.value * factor))
+      zoomPx.value = target
+      cell.value = target
       return
     }
     const rect = el.getBoundingClientRect()
-    zoomAtPoint(rect.left + rect.width / 2, rect.top + rect.height / 2, cell.value * factor)
+    zoomAtPoint(rect.left + rect.width / 2, rect.top + rect.height / 2, target)
   }
 
   /** 适应窗口 */

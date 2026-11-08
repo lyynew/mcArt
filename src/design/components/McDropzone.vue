@@ -84,6 +84,7 @@ function onKey(e: KeyboardEvent): void {
 
 <style scoped>
 .mc-drop {
+  position: relative; /* 隐藏的 file input 要锚定在这一块里，原因见下 */
   background: var(--mc-plate);
   border: var(--mc-bd) solid #000;
   box-shadow:
@@ -113,11 +114,17 @@ function onKey(e: KeyboardEvent): void {
   cursor: not-allowed;
 }
 
-/* 真正的文件框藏起来，但保留在无障碍树里 */
+/*
+ * 真正的文件框藏起来，但保留在无障碍树里。
+ * inset 必须写：绝对定位元素若找不到本块的 relative 祖先，会挂到整页容器上，
+ * 选完文件浏览器为让它可见会把页面滚回顶部——和开关组件踩的是同一个坑。
+ */
 .mc-drop__input {
   position: absolute;
+  inset: 0 auto auto 0;
   width: 1px;
   height: 1px;
+  margin: 0;
   opacity: 0;
   pointer-events: none;
 }

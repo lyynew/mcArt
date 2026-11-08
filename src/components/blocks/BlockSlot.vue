@@ -111,21 +111,15 @@ const skin = computed(() => {
   pointer-events: none;
 }
 
+/* hover 用 outline 而不是阴影：阴影被 is-empty / is-on 覆盖，会让空槽看起来点不动 */
 .slot:hover {
-  box-shadow: inset 0 0 0 2px #fff;
+  outline: 2px solid #fff;
+  outline-offset: -4px;
 }
 
 .slot:focus-visible {
   outline: 2px solid var(--mc-focus);
   outline-offset: 2px;
-}
-
-.slot.is-on {
-  box-shadow:
-    inset var(--mc-bv) var(--mc-bv) 0 var(--mc-plate-lo),
-    inset calc(-1 * var(--mc-bv)) calc(-1 * var(--mc-bv)) 0 #d4d4d4,
-    0 0 0 2px var(--mc-pick),
-    0 0 8px var(--mc-pick);
 }
 
 .slot.is-muted {
@@ -137,5 +131,29 @@ const skin = computed(() => {
   box-shadow:
     inset var(--mc-bv) var(--mc-bv) 0 #9a9a9a,
     inset calc(-1 * var(--mc-bv)) calc(-1 * var(--mc-bv)) 0 #616161;
+}
+
+/*
+ * 选中态必须排在 .is-empty 之后。
+ * 两者特异性相同（.slot.xxx），原先选中态写在前面，空槽一旦被选中，
+ * 它的阴影就被 .is-empty 覆盖，于是「点了空格子没有任何反应」。
+ * 空槽没有贴图可比，再补一圈内描边，让选中在灰底上也看得清。
+ */
+.slot.is-on {
+  box-shadow:
+    inset var(--mc-bv) var(--mc-bv) 0 var(--mc-plate-lo),
+    inset calc(-1 * var(--mc-bv)) calc(-1 * var(--mc-bv)) 0 #d4d4d4,
+    0 0 0 2px var(--mc-pick),
+    0 0 8px var(--mc-pick);
+}
+
+.slot.is-empty.is-on {
+  background: #8a8a7a;
+  box-shadow:
+    inset 0 0 0 2px var(--mc-pick),
+    inset var(--mc-bv) var(--mc-bv) 0 #a8a8a8,
+    inset calc(-1 * var(--mc-bv)) calc(-1 * var(--mc-bv)) 0 #6b6b6b,
+    0 0 0 2px var(--mc-pick),
+    0 0 8px var(--mc-pick);
 }
 </style>

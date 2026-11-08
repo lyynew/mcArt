@@ -63,7 +63,8 @@ export function usePointerTools(options: {
     }
 
     editor.beginStroke()
-    const changed = editor.strokeAt(pos.x, pos.y)
+    // Shift 是替换工具的「只换相连一片」修饰键；其他工具忽略它
+    const changed = editor.strokeAt(pos.x, pos.y, { region: e.shiftKey })
     editor.trackStroke(changed)
 
     dragging.value = settings.tool === 'brush' || settings.tool === 'eraser'
