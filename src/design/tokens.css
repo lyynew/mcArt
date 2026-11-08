@@ -1,0 +1,95 @@
+/* ============================================================
+   设计令牌
+   ------------------------------------------------------------
+   全部视觉常量集中在这一层，组件里只引用变量、不写死颜色。
+   取值沿用原版单文件版本的实测色值，保证迁移后观感一致。
+   ============================================================ */
+
+:root {
+  color-scheme: dark;
+
+  /* —— 面板：游戏内 GUI 窗 —— */
+  --mc-panel: #c6c6c6;
+  --mc-panel-hi: #ffffff;      /* 凸起高光 */
+  --mc-panel-lo: #565656;      /* 凸起暗部 */
+  --mc-plate: #b0b0b0;         /* 凹陷底板：上传框、列表 */
+  --mc-plate-lo: #4f4f4f;
+  --mc-plate-hi: #dedede;
+  --mc-ink: #3f3f3f;           /* 面板内正文 */
+  --mc-ink-soft: #5f5f5f;      /* 面板内次要文字 */
+  --mc-ink-strong: #2f2f2f;    /* 面板内数值 */
+
+  /* —— 按钮：凸起金属面 —— */
+  --mc-btn: #8b8b8b;
+  --mc-btn-hover: #9d9d9d;
+  --mc-btn-hi: #b5b5b5;
+  --mc-btn-lo: #575757;
+
+  /* —— 舞台与页面 —— */
+  --mc-stage: #1d1b17;         /* 画布底 */
+  --mc-bg: #2a2723;            /* 泥土页面底 */
+  --mc-bg-glow: #3b382f;
+  --mc-bar-top: #4a4537;
+  --mc-bar-bot: #332f26;
+  --mc-edge: #16140f;          /* 硬描边 */
+
+  /* —— 草绿：主强调色 —— */
+  --mc-accent: #4e8a34;
+  --mc-accent-hi: #6fb14b;
+  --mc-accent-lo: #2d5420;
+  --mc-accent-hover: #5c9f3e;
+  --mc-accent-hover-hi: #82c95c;
+  --mc-accent-ink: #9ad36a;    /* 深色背景上的绿字 */
+  --mc-focus: #9ad36a;         /* 焦点环 */
+  --mc-pick: #ffd94a;          /* 选中高亮（金） */
+
+  /* —— 文字：面板之外 —— */
+  --mc-text: #f2efe6;
+  --mc-text-dim: #b5ad95;
+  --mc-text-soft: #a5a08e;   /* 长段落，比 dim 再退一档但仍可读 */
+  --mc-text-mute: #7f7a68;   /* 仅用于脚注、分隔符 */
+
+  /* —— 结构：描边 / 斜面 / 投影 —— */
+  --mc-bd: 2px;
+  --mc-bv: 2px;
+  --mc-shadow-panel: 4px 4px 0 rgb(0 0 0 / 45%);
+  --mc-shadow-modal: 8px 8px 0 rgb(0 0 0 / 50%);
+  --mc-shadow-btn: 2px 2px 0 rgb(0 0 0 / 45%);
+  --mc-ts-light: 1px 1px 0 #fff;      /* 浅底上的文字投影 */
+  --mc-ts-dark: 1px 1px 0 #2f2f2f;    /* 深底上的文字投影 */
+
+  /* —— 间距：跟像素网格对齐，不做 4 的整数倍洁癖 —— */
+  --sp-1: 3px;
+  --sp-2: 5px;
+  --sp-3: 7px;
+  --sp-4: 9px;
+  --sp-5: 12px;
+  --sp-6: 16px;
+  --sp-7: 24px;
+
+  /* —— 字号 —— */
+  --fs-micro: 9.5px;
+  --fs-note: 10.5px;
+  --fs-sm: 11.5px;
+  --fs-body: 12px;
+  --fs-title: 11px;
+  --fs-head: 15px;
+
+  /* —— 字体：等宽，贴合像素/方块气质 —— */
+  --font-mc: ui-monospace, "Cascadia Mono", Consolas, "Microsoft YaHei", monospace;
+
+  /* —— 层级 —— */
+  --z-header: 20;
+  --z-modal: 60;
+  --z-toast: 80;
+
+  /* —— 动效时长 —— */
+  --mc-motion: 90ms;
+}
+
+/* 用户在系统里关掉动效时，所有过渡退化为瞬时 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --mc-motion: 0s;
+  }
+}

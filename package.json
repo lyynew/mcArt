@@ -1,0 +1,31 @@
+{
+  "name": "mcart-tools",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "description": "Minecraft 网页工具集 · 方块像素画生成器 / 方块图鉴 / 结构查看器",
+  "scripts": {
+    "sync:textures": "node scripts/sync-textures.mjs",
+    "predev": "npm run sync:textures",
+    "dev": "vite",
+    "prebuild": "npm run sync:textures",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "fixtures": "node scripts/make-fixtures.mjs"
+  },
+  "dependencies": {
+    "vue": "^3.5.45",
+    "vue-router": "^5.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0",
+    "vue-tsc": "^3.3.14"
+  }
+}

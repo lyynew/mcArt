@@ -1,0 +1,7 @@
+# 统一按 LF 存仓库，避免 Windows 开发者提交时产生整文件行尾差异
+* text=auto eol=lf
+
+# 二进制资源：不要做行尾转换和文本 diff
+*.png binary
+*.nbt binary
+*.bin binary
