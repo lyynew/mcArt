@@ -3,6 +3,7 @@ import { onBeforeUnmount, onMounted, ref, toRef } from 'vue'
 import { McWindow } from '@/design/components'
 import { useEditor } from '../store/editor'
 import { useCanvasView } from '../composables/useCanvasView'
+import { useTouchGestures } from '../composables/useTouchGestures'
 import { useBoardPainter } from '../composables/useBoardPainter'
 import { usePointerTools } from '../composables/usePointerTools'
 import { useHotkeys } from '../composables/useHotkeys'
@@ -22,7 +23,16 @@ const wrapper = ref<HTMLElement | null>(null)
 const board = ref<HTMLCanvasElement | null>(null)
 
 const view = useCanvasView(wrapper, toRef(settings, 'n'), toRef(settings, 'zoomPx'))
-useBoardPainter(board, view.cell)
+const painter = useBoardPainter(board, view.cell)
+
+// 触屏上的双指缩放/平移。桌面没有触摸事件，挂着也不会有副作用
+useTouchGestures({
+  el: wrapper,
+  canvas: board,
+  cell: view.cell,
+  setCell: view.setCell,
+  syncSize: painter.syncCssSize,
+})
 
 const pointer = usePointerTools({
   canvas: board,
@@ -88,6 +98,10 @@ onBeforeUnmount(() => {
   flex: 1;
   min-height: 0;
   overflow: auto;
+  /* 手势拖到边界时不要带动整页滚动或触发下拉刷新 */
+  overscroll-behavior: contain;
+  /* 手势拖到边界时不要带动整页滚动或触发下拉刷新 */
+  overscroll-behavior: contain;
   padding: 14px;
   background: var(--mc-stage);
   background-image: repeating-linear-gradient(

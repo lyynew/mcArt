@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { isCoarsePointer } from '@/shared/pointer'
 import { notice } from '../store/view-state'
 import { useEditor } from '../store/editor'
 import type { ToolId } from '../types'
@@ -7,11 +8,14 @@ import type { ToolId } from '../types'
 /**
  * 舞台底栏：规格 / 方块数 / 用色数 / 光标位置 / 当前工具的提示。
  * 批量操作的临时回执（例如「已替换 128 格」）也显示在这里，盖过工具提示。
+ *
+ * 提示分鼠标与手指两套：手机上写「滚轮缩放 · 空格拖动」等于没写，
+ * 那边既没有滚轮也没有空格键。
  */
 const editor = useEditor()
 const { settings, stats } = editor
 
-const HINTS: Record<ToolId, string> = {
+const HINTS_POINTER: Record<ToolId, string> = {
   brush: '左键绘制 · 滚轮缩放 · 空格拖动',
   eraser: '左键擦成空格 · 滚轮缩放',
   picker: '左键吸取方块 · 滚轮缩放',
@@ -20,7 +24,19 @@ const HINTS: Record<ToolId, string> = {
   pan: '左键拖动画面 · 滚轮缩放',
 }
 
-const hint = computed(() => notice.value || HINTS[settings.tool])
+const HINTS_TOUCH: Record<ToolId, string> = {
+  brush: '单指绘制 · 双指缩放与平移',
+  eraser: '单指点按擦除 · 双指缩放与平移',
+  picker: '点按吸取方块 · 双指缩放',
+  fill: '点按填充整片连通同色区域 · 双指缩放',
+  replace: '点实心方块 → 全图同种替换 · 双指缩放',
+  pan: '单指拖动画面 · 双指缩放',
+}
+
+const hint = computed(() => {
+  if (notice.value) return notice.value
+  return (isCoarsePointer.value ? HINTS_TOUCH : HINTS_POINTER)[settings.tool]
+})
 
 const hoverText = computed(() => {
   const h = editor.hover.value
@@ -37,7 +53,8 @@ const sizeText = computed(() => `${settings.n} × ${settings.n}`)
     <span><i class="stage-foot__dot" />规格 <b>{{ sizeText }}</b></span>
     <span>方块 <b>{{ stats.solid }}</b></span>
     <span>用色 <b>{{ stats.colors }}</b></span>
-    <span class="stage-foot__hover">{{ hoverText }}</span>
+    <!-- 手指没有悬停状态，这一栏在触屏上永远显示「-」，直接省掉 -->
+    <span v-if="!isCoarsePointer" class="stage-foot__hover">{{ hoverText }}</span>
     <span class="stage-foot__hint" :class="{ 'stage-foot__hint--notice': notice }">{{ hint }}</span>
   </div>
 </template>

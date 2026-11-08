@@ -95,4 +95,18 @@ withDefaults(
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* 触屏：整行高度就是点击区域，勾选框本身也放大一点 */
+@media (pointer: coarse) {
+  .mc-switch {
+    padding: 6px 0;
+    font-size: 13px;
+  }
+
+  .mc-switch__box {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+  }
+}
 </style>

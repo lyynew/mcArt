@@ -124,4 +124,20 @@ withDefaults(
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/*
+ * 触屏：按手指尺寸放大。
+ * 桌面 22px 高的小按钮在手机上点十次错三次，工具栏又是高频操作区。
+ */
+@media (pointer: coarse) {
+  .mc-btn--sm {
+    padding: 7px 9px;
+    font-size: 12.5px;
+  }
+
+  .mc-btn--icon {
+    width: 36px;
+    padding: 6px 0;
+  }
+}
 </style>

@@ -29,15 +29,41 @@ export interface BoardPaintOptions {
 const EMPTY_BG = '#f2f2ee'
 const EMPTY_CHECK = '#e2e2dc'
 
+/**
+ * 设定画布的显示尺寸与位图尺寸，随后由 paintBoard 重绘。
+ *
+ * 尺寸没变时不碰位图——重设 canvas.width 会清空画面。
+ */
+export function applyCanvasSize(canvas: HTMLCanvasElement, size: number, dpr: number): void {
+  const bitmap = Math.round(size * dpr)
+  if (canvas.width !== bitmap || canvas.height !== bitmap) {
+    canvas.width = bitmap
+    canvas.height = bitmap
+  }
+  applyCssSize(canvas, size)
+}
+
+/**
+ * 只改显示尺寸，保留位图内容。
+ *
+ * 触摸手势要在「改缩放」和「写滚动位置」之间同步跑完这一步：
+ * 尺寸若等下一帧重绘才更新，手势写 scrollLeft 会被旧的内容尺寸夹住——
+ * 表现就是双指拖动看着没反应，或者拖 120px 只滚 90px。
+ * 只改 CSS 尺寸不会清空画面，最多模糊一帧，下一帧重绘就清晰了。
+ */
+export function applyCssSize(canvas: HTMLCanvasElement, size: number): void {
+  const px = `${size}px`
+  if (canvas.style.width === px && canvas.style.height === px) return
+  canvas.style.width = px
+  canvas.style.height = px
+}
+
 export function paintBoard(canvas: HTMLCanvasElement, o: BoardPaintOptions): void {
   const { n, idx, blocks, cell, showGrid, shading, realTextures, focusIndex, textures } = o
   const size = n * cell
   const dpr = o.devicePixelRatio || 1
 
-  canvas.width = Math.round(size * dpr)
-  canvas.height = Math.round(size * dpr)
-  canvas.style.width = `${size}px`
-  canvas.style.height = `${size}px`
+  applyCanvasSize(canvas, size, dpr)
 
   const ctx = canvas.getContext('2d')
   if (!ctx) return

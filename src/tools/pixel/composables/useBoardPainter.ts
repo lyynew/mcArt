@@ -4,7 +4,7 @@ import { preloadTextures } from '@/core/textures'
 import { buffers, revision } from '../store/buffers'
 import { useEditor } from '../store/editor'
 import { overrides } from '../store/texture-pack'
-import { paintBoard } from '../board-painter'
+import { applyCssSize, paintBoard } from '../board-painter'
 
 /**
  * 把 store 的数据接到 canvas 上。
@@ -85,5 +85,15 @@ export function useBoardPainter(canvas: Ref<HTMLCanvasElement | null>, cell: Ref
     if (frame) cancelAnimationFrame(frame)
   })
 
-  return { repaint: schedule, textures }
+  /**
+   * 手势期间同步更新显示尺寸。
+   * 不走绘制帧，因为滚动范围必须立刻反映新的画布大小（原因见 applyCssSize 的注释）。
+   */
+  function syncCssSize(): void {
+    const el = canvas.value
+    if (!el || !buffers.n) return
+    applyCssSize(el, buffers.n * cell.value)
+  }
+
+  return { repaint: schedule, syncCssSize, textures }
 }

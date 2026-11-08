@@ -6,6 +6,8 @@
 *::before,
 *::after {
   box-sizing: border-box;
+  /* 移动端点击时的蓝色高亮块会盖掉像素按钮的立体感，统一去掉 */
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -31,6 +33,8 @@ body {
   /* 高度必须锁死：编辑器里 canvas 尺寸依赖容器高度，
      若允许 min-height 撑开，会变成「画布越大 → 容器越高 → 画布更大」的循环 */
   height: 100%;
+  /* 移动端地址栏收起/展开会改变视口高度，用动态视口单位避免整页跟着跳 */
+  height: 100dvh;
 }
 
 h1,
@@ -46,6 +50,20 @@ select,
 textarea {
   font: inherit;
   color: inherit;
+}
+
+/* 手指点按不要等 300ms 的双击判定，编辑器里每一次点击都要即时响应 */
+button,
+a,
+label {
+  touch-action: manipulation;
+}
+
+/* 手指点按不要等 300ms 的双击判定，编辑器里每一次点击都要即时响应 */
+button,
+a,
+label {
+  touch-action: manipulation;
 }
 
 a {

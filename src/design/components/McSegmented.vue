@@ -97,4 +97,11 @@ withDefaults(
 .mc-seg__item.is-on:hover {
   background: var(--mc-accent-hover);
 }
+
+@media (pointer: coarse) {
+  .mc-seg__item {
+    padding: 8px var(--sp-2);
+    font-size: 12.5px;
+  }
+}
 </style>

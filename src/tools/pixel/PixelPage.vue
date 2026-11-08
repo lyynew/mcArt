@@ -139,7 +139,9 @@ onBeforeUnmount(() => {
 
   .pixel__stage {
     order: -1;
+    /* 舞台排在面板前面，给小视口高度（地址栏展开时）也留出足够的作图区 */
     min-height: 62vh;
+    min-height: 58svh;
   }
 }
 </style>

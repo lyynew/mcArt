@@ -79,6 +79,15 @@ export function useCanvasView(
     zoomAtPoint(rect.left + rect.width / 2, rect.top + rect.height / 2, target)
   }
 
+  /** 直接设定单格像素，不做锚点修正（触摸手势自己算滚动位置） */
+  function setCell(next: number): number {
+    const target = clampZoom(next)
+    if (target === cell.value) return target
+    zoomPx.value = target
+    cell.value = target
+    return target
+  }
+
   /** 适应窗口 */
   function fit(): void {
     zoomPx.value = 0
@@ -104,5 +113,5 @@ export function useCanvasView(
 
   watch([n, zoomPx], recalc)
 
-  return { cell, zoomLabel, recalc, fit, wheel, zoomBy, fitCell }
+  return { cell, zoomLabel, recalc, fit, wheel, zoomBy, setCell, fitCell }
 }

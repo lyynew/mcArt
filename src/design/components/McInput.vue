@@ -56,4 +56,16 @@ withDefaults(
 .mc-input[type='search']::-webkit-search-cancel-button {
   appearance: none;
 }
+
+/*
+ * iOS 对字号小于 16px 的输入框，会在聚焦时自动放大整个页面，
+ * 失焦后也不会缩回去——搜索框一点就把界面撑花了。
+ * 唯一可靠的规避方式就是把字号提到 16px。
+ */
+@media (pointer: coarse) {
+  .mc-input {
+    font-size: 16px;
+    padding: 6px var(--sp-3);
+  }
+}
 </style>
