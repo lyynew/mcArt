@@ -2,6 +2,7 @@
 import { RouterLink, useRoute } from 'vue-router'
 import { McChip } from '@/design/components'
 import { TOOLS } from '@/tools/registry'
+import { APP_VERSION, IS_PRERELEASE } from '@/shared/version'
 
 /**
  * 顶栏：等距草方块标志 + 站名 + 工具导航 + 外链。
@@ -37,7 +38,16 @@ const github = 'https://github.com/lyynew/mcArt'
         </svg>
       </span>
       <span class="brand__text">
-        <strong>mcArt</strong>
+        <strong>
+          mcArt
+          <span
+            v-if="IS_PRERELEASE"
+            class="brand__tag"
+            :title="`当前为测试版：${APP_VERSION}，功能与数据格式仍可能调整`"
+          >
+            BETA
+          </span>
+        </strong>
         <small>Minecraft 网页工具集</small>
       </span>
     </RouterLink>
@@ -141,6 +151,26 @@ const github = 'https://github.com/lyynew/mcArt'
   text-shadow:
     2px 2px 0 #191510,
     0 0 9px rgb(120 200 90 / 22%);
+  /* 站名与 BETA 标签同一基线，避免标签把行高顶起来 */
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+/* 测试版标签：像素风小膏药，不用斜体，靠底色和描边区分 */
+.brand__tag {
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.1em;
+  color: #1b2410;
+  background: var(--mc-accent);
+  border: 1px solid #000;
+  box-shadow:
+    inset 1px 1px 0 var(--mc-accent-hi),
+    inset -1px -1px 0 var(--mc-accent-lo);
+  cursor: help;
 }
 
 .brand__text small {

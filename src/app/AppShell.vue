@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AppHeader from './AppHeader.vue'
+import { APP_VERSION, APP_VERSION_LABEL } from '@/shared/version'
 
 const route = useRoute()
 // 工具页要占满视口高度，页脚在那种页面里只会挤压舞台
@@ -17,6 +18,10 @@ const showFooter = computed(() => route.path === '/')
   </main>
   <footer v-if="showFooter" class="site-footer">
     <span>mcArt · 代码 MIT</span>
+    <span class="site-footer__sep">·</span>
+    <span class="site-footer__ver" :title="`完整版本号 ${APP_VERSION}`">
+      {{ APP_VERSION_LABEL }}
+    </span>
     <span class="site-footer__sep">·</span>
     <span>方块贴图版权归 Mojang Studios，仅供个人制作像素画使用</span>
     <a class="site-footer__link" href="legacy/index.html">旧版页面</a>
@@ -44,6 +49,13 @@ const showFooter = computed(() => route.path === '/')
 
 .site-footer__sep {
   opacity: 0.6;
+}
+
+.site-footer__ver {
+  padding: 0 5px;
+  color: var(--mc-text-dim);
+  border: 1px solid rgb(255 255 255 / 14%);
+  cursor: help;
 }
 
 .site-footer__link {

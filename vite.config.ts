@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -9,9 +10,17 @@ import vue from '@vitejs/plugin-vue'
  */
 const base = process.env.GITHUB_ACTIONS ? '/mcArt/' : '/'
 
+/** 版本号只在 package.json 里维护一处，界面通过 __APP_VERSION__ 读取 */
+const pkg = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf-8'),
+) as { version: string }
+
 export default defineConfig({
   base,
   plugins: [vue()],
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
