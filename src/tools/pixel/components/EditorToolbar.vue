@@ -44,7 +44,7 @@ const BRUSHES = [1, 2, 3]
 <template>
   <div class="toolbar">
     <div class="toolbar__line">
-      <div class="toolbar__group">
+      <div class="toolbar__group toolbar__group--tools">
         <span class="toolbar__label">工具</span>
         <McButton
           v-for="item in TOOLS"
@@ -152,6 +152,35 @@ const BRUSHES = [1, 2, 3]
   margin: 0 3px;
   background: var(--mc-btn);
   box-shadow: 1px 0 0 #fff;
+}
+
+/*
+ * 窄屏上按钮会换行，分隔线常常孤零零挂在行尾，看起来像多出来的一根竖条。
+ * 这时候靠组间距分组已经够了，直接收掉。
+ */
+@media (max-width: 620px) {
+  /* 换行后分隔线常常孤零零挂在行尾，靠组间距分组已经够了 */
+  .toolbar__sep {
+    display: none;
+  }
+
+  .toolbar__line {
+    gap: 5px;
+  }
+
+  /*
+   * 六个工具按钮在 360px 下会挤成「5 个 + 抓手单独一行」，
+   * 改成三列网格，两行排满，宽度一致也更好点。
+   */
+  .toolbar__group--tools {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .toolbar__group--tools > .toolbar__label {
+    grid-column: 1 / -1;
+  }
 }
 
 .toolbar__zoom {

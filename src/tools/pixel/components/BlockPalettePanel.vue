@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { McInput, McNote, McSwitch, McWindow } from '@/design/components'
+import { isCoarsePointer } from '@/shared/pointer'
 import { FAMILIES } from '@/core/blocks'
 import { ALL_BLOCKS, FAMILY_LABELS, type PaletteBlock } from '@/core/palettes'
 import { useEditor } from '../store/editor'
@@ -72,7 +73,12 @@ function onSelect(block: PaletteBlock): void {
       @clear="editor.clearHotSlot"
     />
 
-    <McNote>先点一个格子选中，再点上面的方块放进去；右键格子清空</McNote>
+    <!-- 触屏没有右键，长按才是清空 -->
+    <McNote>
+      先点一个格子选中，再点上面的方块放进去；{{
+        isCoarsePointer ? '长按格子清空' : '右键格子清空'
+      }}
+    </McNote>
   </McWindow>
 </template>
 

@@ -130,9 +130,21 @@ onBeforeUnmount(() => {
     grid-template-columns: 1fr;
     overflow: visible;
     height: auto;
+    /*
+     * 单列时必须彻底退出「撑满视口」的角色。
+     * 只写 height: auto 是不够的：顶部那条 flex: 1 仍然会把它压成视口剩余高度，
+     * grid 的行随之被压缩，而两列都带 min-height: 0（宽屏用来内部滚动的），
+     * 结果就是每一列被压成一两百像素、内容溢出到外面、左右两栏互相盖住。
+     * 改成按内容撑高，滚动交给外层 .site-main。
+     */
+    flex: 0 0 auto;
+    grid-auto-rows: max-content;
+    align-content: start;
   }
 
   .pixel__col {
+    /* 同理：允许列被压扁是宽屏的滚动技巧，单列下必须放开 */
+    min-height: auto;
     overflow: visible;
     max-height: none;
   }
