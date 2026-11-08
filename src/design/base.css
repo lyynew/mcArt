@@ -28,7 +28,9 @@ body {
 #app {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  /* 高度必须锁死：编辑器里 canvas 尺寸依赖容器高度，
+     若允许 min-height 撑开，会变成「画布越大 → 容器越高 → 画布更大」的循环 */
+  height: 100%;
 }
 
 h1,

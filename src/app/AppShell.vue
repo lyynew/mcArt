@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { computed } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 import AppHeader from './AppHeader.vue'
+
+const route = useRoute()
+// 工具页要占满视口高度，页脚在那种页面里只会挤压舞台
+const showFooter = computed(() => route.path === '/')
 </script>
 
 <template>
@@ -10,7 +15,7 @@ import AppHeader from './AppHeader.vue'
       <component :is="Component" />
     </RouterView>
   </main>
-  <footer class="site-footer">
+  <footer v-if="showFooter" class="site-footer">
     <span>mcArt · 代码 MIT</span>
     <span class="site-footer__sep">·</span>
     <span>方块贴图版权归 Mojang Studios，仅供个人制作像素画使用</span>
@@ -24,6 +29,7 @@ import AppHeader from './AppHeader.vue'
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
 .site-footer {

@@ -5,6 +5,7 @@
 export { default as BlockMosaic } from './BlockMosaic.vue'
 export { default as McButton } from './McButton.vue'
 export { default as McChip } from './McChip.vue'
+export { default as McDropzone } from './McDropzone.vue'
 export { default as McInput } from './McInput.vue'
 export { default as McModal } from './McModal.vue'
 export { default as McNote } from './McNote.vue'

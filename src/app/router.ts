@@ -18,20 +18,18 @@ const router = createRouter({
     {
       path: '/pixel',
       name: 'pixel',
-      component: () => import('@/pages/ComingSoonPage.vue'),
-      props: { toolId: 'pixel' },
+      // 工具页按需加载：首屏不该为整个编辑器的贴图与算法付费
+      component: () => import('@/tools/pixel/PixelPage.vue'),
     },
     {
       path: '/atlas',
       name: 'atlas',
-      component: () => import('@/pages/ComingSoonPage.vue'),
-      props: { toolId: 'atlas' },
+      component: () => import('@/tools/atlas/AtlasPage.vue'),
     },
     {
       path: '/nbt',
       name: 'nbt',
-      component: () => import('@/pages/ComingSoonPage.vue'),
-      props: { toolId: 'nbt' },
+      component: () => import('@/tools/nbt-viewer/NbtViewerPage.vue'),
     },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
