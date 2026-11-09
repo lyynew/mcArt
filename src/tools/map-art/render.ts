@@ -38,3 +38,27 @@ export function createMapCanvas(colors: Uint8Array, lookup: ColorLookup): HTMLCa
   paintMap(canvas, colors, lookup)
   return canvas
 }
+
+/** 高度图视图：越亮越高，用来核对阶梯起伏与 noobline 是否连贯 */
+export function paintHeightMap(
+  canvas: HTMLCanvasElement,
+  heights: Int16Array,
+  maxHeight: number,
+): void {
+  if (canvas.width !== MAP_SIZE) canvas.width = MAP_SIZE
+  if (canvas.height !== MAP_SIZE) canvas.height = MAP_SIZE
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('无法创建画布上下文')
+
+  const image = ctx.createImageData(MAP_SIZE, MAP_SIZE)
+  const px = image.data
+  for (let i = 0; i < heights.length; i++) {
+    const t = maxHeight > 0 ? heights[i]! / maxHeight : 0
+    const o = i * 4
+    px[o] = 40 + t * 180
+    px[o + 1] = 44 + t * 200
+    px[o + 2] = 30 + t * 90
+    px[o + 3] = 255
+  }
+  ctx.putImageData(image, 0, 0)
+}

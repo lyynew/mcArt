@@ -130,6 +130,24 @@ export function ciede2000(
 }
 
 /**
+ * sRGB 单通道 → 线性光（0–1）。
+ *
+ * 误差扩散必须在线性光里做：gamma 编码的 sRGB 数值差和人眼感知不成比例，
+ * 直接在 0–255 上扩散误差，暗部渐变容易发脏、亮部又容易过冲。
+ * 颜色「选谁」仍走 CIEDE2000（在 Lab 上），只有「误差往哪儿传」用线性光。
+ */
+export function srgbToLinear(v: number): number {
+  const c = Math.max(0, Math.min(255, v)) / 255
+  return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+}
+
+/** 线性光（0–1）→ sRGB 单通道 0–255 */
+export function linearToSrgb(v: number): number {
+  const c = Math.max(0, Math.min(1, v))
+  return (c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055) * 255
+}
+
+/**
  * 复用缓冲区，避免每个像素都新建数组。
  * 只在同步调用内部使用，不会跨调用残留语义。
  */

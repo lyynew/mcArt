@@ -46,7 +46,7 @@ Minecraft 网页工具集：方块像素画生成器、地图画生成器、方�
 | 工具 | 做什么 |
 | --- | --- |
 | 方块像素画生成器 `/tools/pixel` | 图片转方块画，能改能画，导出 `.nbt` 结构文件、施工图与材料清单 |
-| 地图画生成器 `/tools/map-art` | 图片写进地图物品，244 色 + 抖动，导出 `map_#.dat`、ZIP 说明包、`give` 指令与 PNG |
+| 地图画生成器 `/tools/map-art` | 三条路线：写地图数据 244 色 / 平铺 59 色 / 立体阶梯 177 色；导出 `map_#.dat`、`give`、`.litematic`、分块 `.nbt` 与 PNG |
 | 方块图鉴 `/tools/atlas` | 142 种方块的贴图、平均色与 ID，一键复制 `give` 命令 |
 | 结构文件查看器 `/tools/nbt` | 拖入 `.nbt` 分层看结构、统计材料，是导出的逆运算 |
 
@@ -120,7 +120,9 @@ src/
   tools/
     ToolShell.vue 工具页标准三栏外壳（新工具统一用它）
     pixel/        像素画生成器：store / composables / components
-    map-art/      地图画生成器：model / 纯算法 / store / components（新工具的参考实现）
+    map-art/      地图画生成器（新工具的参考实现）：
+                  model / map-colors / map-blocks / rasterize / quantize / heightmap
+                  / voxels / structure / litematic / render / export / store / components
     atlas/        方块图鉴
     nbt-viewer/   结构文件查看器
   pages/          独立应用入口的首页
@@ -150,6 +152,13 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
   `store.ts` 用 `shared/debounce.ts`，首帧 `flush()` 立刻出结果。
 - **最近色缓存的键要精确**。按 6bit 粗量化会让两个不同颜色撞键，扫描顺序一换结果就变
   （蛇形抖动踩过）；地图画改用完整 8bit RGB 做键，重复色照样能省下绝大多数计算。
+- **误差扩散在线性光里做**。gamma 编码的 sRGB 数值差和人眼感知不成比例，
+  在 0–255 上扩散会让暗部发脏；`core/color.ts` 的 `srgbToLinear` / `linearToSrgb`
+  专供这条路径，选色仍走 CIEDE2000。
+- **立体高度差只比符号**。逐列对齐最低点（noobline 逐列可不同高）比全图共用基准
+  省支撑方块；「下降时一次多降几格」反而会拉大跨度，别再试。
+- **Litematica 的 BlockStates 不是原版 BitArray**：条目连续打包、可跨 64 位边界，
+  下标 0 必须是 air，顺序是 `y*(x*z) + z*x + x`。全用 BigInt 写，别用 Number 碰第 63 位。
 - 非响应式对象被 `computed` 依赖时，必须提供版本号作为触发点——否则那个 computed 首次求值后
   永远不会失效（`hasImage` 就踩过这个坑，导致整个编辑器变成只读）。
 - **缩放步进用加法，不要「乘系数再取整」**。取整会把小尺寸的步进吃掉：2 × 1.15 = 2.3 → 2，
@@ -178,9 +187,13 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 - `csv.test.ts` / `projection.test.ts` —— 材料清单格式、结构文件的分层投影与统计
 - `tools/map-art/map-colors.test.ts` —— 244 色的展开、明暗系数与色号唯一性
 - `tools/map-art/rasterize.test.ts` —— 平滑 / 像素两种采样、透明填充与调色
-- `tools/map-art/quantize.test.ts` —— 三种抖动只产出合法色号、零强度与「无抖动」逐格一致
+- `tools/map-art/quantize.test.ts` —— 线性光转换、五种抖动只产出合法色号、零强度与「无抖动」逐格一致
 - `tools/map-art/map-dat.test.ts` —— `map_#.dat` 字节被 `parseNbt` 完整读回、gzip / ZIP 可解、
   `give` 指令与文件路径按版本分流
+- `tools/map-art/heightmap.test.ts` —— 高度差符号逐格等于明暗档、逐列对齐确实省支撑
+- `tools/map-art/structure.test.ts` —— 48³ 分块尺寸与 `parseStructure` 兼容回读
+- `tools/map-art/litematic.test.ts` —— 位打包跨 64 位边界可解回、Version 6 根结构合规；
+  另用独立的 Python `litemapy` 对 18 万体素做过逐格交叉验证
 
 `nbt-read.ts` 是只读的 NBT 解析器，既用于测试回读，也是结构查看器的基础；
 `nbt-writer.ts` 是它对应的写入器，结构文件与地图数据共用。
@@ -207,7 +220,9 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 - 方块贴图取自 Minecraft Java 版资源，版权归 Mojang Studios 所有，仅供个人制作像素画使用，
   请勿商用或二次分发。**这部分不包含在 MIT 许可内。**
 - 地图基础色表、明暗系数、`map_#.dat` 字段与 DataVersion 来自 Minecraft Wiki 的公开游戏数据；
-  CIEDE2000 / Floyd–Steinberg / Bayer 是公开算法，实现均为本项目自写，没有复制第三方代码。
+  方块 → 基础色来自 `plonck/palette`（MIT）导出的 `blocks.csv`；`.litematic` 格式来自公开的
+  Litematica Version 6 规格说明。CIEDE2000 / Floyd–Steinberg / Atkinson / Bayer 是公开算法，
+  实现均为本项目自写，没有复制第三方代码。
 - 导出的 PNG 与施工图始终是纯色；真实材质只用于画布预览，这样施工图看得更清楚。
 - 结构方块单次上限 48×48，更大的画幅会自动分块打包成 zip，附载入说明。
 

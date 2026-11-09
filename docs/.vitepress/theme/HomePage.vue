@@ -54,9 +54,9 @@ const heroSrc = withBase('/hero-block.svg')
           <span class="home-card__no">02 / MAP ART</span>
           <span class="home-card__name">地图画生成器</span>
           <p class="home-card__desc">
-            图片写进地图物品，244 色 + 抖动，导出 map_#.dat、give 指令与 PNG 预览。
+            写地图数据、平铺或立体阶梯，导出 map_#.dat、give 指令与 .litematic 施工文件。
           </p>
-          <span class="home-card__foot">128 × 128 · 244 色 →</span>
+          <span class="home-card__foot">128 × 128 · 立体阶梯 →</span>
         </a>
         <a class="home-card" href="./tools/atlas.html">
           <span class="home-card__no">03 / LOOK UP</span>

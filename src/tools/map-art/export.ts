@@ -14,7 +14,10 @@ import { canvasToBlob } from '@/shared/download'
 import { buildMapNbt } from './map-dat'
 import { COLOR_BY_ID } from './map-colors'
 import { createMapCanvas } from './render'
-import { versionOf, type MapOptions } from './model'
+import { buildLitematic } from './litematic'
+import { buildPlacementNote, buildStructureChunks, type BuildInput } from './structure'
+import type { HeightMap } from './heightmap'
+import { versionOf, type BuildOptions, type MapOptions } from './model'
 
 export function mapFileName(options: MapOptions): string {
   const v = versionOf(options.version)
@@ -65,6 +68,8 @@ export function instructions(options: MapOptions): string {
     '',
     '地图已写入 locked=1，游戏不会按地形重绘覆盖画面。',
     '透明像素写成色号 0，在地图上显示为未探索区域。',
+    '若同时下载了施工文件（.litematic / 分块 .nbt），施工完成后游戏会自行绘制同一幅图；',
+    '这份 .dat 可以先当作画面预览，不必先跑一遍地图。',
     '',
     '本文件由 mcArt 生成，图片不上传，全部在浏览器本地计算。',
     '地图色表来自游戏公开数据；色差用 CIEDE2000，抖动为 Floyd–Steinberg / Bayer 有序抖动。',
@@ -99,4 +104,41 @@ export function buildPngBlob(colors: Uint8Array): Promise<Blob> {
 
 export function asBlob(bytes: Uint8Array, type = 'application/octet-stream'): Blob {
   return new Blob([bytes as BlobPart], { type })
+}
+
+export interface BuildExportInput {
+  colors: Uint8Array
+  heightMap: HeightMap
+  build: BuildOptions
+  options: MapOptions
+  name: string
+}
+
+/** 两种施工导出共用同一份体素输入，保证 .litematic 与 .nbt 分块内容一致 */
+function buildInputOf(input: BuildExportInput): BuildInput {
+  return {
+    colors: input.colors,
+    heights: input.heightMap.heights,
+    noobline: input.heightMap.noobline,
+    maxHeight: input.heightMap.maxHeight,
+    supportBlock: input.build.supportBlock,
+    withNoobline: input.build.noobline,
+    dataVersion: versionOf(input.options.version).dataVersion,
+  }
+}
+
+export async function buildLitematicBytes(input: BuildExportInput): Promise<Uint8Array> {
+  return buildLitematic({ ...buildInputOf(input), name: input.name })
+}
+
+/** 结构分块 + 摆放说明打成一个 ZIP */
+export async function buildStructureZipBytes(input: BuildExportInput): Promise<Uint8Array> {
+  const voxel = buildInputOf(input)
+  const chunks = await buildStructureChunks(voxel)
+  const entries = chunks.map((c) => ({ name: `structures/${c.name}`, data: c.data }))
+  entries.push({
+    name: '摆放说明.txt',
+    data: buildPlacementNote(chunks, voxel, input.heightMap),
+  })
+  return zipStored(entries)
 }

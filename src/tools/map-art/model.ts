@@ -3,7 +3,8 @@
  *
  * 一份文件里放齐所有「用户能改的量」和游戏侧的常量表，
  * 组件不写死 128、不写死版本号，算法层也不认识 UI。
- * 数据来源：Minecraft Wiki「Map item format / Data version / Java Edition level format」。
+ * 数据来源：Minecraft Wiki「Map item format / Data version / Java Edition level format」
+ * 与 plonck/palette（MIT）从 1.21.11 客户端导出的 blocks.csv。
  */
 
 /** 一张地图固定 128×128，colors 数组必须正好这么长 */
@@ -13,10 +14,20 @@ export const MAP_PIXELS = MAP_SIZE * MAP_SIZE
 /** 色号 0 表示未探索（透明），不能拿它当颜色用 */
 export const COLOR_TRANSPARENT = 0
 
+/** 结构方块单次加载上限，施工文件按这个尺寸切块 */
+export const STRUCT_CHUNK = 48
+
 export type SamplingMode = 'smooth' | 'pixel'
-export type DitherMode = 'none' | 'floyd' | 'bayer'
-export type ShadeMode = 'all' | 'flat'
+export type DitherMode = 'none' | 'floyd' | 'atkinson' | 'bayer' | 'bayer8'
 export type BackgroundMode = 'transparent' | 'white' | 'black'
+
+/**
+ * 三种产出路线。
+ *  data      —— 直接把 244 色写进 map_#.dat，四档明暗都能用，不用摆方块
+ *  flat      —— 平铺摆方块；同高只出 220 档，59 种基础色
+ *  staircase —— 立体阶梯；高度差出前三档，59 × 3 = 177 色，需要施工图
+ */
+export type BuildMode = 'data' | 'flat' | 'staircase'
 
 export interface ImageOptions {
   /** 平滑适合照片，像素适合像素画与像素字 */
@@ -25,16 +36,29 @@ export interface ImageOptions {
   contrast: number
   /** -60 ~ 60 */
   saturation: number
-  /** 半透明/透明像素怎么处理 */
+  /** 半透明/透明像素怎么处理；摆方块时透明会被强制填实 */
   background: BackgroundMode
 }
 
 export interface ColorOptions {
-  /** all = 61 基色 × 4 明暗；flat = 只用原色，方便真的平铺摆方块 */
-  shades: ShadeMode
   dither: DitherMode
-  /** Floyd–Steinberg 误差扩散强度，0 ~ 100 */
+  /** 误差扩散强度，0 ~ 100 */
   strength: number
+  /** 抖动后把孤立且感知色差很小的格子并回邻色 */
+  despeckle: boolean
+}
+
+export interface BuildOptions {
+  mode: BuildMode
+  /**
+   * 高度压缩：逐列把最低点对齐到 0（noobline 逐列可不同高），支撑方块最少。
+   * 关掉则全图共用一个基准，回到社区里常见的经典阶梯。
+   */
+  compress: boolean
+  /** 支撑方块与 noobline 用的廉价实心方块 ID */
+  supportBlock: string
+  /** 北边界外多铺一行，固定第一行的明暗档 */
+  noobline: boolean
 }
 
 export const DIMENSIONS = [
@@ -91,9 +115,16 @@ export const DEFAULT_IMAGE_OPTIONS: ImageOptions = {
 }
 
 export const DEFAULT_COLOR_OPTIONS: ColorOptions = {
-  shades: 'all',
   dither: 'floyd',
   strength: 70,
+  despeckle: false,
+}
+
+export const DEFAULT_BUILD_OPTIONS: BuildOptions = {
+  mode: 'data',
+  compress: true,
+  supportBlock: 'dirt',
+  noobline: true,
 }
 
 export const DEFAULT_MAP_OPTIONS: MapOptions = {
@@ -115,4 +146,15 @@ export function clampMapId(value: number): number {
 export function clampCenter(value: number): number {
   if (!Number.isFinite(value)) return 0
   return Math.min(2147483647, Math.max(-2147483648, Math.trunc(value)))
+}
+
+/**
+ * 明暗档 → 当前格相对北侧格的高度差符号。
+ * 中文 Minecraft Wiki 的例子：同高乘 220，高于北侧乘 255，低于北侧乘 180；
+ * 第 4 档（135）只在深水处出现，摆方块拿不到。
+ */
+export function shadeToStep(shade: number): -1 | 0 | 1 {
+  if (shade === 0) return -1
+  if (shade === 2) return 1
+  return 0
 }

@@ -16,6 +16,7 @@ export type NbtValue =
   | { [key: string]: NbtValue }
   | Uint8Array
   | Int32Array
+  | BigInt64Array
 
 export const TAG = {
   End: 0,
@@ -146,8 +147,10 @@ class Reader {
       }
       case TAG.LongArray: {
         const len = this.i32()
-        for (let i = 0; i < len; i++) this.i64()
-        return []
+        const out = new BigInt64Array(len)
+        for (let i = 0; i < len; i++) out[i] = this.view.getBigInt64(this.p + i * 8)
+        this.p += len * 8
+        return out
       }
       default:
         throw new Error(`不认识的 NBT 标签类型：${type}（偏移 ${this.p}）`)

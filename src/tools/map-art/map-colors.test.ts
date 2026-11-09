@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest'
 import {
   BASE_COLORS,
   COLOR_BY_ID,
+  DATA_COLORS,
   FLAT_COLORS,
   MAP_COLORS,
   SHADE_MULTIPLIERS,
+  STAIRCASE_COLORS,
   describeColor,
   paletteOf,
 } from './map-colors'
+import { BUILDABLE_BASES, BLOCK_OF_BASE, blockOfColor } from './map-blocks'
 
 describe('地图色表', () => {
   it('61 个基础色 × 4 档 = 244 色，色号连续且唯一', () => {
@@ -31,11 +34,27 @@ describe('地图色表', () => {
     expect(grass[3]!.rgb[0]).toBeLessThan(grass[0]!.rgb[0])
   })
 
-  it('平面色板只有原色档', () => {
-    expect(FLAT_COLORS).toHaveLength(61)
-    expect(FLAT_COLORS.every((c) => c.shade === 2 && c.id % 4 === 2)).toBe(true)
-    expect(paletteOf('all')).toBe(MAP_COLORS)
+  it('平铺用 220 档（同高），并排除两种摆不出来的基础色', () => {
+    expect(BUILDABLE_BASES).toHaveLength(59)
+    expect(FLAT_COLORS).toHaveLength(59)
+    expect(FLAT_COLORS.every((c) => c.shade === 1 && c.id % 4 === 1)).toBe(true)
+    expect(paletteOf('data')).toBe(DATA_COLORS)
     expect(paletteOf('flat')).toBe(FLAT_COLORS)
+  })
+
+  it('立体阶梯只用自然可得的前三档', () => {
+    expect(STAIRCASE_COLORS).toHaveLength(59 * 3)
+    expect(STAIRCASE_COLORS.every((c) => c.shade !== 3)).toBe(true)
+    expect(paletteOf('staircase')).toBe(STAIRCASE_COLORS)
+  })
+
+  it('方块表与基础色一一对应，两种不可建色为 null', () => {
+    expect(Object.keys(BLOCK_OF_BASE)).toHaveLength(61)
+    expect(BLOCK_OF_BASE[7]).toBeNull() // PLANT：只有树叶与花草
+    expect(BLOCK_OF_BASE[12]).toBeNull() // WATER：只有水与水生植物
+    expect(blockOfColor(0)).toBeNull()
+    expect(blockOfColor(8 * 4 + 1)).toBe('white_concrete')
+    expect(blockOfColor(31 * 4 + 2)).toBe('prismarine_bricks')
   })
 
   it('色号 0 是透明，描述里能读出色名与档位', () => {

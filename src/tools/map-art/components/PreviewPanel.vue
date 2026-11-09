@@ -1,26 +1,32 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { McWindow } from '@/design/components'
+import { McButton, McWindow } from '@/design/components'
 import { useMapArt } from '../store'
 import { COLOR_BY_ID, describeColor } from '../map-colors'
-import { paintMap } from '../render'
+import { paintHeightMap, paintMap } from '../render'
 import { MAP_PIXELS, MAP_SIZE } from '../model'
 
-/** 预览：画布 + 统计 + 悬浮读数。渲染函数与 PNG 导出共用。 */
-const { result, hasImage } = useMapArt()
+/** 预览：画面 / 高度图两种视图 + 统计 + 悬浮读数。渲染函数与 PNG 导出共用。 */
+const { result, hasImage, isBuild, heightMap } = useMapArt()
 const canvas = ref<HTMLCanvasElement | null>(null)
 const hover = ref<{ x: number; y: number; id: number } | null>(null)
+const view = ref<'color' | 'height'>('color')
 
 const emptyColors = new Uint8Array(MAP_PIXELS)
+const showHeight = computed(
+  () => isBuild.value && view.value === 'height' && heightMap.value !== null,
+)
 
 function repaint(): void {
   const el = canvas.value
   if (!el) return
-  paintMap(el, result.value?.colors ?? emptyColors, COLOR_BY_ID)
+  const map = heightMap.value
+  if (showHeight.value && map) paintHeightMap(el, map.heights, map.maxHeight)
+  else paintMap(el, result.value?.colors ?? emptyColors, COLOR_BY_ID)
 }
 
 onMounted(repaint)
-watch(result, repaint)
+watch([result, heightMap, showHeight], repaint)
 
 function onMove(e: MouseEvent): void {
   const el = canvas.value
@@ -35,6 +41,10 @@ function onMove(e: MouseEvent): void {
 }
 
 const hoverText = computed(() => {
+  if (showHeight.value && heightMap.value && hover.value) {
+    const h = heightMap.value.heights[hover.value.y * MAP_SIZE + hover.value.x]!
+    return `${hover.value.x}, ${hover.value.y} · 高度 ${h}`
+  }
   const h = hover.value
   return h ? `${h.x}, ${h.y} · ${describeColor(h.id)}` : '把鼠标移到画面上看色号'
 })
@@ -44,6 +54,12 @@ const stats = computed(() => {
   return r
     ? `用色 ${r.used} 种 · 透明 ${r.transparent.toLocaleString('zh-CN')} 格 · 平均 ΔE ${r.meanError.toFixed(1)}`
     : '等待图片'
+})
+
+const buildStats = computed(() => {
+  const m = heightMap.value
+  if (!m) return ''
+  return `${m.maxHeight + 1} 层 · ${m.totalBlocks.toLocaleString('zh-CN')} 方块 · 支撑 ${m.supportBlocks.toLocaleString('zh-CN')}`
 })
 </script>
 
@@ -61,6 +77,13 @@ const stats = computed(() => {
       />
       <div v-if="!hasImage" class="preview__empty">载入一张图片，这里会显示 128 × 128 的调色结果</div>
     </div>
+
+    <div v-if="isBuild" class="preview__tools">
+      <McButton size="sm" :active="view === 'color'" @click="view = 'color'">画面</McButton>
+      <McButton size="sm" :active="view === 'height'" @click="view = 'height'">高度图</McButton>
+      <span class="preview__build">{{ buildStats }}</span>
+    </div>
+
     <div class="preview__bar">
       <span>{{ stats }}</span>
       <span class="preview__hover">{{ hoverText }}</span>
@@ -101,6 +124,22 @@ const stats = computed(() => {
   color: var(--mc-text);
   font-size: var(--fs-sm);
   text-align: center;
+}
+
+.preview__tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border-top: var(--mc-bd) solid #000;
+  background: var(--mc-plate);
+}
+
+.preview__build {
+  margin-left: auto;
+  font-size: var(--fs-note);
+  color: var(--mc-ink-soft);
 }
 
 .preview__bar {

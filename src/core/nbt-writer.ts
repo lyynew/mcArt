@@ -25,6 +25,16 @@ export class NbtWriter {
     return this
   }
 
+  /** Litematica 的 BlockStates 是 long array，位运算必须用 BigInt 才不会丢符号位 */
+  i64(v: bigint): this {
+    let u = BigInt.asUintN(64, v)
+    for (let i = 7; i >= 0; i--) {
+      this.buf.push(Number(u & 255n))
+      u >>= 8n
+    }
+    return this
+  }
+
   /** 字符串按 UTF-8 编码，长度是 i16（超长字符串不该出现在这类文件里） */
   str(s: string): this {
     const bytes = new TextEncoder().encode(s)

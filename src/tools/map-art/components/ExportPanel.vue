@@ -7,11 +7,14 @@ import { useMapArt } from '../store'
 import {
   asBlob,
   buildDatBytes,
+  buildLitematicBytes,
   buildPngBlob,
+  buildStructureZipBytes,
   buildZipBytes,
   giveCommand,
   mapFileName,
   mapFilePath,
+  type BuildExportInput,
 } from '../export'
 import {
   DIMENSIONS,
@@ -22,8 +25,8 @@ import {
   type GameVersionId,
 } from '../model'
 
-/** 导出面板：参数、命令、四种产物。所有下载都经 shared/download，别各写一份。 */
-const { result, mapOptions, message } = useMapArt()
+/** 导出面板：参数、命令、地图数据与施工文件。所有下载都经 shared/download。 */
+const { result, heightMap, build, isBuild, mapOptions, message } = useMapArt()
 const copied = ref(false)
 const working = ref(false)
 
@@ -104,6 +107,41 @@ function savePng(): Promise<void> {
     name: `mcArt-map-${mapOptions.id}.png`,
   }))
 }
+
+/** 两种施工导出共用同一份输入，避免投影与结构分块对不上 */
+function buildExportInput(): BuildExportInput {
+  return {
+    colors: result.value!.colors,
+    heightMap: heightMap.value!,
+    build,
+    options: mapOptions,
+    name: `mcArt-map-${mapOptions.id}`,
+  }
+}
+
+function saveBuild(label: string, make: () => Promise<Uint8Array>, fileName: string): Promise<void> {
+  if (!heightMap.value) {
+    message.value = '高度图还没算好，稍等一下'
+    return Promise.resolve()
+  }
+  return run(label, async () => ({ blob: asBlob(await make()), name: fileName }))
+}
+
+function saveLitematic(): Promise<void> {
+  return saveBuild(
+    '投影文件',
+    () => buildLitematicBytes(buildExportInput()),
+    `mcArt-map-${mapOptions.id}.litematic`,
+  )
+}
+
+function saveStructureZip(): Promise<void> {
+  return saveBuild(
+    '结构分块',
+    () => buildStructureZipBytes(buildExportInput()),
+    `mcArt-map-${mapOptions.id}-structures.zip`,
+  )
+}
 </script>
 
 <template>
@@ -150,6 +188,9 @@ function savePng(): Promise<void> {
     <McButton size="sm" variant="primary" @click="copyCommand">
       {{ copied ? '已复制 ✓' : '复制 give 指令' }}
     </McButton>
+    <McNote v-if="isBuild">
+      施工完成后游戏会自己绘制地图；这份 .dat 可先当作画面预览，省得跑一遍图。
+    </McNote>
   </McWindow>
 
   <McWindow title="导出文件">
@@ -162,6 +203,21 @@ function savePng(): Promise<void> {
     </div>
     <McNote v-if="message">{{ message }}</McNote>
     <McNote v-else>单文件适合替换已有地图；ZIP 里附了分版本路径与编号说明。</McNote>
+  </McWindow>
+
+  <McWindow v-if="isBuild" title="施工文件">
+    <div class="export__buttons">
+      <McButton :disabled="!result || !heightMap || working" @click="saveLitematic">
+        下载 .litematic 投影
+      </McButton>
+      <McButton :disabled="!result || !heightMap || working" @click="saveStructureZip">
+        下载分块 .nbt（ZIP）
+      </McButton>
+    </div>
+    <McNote>
+      投影文件用 Litematica 直接载入；结构分块按 48³ 切开，包内附每张的相对位置。
+      两者都含顶层方块、支撑方块与 noobline。
+    </McNote>
   </McWindow>
 
   <McWindow title="放进存档">

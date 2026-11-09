@@ -8,14 +8,19 @@
  *
  * 基础色 RGB 与四档系数来自 Minecraft Wiki「Map item format」，
  * 属于游戏公开数据；这里只做展开与 Lab 预计算，不含任何第三方实现。
- * 系数顺序不是从亮到暗：档 3（135）才是最暗的。
+ *
+ * 四档由「当前格与北侧格的高度差」决定，不是颜色本身的属性：
+ *   档 0 = 180（比北侧低）／档 1 = 220（同高）／档 2 = 255（比北侧高）
+ *   档 3 = 135 最暗，只在深水处出现，摆方块拿不到。
+ * 所以系数顺序并不从亮到暗，平铺地面用的是档 1 而不是档 2。
  */
 import { rgbToLab, type ColorPoint, type Lab, type RGB } from '@/core/color'
-import { COLOR_TRANSPARENT } from './model'
+import { BUILDABLE_BASES } from './map-blocks'
+import { COLOR_TRANSPARENT, type BuildMode } from './model'
 
 /** 四档明暗的乘数，游戏里按 floor(base × m / 255) 取整 */
 export const SHADE_MULTIPLIERS = [180, 220, 255, 135] as const
-export const SHADE_LABELS = ['暗', '次暗', '原色', '深'] as const
+export const SHADE_LABELS = ['低于北侧 180', '同高 220', '高于北侧 255', '深水 135'] as const
 
 export interface BaseColor {
   id: number
@@ -128,15 +133,33 @@ function expand(base: BaseColor): MapColor[] {
 /** 全部 244 色，按色号升序 */
 export const MAP_COLORS: readonly MapColor[] = BASE_COLORS.flatMap(expand)
 
-/** 只用原色档：平铺摆方块时能真实还原的 61 色 */
-export const FLAT_COLORS: readonly MapColor[] = MAP_COLORS.filter((c) => c.shade === 2)
+/** 直接写地图数据：四档 244 色全可用，不需要摆方块 */
+export const DATA_COLORS: readonly MapColor[] = MAP_COLORS
+
+/**
+ * 平铺摆方块：同高只出 220 档（shade 1），并排除两种摆不出来的基础色。
+ *
+ * 这里以前错用 shade 2（255）——那是「当前格比北侧高」才有的亮档，
+ * 平铺地面得不到。中文 Minecraft Wiki 的例子写得很清楚：两个同高的
+ * 黑色羊毛，地图上是 25×220/255 = 21，而不是 25。
+ */
+export const FLAT_COLORS: readonly MapColor[] = MAP_COLORS.filter(
+  (c) => c.shade === 1 && BUILDABLE_BASES.includes(c.baseId),
+)
+
+/** 立体阶梯：前三档靠高度差自然得到，第 4 档（135）只有深水 / 外部工具能写 */
+export const STAIRCASE_COLORS: readonly MapColor[] = MAP_COLORS.filter(
+  (c) => c.shade !== 3 && BUILDABLE_BASES.includes(c.baseId),
+)
 
 export const COLOR_BY_ID: ReadonlyMap<number, MapColor> = new Map(
   MAP_COLORS.map((c) => [c.id, c]),
 )
 
-export function paletteOf(mode: 'all' | 'flat'): readonly MapColor[] {
-  return mode === 'flat' ? FLAT_COLORS : MAP_COLORS
+export function paletteOf(mode: BuildMode): readonly MapColor[] {
+  if (mode === 'flat') return FLAT_COLORS
+  if (mode === 'staircase') return STAIRCASE_COLORS
+  return DATA_COLORS
 }
 
 export function describeColor(id: number): string {

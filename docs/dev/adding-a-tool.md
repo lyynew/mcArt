@@ -20,11 +20,15 @@ src/tools/<name>/
   <Name>Page.vue        页面：只放 ToolShell + 面板 + 跨面板副作用（如整页拖放）
   model.ts              常量、用户能改的选项类型、默认值、游戏侧数据表
   store.ts              模块级 ref / reactive / computed，状态与动作的唯一入口
-  *.ts                  纯算法：采样、量化、序列化、渲染前的数据处理
+  *.ts                  纯算法：色板与数据表、采样、量化、高度图、取块、序列化
+  render.ts             canvas 渲染（预览与 PNG 导出共用）
   export.ts             组装产物（字节 / 文本 / Blob），不直接触发下载
   demo.ts               示例数据的生成（可选）
   components/           按职责拆面板，每个组件只做一块 UI
   *.test.ts             与纯算法文件一一对应的单测
+
+  `map-art/` 里 `voxels.ts` 是特意抽的：`.nbt` 分块与 `.litematic` 是两种容器，
+  共用同一个「某坐标摆什么」的取块函数，才不会出现投影对、结构文件差一格。
 ```
 
 约束：
