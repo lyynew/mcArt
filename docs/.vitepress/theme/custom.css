@@ -1,28 +1,725 @@
 /* ============================================================
-   站点自定义层
+   mcArt 站点主题
    ------------------------------------------------------------
-   只管「文档站外壳」与工具页的页面级布局。
-   工具内部的像素风样式在 src/design 下，挂在 .mc-scope 里，互不相干。
+   关键词：简约 / 像素 / 设计感
+   - 一张暖白纸 + 22px 极淡方格，只有一种绿，其余全靠留白与 1px 线
+   - 方角、硬边、无渐变无圆润阴影；标题用方舟像素字体（12 的整数倍字号）
+   - 工具区保留原有 MC 面板（功能不动），但把工作台底色换成同一套方格语言
    ============================================================ */
 
-/* —— 品牌色：沿用工具里的草绿 —— */
 :root {
-  --vp-c-brand-1: #4e8a34;
-  --vp-c-brand-2: #5c9f3e;
-  --vp-c-brand-3: #6fb14b;
-  --vp-c-brand-soft: rgb(78 138 52 / 14%);
+  --paper: #f6f5f0;
+  --paper-2: #efeee7;
+  --surface: #fffefb;
+  --ink: #1b1a16;
+  --ink-2: #55534b;
+  --ink-3: #8a877c;
+  --line: #e3e1d7;
+  --line-strong: #d0cdc0;
+  --grid-line: rgb(70 60 35 / 4.5%);
+  --green: #4d7a2a;
+  --green-hi: #62963a;
+  --green-ink: #ffffff;
+  --green-soft: #e9f0dd;
+  --hard-shadow: 4px 4px 0 rgb(27 26 22 / 9%);
+
+  --font-pixel: 'Ark Pixel', ui-monospace, 'Microsoft YaHei', monospace;
+  --font-body: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', Consolas, 'Microsoft YaHei', monospace;
+
+  /* 映射到 VitePress 默认主题，导航 / 侧栏 / 搜索 / 页脚都跟着走 */
+  --vp-c-bg: var(--paper);
+  --vp-c-bg-alt: var(--paper-2);
+  --vp-c-bg-soft: var(--surface);
+  --vp-c-bg-elv: var(--surface);
+  --vp-c-bg-mute: var(--paper-2);
+  --vp-c-text-1: var(--ink);
+  --vp-c-text-2: var(--ink-2);
+  --vp-c-text-3: var(--ink-3);
+  --vp-c-divider: var(--line);
+  --vp-c-gutter: var(--line);
+  --vp-c-border: var(--line-strong);
+  --vp-c-brand-1: var(--green);
+  --vp-c-brand-2: var(--green-hi);
+  --vp-c-brand-3: var(--green);
+  --vp-c-brand-soft: var(--green-soft);
+  --vp-c-brand-text: var(--green);
+  --vp-c-default-1: var(--ink-2);
+  --vp-c-default-2: var(--paper-2);
+  --vp-c-default-3: var(--surface);
+  --vp-c-default-soft: var(--paper-2);
+  --vp-c-tip-1: var(--green);
+  --vp-c-tip-soft: var(--green-soft);
+  --vp-nav-bg-color: var(--paper);
+  --vp-nav-screen-bg-color: var(--paper);
+  --vp-sidebar-bg-color: var(--paper);
+  --vp-code-block-bg: var(--surface);
+  --vp-font-family-base: var(--font-body);
+  --vp-font-family-mono: var(--font-mono);
+  --vp-code-font-size: 13px;
 }
 
-.dark {
-  --vp-c-brand-1: #8ecb62;
-  --vp-c-brand-2: #a5dc84;
-  --vp-c-brand-3: #6fb14b;
-  --vp-c-brand-soft: rgb(142 203 98 / 16%);
+html.dark {
+  --paper: #171811;
+  --paper-2: #1f2018;
+  --surface: #212219;
+  --ink: #f0efe8;
+  --ink-2: #b7b4a8;
+  --ink-3: #8b887c;
+  --line: rgb(255 255 255 / 10%);
+  --line-strong: rgb(255 255 255 / 19%);
+  --grid-line: rgb(235 225 190 / 4%);
+  --green: #8fb851;
+  --green-hi: #a6cf6b;
+  --green-ink: #14170d;
+  --green-soft: #2b331b;
+  --hard-shadow: 4px 4px 0 rgb(0 0 0 / 32%);
 }
 
-/* —— 工具页：整屏，页面本身不滚动，滚动交给工具内部的面板 ——
-   导航在桌面端是 fixed，宽度 ≥960 时 VPContent 自带 padding-top；
-   窄屏导航回到文档流，靠 flex 分配剩下的高度，两种情况都不用写死数值。 */
+body {
+  font-family: var(--font-body);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+::selection {
+  background: var(--green);
+  color: var(--green-ink);
+}
+
+/* —— 顶栏：一条细线，不要描边和投影 —— */
+.VPNavBar {
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.VPNavBarTitle .logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 0;
+}
+
+.VPNavBarTitle .text {
+  font-family: var(--font-pixel);
+  /* 12px 字体用 2 倍字号，格子才不会糊 */
+  font-size: 24px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.VPNavBarMenuLink,
+.VPNavScreenMenuLink {
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+
+.VPNavBarMenuLink.active {
+  border-bottom: 2px solid var(--green);
+}
+
+.VPNavBarSearchButton,
+.VPNavBarSearchButton .DocSearch-Button,
+.DocSearch-Button,
+.VPSwitchAppearance,
+.VPSocialLink {
+  border-radius: 0;
+}
+
+.DocSearch-Button {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.DocSearch-Button:hover {
+  border-color: var(--green);
+  box-shadow: none;
+}
+
+.VPNavBar .VPNavBarMenuGroup .button,
+.VPNavBar .VPNavBarMenuLink {
+  border-radius: 0;
+}
+
+/* —— 侧栏与目录：发丝线，选中态一小块绿 —— */
+.VPSidebar {
+  border-right: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.VPSidebarItem .text {
+  font-size: 13px;
+}
+
+.VPSidebarItem.is-active > .item > .indicator,
+.VPSidebarItem.is-active > .item > .link > .text {
+  color: var(--green);
+}
+
+.VPDocAsideOutlineItem.is-active > .outline-link,
+.VPDocAsideOutlineItem > .outline-link:hover {
+  color: var(--green);
+}
+
+.VPLocalNav {
+  border-bottom: 1px solid var(--line);
+}
+
+/* 自定义首页是整屏版式，不需要「回到顶部」那条浮动栏 */
+.Layout.home-page .VPLocalNav {
+  display: none;
+}
+
+/* —— 正文排版 —— */
+.vp-doc h1,
+.vp-doc h2,
+.vp-doc h3,
+.vp-doc h4 {
+  font-family: var(--font-pixel);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.vp-doc h1 {
+  font-size: 36px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.vp-doc h2 {
+  font-size: 24px;
+  line-height: 1.5;
+  margin: 44px 0 16px;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.vp-doc h3 {
+  font-size: 20px;
+  line-height: 1.5;
+  margin: 30px 0 12px;
+}
+
+.vp-doc p,
+.vp-doc li {
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--ink-2);
+}
+
+.vp-doc a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+.vp-doc strong {
+  color: var(--ink);
+}
+
+.vp-doc hr {
+  border: 0;
+  border-top: 1px dashed var(--line-strong);
+}
+
+.vp-doc blockquote {
+  border-left: 3px solid var(--green);
+  background: var(--green-soft);
+  border-radius: 0;
+  color: var(--ink-2);
+}
+
+.vp-doc table {
+  border: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.vp-doc th,
+.vp-doc td {
+  border: 1px solid var(--line);
+}
+
+.vp-doc th {
+  background: var(--paper-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.vp-doc tr:nth-child(2n) {
+  background: transparent;
+}
+
+.vp-doc :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: var(--green-soft);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  padding: 1px 5px;
+}
+
+.vp-doc div[class*='language-'],
+.vp-doc .vp-code-group {
+  border: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.vp-doc .custom-block {
+  border-radius: 0;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--green);
+  box-shadow: none;
+  font-size: 13px;
+}
+
+.vp-doc .custom-block.tip {
+  background: var(--green-soft);
+}
+
+.vp-doc .custom-block .custom-block-title {
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.VPDocFooter {
+  border-top: 1px solid var(--line);
+}
+
+.VPDocFooter .pager-link {
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: var(--surface);
+}
+
+.VPDocFooter .pager-link:hover {
+  border-color: var(--green);
+}
+
+.VPFooter {
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: transparent;
+}
+
+.VPButton {
+  border-radius: 0;
+}
+
+/* ============================================================
+   自定义首页
+   ============================================================ */
+.Layout.home-page .VPContent {
+  padding-top: var(--vp-nav-height);
+}
+
+.Layout.home-page .VPPage > div > div {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 28px 80px;
+}
+
+.home {
+  color: var(--ink);
+}
+
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
+  align-items: center;
+  gap: 40px;
+  min-height: 520px;
+  padding: 56px 0 64px;
+  border-bottom: 1px dashed var(--line-strong);
+}
+
+.home-eyebrow,
+.home-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 20px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+}
+
+.home-eyebrow::before,
+.home-kicker::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: var(--green);
+  box-shadow: 2px 2px 0 var(--line-strong);
+}
+
+.home-hero h1 {
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-size: 48px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
+.home-hero h1 em {
+  font-style: normal;
+  color: var(--green);
+}
+
+.home-lead {
+  margin: 18px 0 28px;
+  max-width: 460px;
+  font-size: 14px;
+  line-height: 1.9;
+  color: var(--ink-2);
+}
+
+.home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.home-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  text-decoration: none !important;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--hard-shadow);
+  transition: transform 0.12s, box-shadow 0.12s, background-color 0.12s;
+}
+
+.home-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--green-soft);
+  border-color: var(--green);
+  color: var(--ink);
+}
+
+.home-btn--primary {
+  background: var(--green);
+  border-color: var(--ink);
+  color: var(--green-ink);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.home-btn--primary:hover {
+  background: var(--green-hi);
+  color: var(--green-ink);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+.home-btn__arrow {
+  font-family: var(--font-mono);
+}
+
+.home-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 26px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.home-stats b {
+  color: var(--ink-2);
+  font-weight: 400;
+}
+
+.home-stats i {
+  font-style: normal;
+  color: var(--line-strong);
+}
+
+/* 右侧：大方块，背后是同一张 22px 方格，只是线更深一点 */
+.home-hero__art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+  border: 1px solid var(--line);
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 22px 22px;
+  box-shadow: var(--hard-shadow);
+}
+
+.home-hero__art img {
+  width: 240px;
+  height: 240px;
+  image-rendering: pixelated;
+  filter: drop-shadow(12px 14px 0 rgb(27 26 22 / 12%));
+}
+
+.home-hero__tag {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--hard-shadow);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+.home-hero__tag::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: var(--green);
+}
+
+.home-section {
+  padding: 56px 0 8px;
+}
+
+.home-section h2 {
+  margin: 0 0 24px;
+  font-family: var(--font-pixel);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.home-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  box-shadow: var(--hard-shadow);
+  text-decoration: none !important;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.home-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--green-soft);
+  border-color: var(--green);
+}
+
+.home-card__no {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.home-card__name {
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.home-card__desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+
+.home-card__foot {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--green);
+}
+
+.home-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+  border-top: 1px solid var(--line);
+}
+
+.home-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 2px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13.5px;
+  color: var(--ink);
+  text-decoration: none !important;
+}
+
+.home-link:hover {
+  color: var(--green);
+}
+
+.home-link span:last-child {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.home-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  align-items: center;
+  margin-top: 72px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.home-footer a {
+  color: var(--ink-2);
+}
+
+@media (max-width: 900px) {
+  .Layout.home-page .VPPage > div > div {
+    padding: 0 18px 56px;
+  }
+
+  .home-hero {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    min-height: 0;
+    padding: 40px 0 48px;
+  }
+
+  .home-hero h1 {
+    font-size: 36px;
+  }
+
+  .home-hero__art {
+    min-height: 260px;
+  }
+
+  .home-hero__art img {
+    width: 180px;
+    height: 180px;
+  }
+
+  .home-cards,
+  .home-links {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   工具总览页卡片
+   ============================================================ */
+.tool-cards {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0 8px;
+}
+
+.vp-doc a.tool-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  background: var(--surface);
+  box-shadow: var(--hard-shadow);
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.vp-doc a.tool-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--green-soft);
+  border-color: var(--green);
+  background: var(--surface);
+  text-decoration: none;
+}
+
+.tool-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-card__name {
+  font-family: var(--font-pixel);
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.tool-card:hover .tool-card__name {
+  color: var(--green);
+}
+
+.tool-card__tag {
+  padding: 1px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 18px;
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.tool-card__desc {
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+
+.tool-card__desc code {
+  font-size: 12.5px;
+}
+
+.tool-card__meta {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+/* ============================================================
+   工具页：整屏布局（这段是功能，别动）
+   ============================================================ */
 .Layout.tool-page {
   height: 100dvh;
   overflow: hidden;
@@ -43,90 +740,25 @@
   flex-direction: column;
 }
 
-/* VitePress 会在页面内容外面再套两层 div（其中一层是为了锚点定位的
-   position:relative），这两层会把 flex 链截断。用 display:contents
-   把它们的盒子去掉，ToolFrame 才是 VPPage 的直接 flex 项。 */
+/* VitePress 在内容外还套两层 div，把盒子去掉，ToolFrame 才是 VPPage 的
+   直接 flex 项；否则高度传不到工具里 */
 .Layout.tool-page .VPPage > div,
 .Layout.tool-page .VPPage > div > div {
   display: contents;
 }
 
-/* —— 工具总览卡片 ——
-   用一组横向卡片而不是三列：正文容器只有 688px，三列会把描述挤成豆腐块 */
-.tool-cards {
-  display: grid;
-  gap: 12px;
-  margin: 24px 0 8px;
+/* 工作台：与文章区共用同一张 22px 方格，只是换成深色底。
+   原来的泥土纹理太吵，留着会和极简的文章区打架。 */
+.Layout.tool-page .mc-scope {
+  background-color: #171811;
+  background-image:
+    linear-gradient(rgb(235 225 190 / 5%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(235 225 190 / 5%) 1px, transparent 1px);
+  background-size: 22px 22px;
 }
 
-.vp-doc a.tool-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 16px 18px;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 10px;
-  background: var(--vp-c-bg-soft);
-  color: inherit;
-  font-weight: inherit;
-  text-decoration: none;
-  transition: border-color 0.25s, background-color 0.25s;
-}
-
-.vp-doc a.tool-card:hover {
-  border-color: var(--vp-c-brand-1);
-  background: var(--vp-c-bg-alt);
-  text-decoration: none;
-}
-
-.tool-card__head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.tool-card__name {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--vp-c-text-1);
-}
-
-.tool-card:hover .tool-card__name {
-  color: var(--vp-c-brand-1);
-}
-
-.tool-card__tag {
-  padding: 0 8px;
-  border-radius: 999px;
-  font-size: 12px;
-  line-height: 20px;
-  background: var(--vp-c-brand-soft);
-  color: var(--vp-c-brand-1);
-}
-
-.tool-card__desc {
-  font-size: 14px;
-  line-height: 1.65;
-  color: var(--vp-c-text-2);
-}
-
-.tool-card__desc code {
-  font-size: 12.5px;
-}
-
-.tool-card__meta {
-  font-size: 12.5px;
-  color: var(--vp-c-text-3);
-}
-
-/* —— 文档里的小尺寸示意图 —— */
-.vp-doc .shot {
-  margin: 20px 0;
-}
-
-.vp-doc .shot figcaption {
-  margin-top: 8px;
-  font-size: 13px;
-  color: var(--vp-c-text-3);
-  text-align: center;
+/* 工具页上的导航保持纸面，但下沿加一道绿，像工作台的分界 */
+.Layout.tool-page .VPNavBar {
+  border-bottom: 1px solid var(--line-strong);
+  box-shadow: inset 0 -2px 0 var(--green);
 }

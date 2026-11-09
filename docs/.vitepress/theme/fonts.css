@@ -1,0 +1,25 @@
+/**
+ * 字体：方舟像素字体（Ark Pixel 12px，SIL OFL 1.1）
+ * 官方项目 https://github.com/TakWolf/ark-pixel-font
+ * 授权文本随站点发布在 /LICENSE-ARK-PIXEL.txt（源在 docs/public/）
+ *
+ * 分 Latin 与简中两片，用 unicode-range 让浏览器只下需要的那一半。
+ * 12px 字体要用 12 的整数倍放大，字形才是完整的方格子，所以标题统一 24 / 48px。
+ */
+@font-face {
+  font-family: 'Ark Pixel';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/ark-pixel-12px-proportional-latin.otf.woff2') format('woff2');
+  unicode-range: U+0000-024F, U+2000-206F, U+20A0-20CF, U+2100-214F;
+}
+
+@font-face {
+  font-family: 'Ark Pixel';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/ark-pixel-12px-proportional-zh_hans.otf.woff2') format('woff2');
+  unicode-range: U+3000-303F, U+3400-4DBF, U+4E00-9FFF, U+F900-FAFF, U+FF00-FFEF;
+}

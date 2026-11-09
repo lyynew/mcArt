@@ -32,7 +32,7 @@ export default defineConfig({
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}favicon.svg` }],
-    ['meta', { name: 'theme-color', content: '#4e8a34' }],
+    ['meta', { name: 'theme-color', content: '#f6f5f0' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: 'mcArt · Minecraft 网页工具集' }],
     [
@@ -108,7 +108,29 @@ export default defineConfig({
 
     socialLinks: [{ icon: 'github', link: repo }],
 
-    search: { provider: 'local' },
+    search: {
+      provider: 'local',
+      options: {
+        translations: {
+          button: { buttonText: '搜索', buttonAriaLabel: '搜索' },
+          modal: {
+            displayDetails: '显示详情',
+            resetButtonTitle: '清除',
+            backButtonTitle: '返回',
+            noResultsText: '没有找到相关内容',
+            footer: {
+              selectText: '选择',
+              selectKeyAriaLabel: '回车',
+              navigateText: '切换',
+              navigateUpKeyAriaLabel: '上箭头',
+              navigateDownKeyAriaLabel: '下箭头',
+              closeText: '关闭',
+              closeKeyAriaLabel: 'Esc',
+            },
+          },
+        },
+      },
+    },
 
     outline: { level: [2, 3], label: '本页目录' },
     docFooter: { prev: '上一篇', next: '下一篇' },

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" shape-rendering="crispEdges">
+  <!-- mcArt 标志的等距草方块，放大到像素网格上；本站自制，非第三方素材 -->
+  <polygon points="128,24 232,84 128,144 24,84" fill="#86bb5e" />
+  <polygon points="24,84 128,144 128,224 24,164" fill="#9c7a56" />
+  <polygon points="232,84 232,164 128,224 128,144" fill="#856347" />
+
+  <polygon points="24,84 128,144 128,160 24,100" fill="#6fa246" />
+  <polygon points="232,84 232,100 128,160 128,144" fill="#5c8c3c" />
+
+  <!-- 顶面：深浅不一的方块感 -->
+  <polygon points="96,42 112,51 96,60 80,51" fill="#74a94f" />
+  <polygon points="160,61 176,70 160,79 144,70" fill="#74a94f" />
+  <polygon points="128,99 144,108 128,117 112,108" fill="#a3cc7d" />
+  <polygon points="64,80 80,89 64,98 48,89" fill="#7cb356" />
+  <polygon points="192,84 208,93 192,102 176,93" fill="#5f9040" />
+
+  <!-- 侧面：零散的泥土与草根像素 -->
+  <rect x="48" y="112" width="16" height="8" fill="#8a6a49" />
+  <rect x="80" y="136" width="16" height="8" fill="#a8845e" />
+  <rect x="104" y="176" width="16" height="8" fill="#7e6143" />
+  <rect x="40" y="140" width="8" height="8" fill="#6fa246" />
+  <rect x="72" y="164" width="8" height="8" fill="#6fa246" />
+  <rect x="176" y="128" width="16" height="8" fill="#755a3d" />
+  <rect x="152" y="160" width="16" height="8" fill="#96734f" />
+  <rect x="200" y="144" width="8" height="8" fill="#5c8c3c" />
+
+  <polyline points="24,84 128,24 232,84" fill="none" stroke="#14110c" stroke-width="7" />
+  <polyline points="24,84 24,164 128,224 232,164 232,84" fill="none" stroke="#14110c" stroke-width="7" />
+  <line x1="128" y1="144" x2="128" y2="224" stroke="#14110c" stroke-width="7" />
+  <line x1="24" y1="84" x2="128" y2="144" stroke="#14110c" stroke-width="7" />
+  <line x1="232" y1="84" x2="128" y2="144" stroke="#14110c" stroke-width="7" />
+</svg>

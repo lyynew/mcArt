@@ -22,9 +22,21 @@ Minecraft 网页工具集：方块像素画生成器、方块图鉴、结构查�
 工具不是复制进文档站的第二份实现：`docs/tools/*.md` 只写一行 `<ToolPixel />`，
 组件本身还住在 `src/tools/`，和独立应用共用同一份代码、同一套状态管理。
 
-**工具的像素风外观暂时保留**，与文章区的排版风格不同；视觉统一放到后面一起做。
-为了让它能安全内嵌，样式做了作用域收敛：`src/design/base.css` 的所有规则都挂在
-`.mc-scope` 下，工具容器（`ToolFrame`）带这个类，文档页一个像素都不受影响。
+工具内部仍保留游戏内 GUI 的浅灰面板（像素风、按格子对齐），但**外壳已统一**：
+文章区是暖白纸 + 22px 方格 + 像素标题，进工具页时同一张方格换成深色底，变成「工作台」。
+样式作用域收敛在 `src/design/base.css`（所有规则挂在 `.mc-scope` 下），
+工具容器（`ToolFrame`）带这个类，文档页一个像素都不受影响。
+
+## 视觉
+
+站点主题在 `docs/.vitepress/theme/custom.css`，一套令牌同时管浅色与深色：
+
+- 暖白纸 + 22px 极淡方格，只有一种草绿，其余全靠留白与 1px 线；方角、硬投影、无渐变
+- 标题用自托管的**方舟像素字体**（Ark Pixel 12px，SIL OFL 1.1），按 12 的整数倍放大才不会糊；
+  正文用系统无衬线，标签 / 代码用等宽
+- 默认主题改用 `vitepress/theme-without-fonts`，不再加载自带的一整套 Inter WebFont
+- 字体文件在 `docs/.vitepress/theme/fonts/`，授权文本随站点发布在 `docs/public/LICENSE-ARK-PIXEL.txt`。
+  字体作者 TakWolf，项目地址 https://github.com/TakWolf/ark-pixel-font
 
 ## 三个工具
 
