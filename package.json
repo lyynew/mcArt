@@ -19,6 +19,7 @@
     "preview": "vitepress preview docs",
     "preview:app": "vite preview",
     "typecheck": "vue-tsc --noEmit",
+    "pretest": "npm run sync",
     "test": "vitest run",
     "test:watch": "vitest",
     "fixtures": "node scripts/make-fixtures.mjs"
