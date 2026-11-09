@@ -29,5 +29,19 @@
   overflow-y: auto;
   /* 滚到边界后不要把滚动传给页面本身，手机上不会出现「滑到底继续弹」 */
   overscroll-behavior: contain;
+  /* Home 指示条（iOS）在布局之外，会压住滚动区最后一行 */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/*
+ * 手机上浏览器底部导航栏是「悬浮层」：不缩水 dvh、也不报 safe-area-inset
+ * （微信 / 小米浏览器 / QQ 浏览器都这样），光靠 env() 挡不住——滚到底
+ * 最后一行仍被压在栏下。窄屏再留一段固定余量，让内容能滚出遮挡区。
+ * 桌面端没有这种栏，多留一截只会把工作台压矮，所以只在窄屏加。
+ */
+@media (max-width: 900px) {
+  .tool-frame {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 56px);
+  }
 }
 </style>
