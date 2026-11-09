@@ -103,14 +103,22 @@ const buildStats = computed(() => {
   place-items: center;
   position: relative;
   padding: var(--sp-4);
+  /*
+   * 容器查询容器：画布要「宽、高谁小听谁的」，光拿宽度不够。
+   * 视口一矮，按宽度算出的正方形就比容器高，往下盖住工具条与统计条，
+   * 还会把外层的滚动区撑出一段。尺寸容器能同时给出 100cqw / 100cqh。
+   * 高度来源分两种布局：宽屏 flex 锁死；窄屏靠 ToolShell 的 min-height: 70svh
+   * 兜底（尺寸封闭后内容不再撑高容器，没这行画布会塌成 0）。
+   */
+  container-type: size;
   /* 棋盘格：透明（未探索）像素要能一眼看出来 */
   background: repeating-conic-gradient(#2c2c2c 0% 25%, #383838 0% 50%) 50% / 16px 16px;
 }
 
 .preview__canvas {
   display: block;
-  width: min(100%, 640px);
-  height: auto;
+  /* 取「容器宽 / 容器高 / 640 上限」三者最小，任何视口下都正好装进舞台 */
+  width: min(100cqw, 100cqh, 640px);
   aspect-ratio: 1;
   image-rendering: pixelated;
   border: var(--mc-bd) solid #000;

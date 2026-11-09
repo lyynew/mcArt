@@ -52,10 +52,21 @@ withDefaults(
 
 .tool-shell > div {
   min-width: 0; /* 不给这一条，一长串文字会把整行撑出屏幕 */
-  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--sp-5);
+}
+
+/*
+ * min-height: 0 单独写在三个列类上，不要合并进 .tool-shell > div：
+ * 那是 (0,1,1) 的选择器，会把窄屏 .tool-shell__stage 的 min-height: 70svh
+ * （(0,1,0)）压掉，而 70svh 是尺寸封闭（container-type: size）的舞台在
+ * 「内容撑高」模式下唯一的高度来源——被压掉画布就塌成 0。
+ */
+.tool-shell__controls,
+.tool-shell__stage,
+.tool-shell__aside {
+  min-height: 0;
 }
 
 .tool-shell__controls,
