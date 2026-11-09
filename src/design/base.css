@@ -1,22 +1,24 @@
 /* ============================================================
-   基础层：重置、页面底色、焦点与滚动条
+   基础层：重置、底色、焦点与滚动条
+   ------------------------------------------------------------
+   这一层不挂在 body / html 上，而是统一挂在 .mc-scope 容器：
+   工具既可以作为独立应用（#app 就是这个容器），也可以内嵌进
+   文档站（VitePress）而不把文档页面一起染成像素风。
    ============================================================ */
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  /* 移动端点击时的蓝色高亮块会盖掉像素按钮的立体感，统一去掉 */
-  -webkit-tap-highlight-color: transparent;
-}
-
-html,
-body {
+/* 独立入口的外壳：锁死视口高度。
+   编辑器里 canvas 尺寸依赖容器高度，若允许 min-height 撑开，
+   会变成「画布越大 → 容器越高 → 画布更大」的循环。 */
+#app {
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  /* 移动端地址栏收起/展开会改变视口高度，用动态视口单位避免整页跟着跳 */
+  height: 100dvh;
 }
 
-body {
-  margin: 0;
+/* 内嵌时由外层（文档站的页面容器）决定高度，这里只负责观感 */
+.mc-scope {
   font: var(--fs-body) / 1.45 var(--font-mc);
   color: var(--mc-text);
   background: var(--mc-bg);
@@ -27,119 +29,110 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-#app {
-  display: flex;
-  flex-direction: column;
-  /* 高度必须锁死：编辑器里 canvas 尺寸依赖容器高度，
-     若允许 min-height 撑开，会变成「画布越大 → 容器越高 → 画布更大」的循环 */
-  height: 100%;
-  /* 移动端地址栏收起/展开会改变视口高度，用动态视口单位避免整页跟着跳 */
-  height: 100dvh;
+.mc-scope *,
+.mc-scope *::before,
+.mc-scope *::after {
+  box-sizing: border-box;
+  /* 移动端点击时的蓝色高亮块会盖掉像素按钮的立体感，统一去掉 */
+  -webkit-tap-highlight-color: transparent;
 }
 
-h1,
-h2,
-h3,
-p {
+.mc-scope h1,
+.mc-scope h2,
+.mc-scope h3,
+.mc-scope p {
   margin: 0;
 }
 
-button,
-input,
-select,
-textarea {
+.mc-scope button,
+.mc-scope input,
+.mc-scope select,
+.mc-scope textarea {
   font: inherit;
   color: inherit;
 }
 
 /* 手指点按不要等 300ms 的双击判定，编辑器里每一次点击都要即时响应 */
-button,
-a,
-label {
+.mc-scope button,
+.mc-scope a,
+.mc-scope label {
   touch-action: manipulation;
 }
 
-/* 手指点按不要等 300ms 的双击判定，编辑器里每一次点击都要即时响应 */
-button,
-a,
-label {
-  touch-action: manipulation;
-}
-
-a {
+.mc-scope a {
   color: var(--mc-accent-ink);
   text-decoration: none;
 }
 
-a:hover {
+.mc-scope a:hover {
   text-decoration: underline;
 }
 
-img {
+.mc-scope img {
   image-rendering: pixelated;
 }
 
-::selection {
+.mc-scope ::selection {
   background: var(--mc-accent);
   color: #fff;
 }
 
 /* 焦点环统一给键盘用户，鼠标点击不显示 */
-:focus-visible {
+.mc-scope :focus-visible {
   outline: 2px solid var(--mc-focus);
   outline-offset: 2px;
 }
 
-:focus:not(:focus-visible) {
+.mc-scope :focus:not(:focus-visible) {
   outline: none;
 }
 
 /* 滚动条做成金属轨，跟面板同一个语言 */
-::-webkit-scrollbar {
+.mc-scope ::-webkit-scrollbar {
   width: 12px;
   height: 12px;
 }
 
-::-webkit-scrollbar-track {
+.mc-scope ::-webkit-scrollbar-track {
   background: #2b2925;
 }
 
-::-webkit-scrollbar-thumb {
+.mc-scope ::-webkit-scrollbar-thumb {
   background: var(--mc-btn);
   border: 2px solid #000;
   box-shadow: inset 2px 2px 0 var(--mc-btn-hi);
 }
 
-::-webkit-scrollbar-thumb:hover {
+.mc-scope ::-webkit-scrollbar-thumb:hover {
   background: var(--mc-btn-hover);
 }
 
-/* —— 排版工具 —— */
-.mc-row {
+/* —— 排版工具：同样只作用于容器内部 —— */
+.mc-scope .mc-row {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
 }
 
-.mc-stack {
+.mc-scope .mc-stack {
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
 }
 
-.mc-grid-2 {
+.mc-scope .mc-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--sp-1);
 }
 
-.mc-grid-3 {
+.mc-scope .mc-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--sp-1);
 }
 
-.mc-rule {
+.mc-scope .mc-rule {
   height: 2px;
   border: 0;
   margin: var(--sp-3) 0;
@@ -147,7 +140,7 @@ img {
   box-shadow: 0 2px 0 var(--mc-panel-hi);
 }
 
-.mc-sr-only {
+.mc-scope .mc-sr-only {
   position: absolute;
   width: 1px;
   height: 1px;

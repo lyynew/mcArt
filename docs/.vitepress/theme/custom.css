@@ -1,0 +1,132 @@
+/* ============================================================
+   站点自定义层
+   ------------------------------------------------------------
+   只管「文档站外壳」与工具页的页面级布局。
+   工具内部的像素风样式在 src/design 下，挂在 .mc-scope 里，互不相干。
+   ============================================================ */
+
+/* —— 品牌色：沿用工具里的草绿 —— */
+:root {
+  --vp-c-brand-1: #4e8a34;
+  --vp-c-brand-2: #5c9f3e;
+  --vp-c-brand-3: #6fb14b;
+  --vp-c-brand-soft: rgb(78 138 52 / 14%);
+}
+
+.dark {
+  --vp-c-brand-1: #8ecb62;
+  --vp-c-brand-2: #a5dc84;
+  --vp-c-brand-3: #6fb14b;
+  --vp-c-brand-soft: rgb(142 203 98 / 16%);
+}
+
+/* —— 工具页：整屏，页面本身不滚动，滚动交给工具内部的面板 ——
+   导航在桌面端是 fixed，宽度 ≥960 时 VPContent 自带 padding-top；
+   窄屏导航回到文档流，靠 flex 分配剩下的高度，两种情况都不用写死数值。 */
+.Layout.tool-page {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.Layout.tool-page .VPContent {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.Layout.tool-page .VPPage {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* VitePress 会在页面内容外面再套两层 div（其中一层是为了锚点定位的
+   position:relative），这两层会把 flex 链截断。用 display:contents
+   把它们的盒子去掉，ToolFrame 才是 VPPage 的直接 flex 项。 */
+.Layout.tool-page .VPPage > div,
+.Layout.tool-page .VPPage > div > div {
+  display: contents;
+}
+
+/* —— 工具总览卡片 ——
+   用一组横向卡片而不是三列：正文容器只有 688px，三列会把描述挤成豆腐块 */
+.tool-cards {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0 8px;
+}
+
+.vp-doc a.tool-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  background: var(--vp-c-bg-soft);
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+  transition: border-color 0.25s, background-color 0.25s;
+}
+
+.vp-doc a.tool-card:hover {
+  border-color: var(--vp-c-brand-1);
+  background: var(--vp-c-bg-alt);
+  text-decoration: none;
+}
+
+.tool-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-card__name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+}
+
+.tool-card:hover .tool-card__name {
+  color: var(--vp-c-brand-1);
+}
+
+.tool-card__tag {
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 20px;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+}
+
+.tool-card__desc {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--vp-c-text-2);
+}
+
+.tool-card__desc code {
+  font-size: 12.5px;
+}
+
+.tool-card__meta {
+  font-size: 12.5px;
+  color: var(--vp-c-text-3);
+}
+
+/* —— 文档里的小尺寸示意图 —— */
+.vp-doc .shot {
+  margin: 20px 0;
+}
+
+.vp-doc .shot figcaption {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--vp-c-text-3);
+  text-align: center;
+}

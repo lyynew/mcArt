@@ -50,7 +50,8 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <div v-if="open" class="mc-modal" @click.self="close">
+    <!-- 挂到 body 之后脱离了工具容器，补一个 mc-scope 让字体与重置继续生效 -->
+    <div v-if="open" class="mc-modal mc-scope" @click.self="close">
       <div
         ref="panel"
         class="mc-modal__panel"

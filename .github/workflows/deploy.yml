@@ -30,6 +30,9 @@ jobs:
       - name: 安装依赖
         run: npm ci
 
+      - name: 单元测试
+        run: npm run test
+
       - name: 类型检查与构建
         run: npm run build
 
@@ -37,7 +40,8 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          # 站点由 VitePress 产出；工具作为组件内嵌在 docs/tools 下
+          path: docs/.vitepress/dist
 
   deploy:
     needs: build

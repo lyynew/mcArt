@@ -10,15 +10,35 @@ Minecraft 网页工具集：方块像素画生成器、方块图鉴、结构查�
 版本号只在 `package.json` 的 `version` 维护，构建时注入界面（顶栏 `BETA` 标签与页脚版本号）。
 发正式版把版本改成 `x.y.z` 去掉预发布后缀，`BETA` 标签会自动消失。
 
+## 站点结构
+
+一个 VitePress 站点，两个区：
+
+| 区 | 路径 | 内容 |
+| --- | --- | --- |
+| 文章 | `/guide/` | 快速开始、生成原理、结构文件、方块与材质、常见问题 |
+| 工具 | `/tools/` | 三个工具的页面，直接挂载 `src/tools/**` 下的 Vue 组件 |
+
+工具不是复制进文档站的第二份实现：`docs/tools/*.md` 只写一行 `<ToolPixel />`，
+组件本身还住在 `src/tools/`，和独立应用共用同一份代码、同一套状态管理。
+
+**工具的像素风外观暂时保留**，与文章区的排版风格不同；视觉统一放到后面一起做。
+为了让它能安全内嵌，样式做了作用域收敛：`src/design/base.css` 的所有规则都挂在
+`.mc-scope` 下，工具容器（`ToolFrame`）带这个类，文档页一个像素都不受影响。
+
 ## 三个工具
 
 | 工具 | 做什么 |
 | --- | --- |
-| 方块像素画生成器 `/pixel` | 图片转方块画，能改能画，导出 `.nbt` 结构文件、施工图与材料清单 |
-| 方块图鉴 `/atlas` | 142 种方块的贴图、平均色与 ID，一键复制 `give` 命令 |
-| 结构文件查看器 `/nbt` | 拖入 `.nbt` 分层看结构、统计材料，是导出的逆运算 |
+| 方块像素画生成器 `/tools/pixel` | 图片转方块画，能改能画，导出 `.nbt` 结构文件、施工图与材料清单 |
+| 方块图鉴 `/tools/atlas` | 142 种方块的贴图、平均色与 ID，一键复制 `give` 命令 |
+| 结构文件查看器 `/tools/nbt` | 拖入 `.nbt` 分层看结构、统计材料，是导出的逆运算 |
 
-旧版单文件页面仍在 `public/legacy/index.html`，作为迁移期的对照基准保留。
+旧版单文件页面仍在 `public/legacy/index.html`（站点上对应 `/legacy/`），
+由 `npm run sync:legacy` 复制到 `docs/public/` 一起发布，作为对照基准保留。
+
+独立应用入口（`index.html` + `src/main.ts` + `src/app/`）也还在，用 `npm run dev:app` 起。
+它是迁移期的回退方案，等工具视觉统一后会被删掉。
 
 ## 移动端
 
@@ -42,24 +62,37 @@ Minecraft 网页工具集：方块像素画生成器、方块图鉴、结构查�
 
 ```bash
 npm install
-npm run dev        # 本地开发，http://localhost:5173
-npm run build      # 类型检查 + 生产构建，产物在 dist/
+npm run dev        # 文档站 + 工具，http://localhost:5173
+npm run build      # 类型检查 + 构建，产物在 docs/.vitepress/dist/
 npm run preview    # 用生产产物起本地服务
 npm run test       # 单元测试
-npm run sync:textures   # 从 原版材质/ 同步贴图（dev / build 前会自动跑）
-npm run fixtures        # 重新生成算法基准文件（一般不需要）
+npm run typecheck  # 只做类型检查
+
+npm run dev:app    # 过渡期：起旧的独立应用入口（不含文章区）
+npm run build:app  # 过渡期：构建旧的独立应用
+
+npm run sync       # 同步贴图 + 旧版页面（dev / build 前会自动跑）
+npm run fixtures   # 重新生成算法基准文件（一般不需要）
 ```
 
 贴图不直接引用 `原版材质/`：`scripts/sync-textures.mjs` 会把它增量拷贝到
 `src/assets/textures/`（该目录在 `.gitignore` 里），再交给 Vite 做内容哈希输出。
-`predev` / `prebuild` 钩子保证这一步总会先跑；只有直接执行 `vite build` 时才需要手动同步。
+旧版单文件页面同理，`scripts/sync-legacy.mjs` 把它从 `public/legacy/` 复制到
+`docs/public/legacy/` 一起发布。`predev` / `prebuild` 钩子保证这两步总会先跑。
 
 ## 目录
 
 ```
+docs/                         VitePress 站点（线上主体）
+  .vitepress/config.mts       导航、侧栏、base、别名与版本注入
+  .vitepress/theme/           继承默认主题：注册工具组件、工具页整屏布局
+  index.md                    首页
+  guide/                      文章
+  tools/                      工具页（一行组件挂载）
+  public/                     logo、favicon、旧版页面副本（生成）
 src/
-  app/            顶栏、页面外壳、路由
-  design/         设计令牌（tokens.css）与基础组件 McWindow / McButton / McSlider …
+  app/            顶栏、页面外壳、路由（仅独立应用入口用）
+  design/         设计令牌（tokens.css）、基础层（base.css，挂在 .mc-scope）、基础组件 McWindow / McButton …
   components/     跨工具复用的业务组件（方块格子、分组网格）
   core/           纯逻辑：方块数据、贴图、颜色、转换、NBT 读写、gzip/zip
   shared/         与业务无关的小工具：下载、剪贴板、防抖、超时
@@ -67,20 +100,21 @@ src/
     pixel/        像素画生成器：store（状态与动作）/ composables（交互）/ components（视图）
     atlas/        方块图鉴
     nbt-viewer/   结构文件查看器
-  pages/          首页
+  pages/          独立应用入口的首页
 public/
   legacy/         旧版单文件页面，功能对照基准
   favicon.svg
 原版材质/          142 张原版方块贴图，是贴图与平均色的唯一来源
 材质清单.txt       方块分组、色值、贴图文件名对照
 .build/           生成方块数据与平均色的 Python 脚本（改色板时才用）
-scripts/          贴图同步、旧版数据迁移、算法基准生成
+scripts/          贴图与旧版页面同步、算法基准生成
 tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 .github/workflows/deploy.yml   推 main 自动发布到 GitHub Pages
 ```
 
 新增工具的常规路径：加一页 `src/tools/<name>/`、在 `src/tools/registry.ts` 登记一条、
-在 `src/app/router.ts` 加一条路由。真正的逻辑放 store / composable，组件只管渲染。
+在 `docs/tools/` 下加一个 md 挂载它（独立应用入口则同步加一条路由）。
+真正的逻辑放 store / composable，组件只管渲染。
 
 ## 代码约定
 
@@ -130,9 +164,9 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 推到 `main` 即自动构建并发布（GitHub Actions）。首次使用需要在仓库的
 **Settings → Pages → Source** 里选 **GitHub Actions**。
 
-站点挂在 `/mcArt/` 子路径下，`vite.config.ts` 会按 `GITHUB_ACTIONS` 环境变量自动切换 `base`，
-本地开发仍是根路径。路由用 hash 模式（`/#/pixel`），因为 GitHub Pages 是纯静态托管，
-history 模式下刷新深链会 404。
+站点挂在 `/mcArt/` 子路径下，`docs/.vitepress/config.mts` 会按 `GITHUB_ACTIONS`
+环境变量自动切换 `base`，本地开发仍是根路径。文档站是 VitePress 的静态多页产物，
+深链（`/tools/pixel`）刷新由 Pages 直接命中同名文件，不需要 hash 路由与 404 兜底。
 
 ## 说明
 
@@ -144,4 +178,4 @@ history 模式下刷新深链会 404。
 ## 许可
 
 代码以 [MIT](LICENSE) 发布，可自由使用、修改、再分发，保留版权声明即可。
-旧版功能说明见 [docs/legacy-generator.md](docs/legacy-generator.md)。
+旧版功能说明见 [docs/guide/legacy-generator.md](docs/guide/legacy-generator.md)。
