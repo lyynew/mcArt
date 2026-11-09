@@ -8,6 +8,8 @@ import { cellsOf, projectionOf } from './projection'
 /**
  * 分层预览画布。
  * 投影与取格逻辑在 projection.ts，这里只负责画。
+ *
+ * 格宽跟着容器算，而不是写死 560：站内是整屏的，写死会让画布缩在中间一小块。
  */
 const props = defineProps<{
   structure: ParsedStructure
@@ -15,6 +17,8 @@ const props = defineProps<{
 }>()
 
 const canvas = ref<HTMLCanvasElement | null>(null)
+/** 画布外面的凹槽，尺寸以它为准 */
+const box = ref<HTMLElement | null>(null)
 
 const layout = computed(() => projectionOf(props.structure.size))
 const cells = computed(() => cellsOf(props.structure, props.layer, layout.value))
@@ -23,6 +27,7 @@ const cells = computed(() => cellsOf(props.structure, props.layer, layout.value)
 const ready = new Map<string, HTMLImageElement>()
 
 let frame = 0
+let observer: ResizeObserver | null = null
 
 function paint(): void {
   if (frame) return
@@ -32,12 +37,22 @@ function paint(): void {
   })
 }
 
+/** 可用空间：扣掉凹槽的内边距 */
+function available(): { w: number; h: number } {
+  const el = box.value
+  if (!el) return { w: 560, h: 420 }
+  // 首次挂载时可能是 0，给个下限，别按 0 画出 2px 的格子
+  return { w: Math.max(120, el.clientWidth - 24), h: Math.max(120, el.clientHeight - 24) }
+}
+
 function draw(): void {
   const el = canvas.value
   if (!el) return
 
   const { cols, rows } = layout.value
-  const cell = Math.max(2, Math.min(24, Math.floor(560 / Math.max(cols, rows))))
+  const { w, h } = available()
+  // 上限 32px：再大只是把 16×16 的贴图糊成色块，反而看不清边界
+  const cell = Math.max(2, Math.min(32, Math.floor(Math.min(w / cols, h / rows))))
   const dpr = window.devicePixelRatio || 1
 
   el.width = Math.round(cols * cell * dpr)
@@ -123,10 +138,18 @@ watch(
 onMounted(() => {
   paint()
   void preload()
+
+  // 窗口缩放、侧栏折叠都会让容器变宽，格宽要跟着重算
+  if (typeof ResizeObserver !== 'undefined' && box.value) {
+    observer = new ResizeObserver(() => paint())
+    observer.observe(box.value)
+  }
 })
 
 onBeforeUnmount(() => {
   if (frame) cancelAnimationFrame(frame)
+  observer?.disconnect()
+  observer = null
 })
 </script>
 
@@ -136,7 +159,7 @@ onBeforeUnmount(() => {
       <span>{{ layout.title }}</span>
       <span class="layer__size">{{ layout.cols }} × {{ layout.rows }}</span>
     </div>
-    <div class="layer__canvas">
+    <div ref="box" class="layer__canvas">
       <canvas ref="canvas" />
     </div>
   </div>
@@ -144,6 +167,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .layer {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
@@ -162,10 +187,12 @@ onBeforeUnmount(() => {
 }
 
 .layer__canvas {
+  flex: 1;
+  min-height: 160px;
   display: grid;
   place-items: center;
+  align-self: stretch;
   width: 100%;
-  max-height: 460px;
   padding: 12px;
   overflow: auto;
   background: var(--mc-stage);

@@ -9,9 +9,11 @@ import { parseStructure, type ParsedStructure } from '@/core/nbt-read'
 
 export interface LoadedStructure {
   name: string
-  /** 原始文件字节数 */
+  /** 原始文件字节数；示例结构没有文件，为 0 */
   fileSize: number
   structure: ParsedStructure
+  /** 由内置示例生成，不是用户拖进来的文件 */
+  demo?: boolean
 }
 
 async function maybeGunzip(bytes: Uint8Array): Promise<Uint8Array> {

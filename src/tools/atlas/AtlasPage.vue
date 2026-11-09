@@ -123,10 +123,22 @@ const matched = computed(() => groups.value.reduce((n, g) => n + g.items.length,
 @media (max-width: 900px) {
   .atlas {
     grid-template-columns: 1fr;
+    /* 单列时退出「撑满视口」的角色：按内容撑高，滚动交给外层容器。
+       宽屏那套 flex: 1 + 内部滚动在窄屏会把两行挤扁。 */
+    flex: 0 0 auto;
+    height: auto;
+    grid-auto-rows: max-content;
+    align-content: start;
   }
 
   .atlas__main {
     min-height: 60vh;
+  }
+
+  /* 手指滑动时不要嵌套滚动：列表跟着页面一起走 */
+  .atlas__scroll,
+  .atlas__side {
+    overflow: visible;
   }
 }
 </style>

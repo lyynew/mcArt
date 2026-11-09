@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ParsedStructure } from '@/core/nbt-read'
-import { cellsOf, materialCounts, projectionOf } from './projection'
+import { cellsOf, denseLayerOf, materialCounts, projectionOf } from './projection'
 
 /**
  * 结构文件的投影与取格。
@@ -81,8 +81,7 @@ describe('cellsOf', () => {
   })
 })
 
-describe('materialCounts', () => {
-  it('统计数量并按多到少排序，忽略空气', () => {
+describe('materialCounts', () => {  it('统计数量并按多到少排序，忽略空气', () => {
     const s = structure([4, 1, 4], [
       { pos: [0, 0, 0], name: 'minecraft:stone' },
       { pos: [1, 0, 0], name: 'minecraft:stone' },
@@ -99,5 +98,31 @@ describe('materialCounts', () => {
   it('全是空气时返回空数组', () => {
     const s = structure([2, 1, 2], [{ pos: [0, 0, 0], name: 'minecraft:air' }])
     expect(materialCounts(s)).toEqual([])
+  })
+})
+
+describe('denseLayerOf', () => {
+  it('跳过空白层，停在方块最多的那层', () => {
+    const s = structure([2, 4, 2], [
+      { pos: [0, 2, 0], name: 'minecraft:stone' },
+      { pos: [1, 2, 0], name: 'minecraft:stone' },
+      { pos: [0, 2, 1], name: 'minecraft:stone' },
+      { pos: [0, 3, 0], name: 'minecraft:stone' },
+    ])
+    expect(denseLayerOf(s, projectionOf(s.size))).toBe(2)
+  })
+
+  it('每层一样多时取最下面那层', () => {
+    const s = structure([2, 3, 2], [
+      { pos: [0, 0, 0], name: 'minecraft:stone' },
+      { pos: [1, 1, 0], name: 'minecraft:stone' },
+      { pos: [0, 2, 0], name: 'minecraft:stone' },
+    ])
+    expect(denseLayerOf(s, projectionOf(s.size))).toBe(0)
+  })
+
+  it('空结构退回第 0 层', () => {
+    const s = structure([2, 2, 2], [])
+    expect(denseLayerOf(s, projectionOf(s.size))).toBe(0)
   })
 })

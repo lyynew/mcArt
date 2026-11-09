@@ -71,3 +71,27 @@ export function materialCounts(structure: ParsedStructure): { id: string; count:
     .map(([id, count]) => ({ id, count }))
     .sort((a, b) => b.count - a.count)
 }
+
+/**
+ * 方块最多的一层。
+ *
+ * 打开文件默认停在第 0 层往往是一片空白（地基之上、屋顶之下），
+ * 让人误以为文件坏了。直接跳到内容最密的一层，第一眼就是有效信息。
+ */
+export function denseLayerOf(structure: ParsedStructure, projection: Projection): number {
+  const axis = projection.axis
+  const total = structure.size[axis]
+  if (total <= 0) return 0
+
+  const counts = new Array<number>(total).fill(0)
+  for (const b of structure.blocks) {
+    const at = b.pos[axis]
+    if (at >= 0 && at < total) counts[at]! += 1
+  }
+
+  let best = 0
+  for (let i = 1; i < total; i++) {
+    if (counts[i]! > counts[best]!) best = i
+  }
+  return best
+}
