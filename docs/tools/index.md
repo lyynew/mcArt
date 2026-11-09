@@ -4,7 +4,7 @@ title: 工具
 
 # 工具
 
-三个工具共用同一份方块数据与贴图，也共用同一套色差算法。生成器负责「做」，图鉴负责「查」，结构查看器负责「验」。
+四个工具共用同一份方块数据、贴图与 CIEDE2000 色差算法。两个生成器负责「做」，图鉴负责「查」，结构查看器负责「验」；地图画走的是另一个出口，产物不是方块而是地图物品数据。
 
 <div class="tool-cards">
   <a class="tool-card" href="./pixel">
@@ -14,6 +14,14 @@ title: 工具
     </span>
     <span class="tool-card__desc">上传图片，按最优色差匹配成方块画。可以逐格修改，最后导出 Java 版结构文件、施工图与材料清单。</span>
     <span class="tool-card__meta">16–160 格 · 10 套方案 · .nbt / PNG / CSV</span>
+  </a>
+  <a class="tool-card" href="./map-art">
+    <span class="tool-card__head">
+      <span class="tool-card__name">地图画生成器</span>
+      <span class="tool-card__tag">可用</span>
+    </span>
+    <span class="tool-card__desc">把图片写进游戏内的地图物品：61 种地图基础色 × 4 档明暗共 244 色，CIEDE2000 匹配，可开关抖动。导出 <code>map_#.dat</code>、<code>give</code> 指令与 PNG 预览。</span>
+    <span class="tool-card__meta">128 × 128 · 244 色 · .dat / ZIP / PNG</span>
   </a>
   <a class="tool-card" href="./atlas">
     <span class="tool-card__head">
@@ -33,11 +41,13 @@ title: 工具
   </a>
 </div>
 
-## 三个工具怎么配合
+## 四个工具怎么配合
 
-1. 在**生成器**里做出画，导出 `.nbt`；
+1. 在**方块像素画生成器**里做出画，导出 `.nbt`；
 2. 对导出结果不放心，用**结构查看器**打开同一个文件，逐层核对方块与尺寸；
-3. 施工时想知道某种方块长什么样、ID 是什么，用**图鉴**查。
+3. 施工时想知道某种方块长什么样、ID 是什么，用**图鉴**查；
+4. 想要的是能拿在手里看的**地图物品**，改用**地图画生成器**——它不摆方块，
+   直接产出存档用的 `map_#.dat`，用法见[地图画与地图数据](../guide/map-art)。
 
 ## 关于工作台的外观
 

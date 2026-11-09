@@ -22,6 +22,11 @@ const router = createRouter({
       component: () => import('@/tools/pixel/PixelPage.vue'),
     },
     {
+      path: '/map-art',
+      name: 'map-art',
+      component: () => import('@/tools/map-art/MapArtPage.vue'),
+    },
+    {
       path: '/atlas',
       name: 'atlas',
       component: () => import('@/tools/atlas/AtlasPage.vue'),

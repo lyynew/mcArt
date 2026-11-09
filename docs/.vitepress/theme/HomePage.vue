@@ -15,7 +15,7 @@ const heroSrc = withBase('/hero-block.svg')
   <div class="home">
     <section class="home-hero">
       <div class="home-hero__copy">
-        <p class="home-eyebrow">方块画 / 图鉴 / 结构文件</p>
+        <p class="home-eyebrow">方块画 / 地图画 / 图鉴 / 结构文件</p>
         <h1>把一张图<br />变成<em>方块画</em></h1>
         <p class="home-lead">
           图片按色差匹配成方块，逐格改到满意，导出结构文件直接进游戏。<br />
@@ -40,7 +40,7 @@ const heroSrc = withBase('/hero-block.svg')
 
     <section class="home-section">
       <p class="home-kicker">工具</p>
-      <h2>三个工具，做完一件事</h2>
+      <h2>四个工具，做完一件事</h2>
       <div class="home-cards">
         <a class="home-card" href="./tools/pixel.html">
           <span class="home-card__no">01 / GENERATE</span>
@@ -50,8 +50,16 @@ const heroSrc = withBase('/hero-block.svg')
           </p>
           <span class="home-card__foot">16–160 格 · 10 套方案 →</span>
         </a>
+        <a class="home-card" href="./tools/map-art.html">
+          <span class="home-card__no">02 / MAP ART</span>
+          <span class="home-card__name">地图画生成器</span>
+          <p class="home-card__desc">
+            图片写进地图物品，244 色 + 抖动，导出 map_#.dat、give 指令与 PNG 预览。
+          </p>
+          <span class="home-card__foot">128 × 128 · 244 色 →</span>
+        </a>
         <a class="home-card" href="./tools/atlas.html">
-          <span class="home-card__no">02 / LOOK UP</span>
+          <span class="home-card__no">03 / LOOK UP</span>
           <span class="home-card__name">方块图鉴</span>
           <p class="home-card__desc">
             142 种方块的原版贴图、平均色与 ID，按分组浏览，一键复制 give 命令。
@@ -59,7 +67,7 @@ const heroSrc = withBase('/hero-block.svg')
           <span class="home-card__foot">142 种 · 贴图放大 →</span>
         </a>
         <a class="home-card" href="./tools/nbt.html">
-          <span class="home-card__no">03 / VERIFY</span>
+          <span class="home-card__no">04 / VERIFY</span>
           <span class="home-card__name">结构文件查看器</span>
           <p class="home-card__desc">
             拖入 .nbt 分层看结构、统计材料、检查 48×48 上限，是导出的逆运算。

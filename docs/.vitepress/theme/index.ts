@@ -37,5 +37,9 @@ export default {
       'ToolNbt',
       defineClientComponent(() => import('@/tools/nbt-viewer/NbtViewerPage.vue')),
     )
+    app.component(
+      'ToolMapArt',
+      defineClientComponent(() => import('@/tools/map-art/MapArtPage.vue')),
+    )
   },
 } satisfies Theme

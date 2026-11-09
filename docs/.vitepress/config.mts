@@ -25,7 +25,7 @@ export default defineConfig({
   title: 'mcArt',
   titleTemplate: ':title · mcArt',
   description:
-    'Minecraft 网页工具集：方块像素画生成器、方块图鉴、结构文件查看器。纯前端，图片不上传。',
+    'Minecraft 网页工具集：方块像素画生成器、地图画生成器、方块图鉴、结构文件查看器。纯前端，图片不上传。',
   base,
   cleanUrls: false,
   lastUpdated: true,
@@ -39,7 +39,7 @@ export default defineConfig({
       'meta',
       {
         property: 'og:description',
-        content: '把一张图变成方块画，导出结构文件直接进游戏。纯前端、离线可用。',
+        content: '把一张图变成方块画或地图物品，导出结构文件与地图数据直接进游戏。纯前端、离线可用。',
       },
     ],
   ],
@@ -72,6 +72,7 @@ export default defineConfig({
         items: [
           { text: '工具总览', link: '/tools/' },
           { text: '方块像素画生成器', link: '/tools/pixel' },
+          { text: '地图画生成器', link: '/tools/map-art' },
           { text: '方块图鉴', link: '/tools/atlas' },
           { text: '结构文件查看器', link: '/tools/nbt' },
         ],
@@ -94,6 +95,7 @@ export default defineConfig({
           items: [
             { text: '结构文件与进游戏', link: '/guide/structure-file' },
             { text: '方块与材质', link: '/guide/blocks-and-textures' },
+            { text: '地图画与地图数据', link: '/guide/map-art' },
           ],
         },
         {
@@ -102,6 +104,12 @@ export default defineConfig({
             { text: '常见问题', link: '/guide/faq' },
             { text: '旧版生成器说明', link: '/guide/legacy-generator' },
           ],
+        },
+      ],
+      '/dev/': [
+        {
+          text: '二次开发',
+          items: [{ text: '新增一个工具', link: '/dev/adding-a-tool' }],
         },
       ],
     },

@@ -8,51 +8,13 @@
  * 这类代码最怕「看起来一样、进游戏加载不出来」。
  */
 import { fullId, type BlockDef } from './blocks'
+import { NbtWriter, TAG } from './nbt-writer'
 
 /** 结构方块单次加载的上限：48×48×48 */
 export const STRUCT_MAX = 48
 
-/** Java 1.21.4 的 DataVersion，写错会导致游戏拒绝加载 */
+/** Java 1.21 的 DataVersion；旧一点的版本号在 1.21.x 存档里也能正常加载 */
 export const DATA_VERSION = 3953
-
-/** NBT 标签类型 */
-const TAG_END = 0
-const TAG_INT = 3
-const TAG_STRING = 8
-const TAG_LIST = 9
-const TAG_COMPOUND = 10
-
-/** 大端序写入器，只实现结构文件需要的几个类型 */
-class NbtWriter {
-  private readonly buf: number[] = []
-
-  u8(v: number): this {
-    this.buf.push(v & 255)
-    return this
-  }
-
-  i16(v: number): this {
-    this.buf.push((v >> 8) & 255, v & 255)
-    return this
-  }
-
-  i32(v: number): this {
-    this.buf.push((v >>> 24) & 255, (v >>> 16) & 255, (v >>> 8) & 255, v & 255)
-    return this
-  }
-
-  /** 字符串按 UTF-8 编码，长度是 i16（所以超长字符串本来就不该出现在这里） */
-  str(s: string): this {
-    const bytes = new TextEncoder().encode(s)
-    this.i16(bytes.length)
-    for (let i = 0; i < bytes.length; i++) this.buf.push(bytes[i]!)
-    return this
-  }
-
-  bytes(): Uint8Array {
-    return new Uint8Array(this.buf)
-  }
-}
 
 export interface StructureBuildOptions {
   /** 整幅图的边长格数 */
@@ -112,62 +74,62 @@ export function buildStructure(o: StructureBuildOptions): Uint8Array {
   const wr = new NbtWriter()
 
   // 根节点：无名 compound
-  wr.u8(TAG_COMPOUND)
+  wr.u8(TAG.Compound)
   wr.str('')
 
   // size: [w, h, 1] 或 [w, 1, h]
-  wr.u8(TAG_LIST)
+  wr.u8(TAG.List)
   wr.str('size')
-  wr.u8(TAG_INT)
+  wr.u8(TAG.Int)
   wr.i32(3)
   wr.i32(w)
   wr.i32(wall ? h : 1)
   wr.i32(wall ? 1 : h)
 
   // palette: [{ Name: "minecraft:xxx" }, ...]，下标即 block 的 state
-  wr.u8(TAG_LIST)
+  wr.u8(TAG.List)
   wr.str('palette')
-  wr.u8(TAG_COMPOUND)
+  wr.u8(TAG.Compound)
   wr.i32(palette.length)
   for (let i = 0; i < palette.length; i++) {
-    wr.u8(TAG_STRING)
+    wr.u8(TAG.String)
     wr.str('Name')
     wr.str(palette[i]!)
-    wr.u8(TAG_END)
+    wr.u8(TAG.End)
   }
 
   // blocks: [{ pos: [x,y,z], state: int }, ...]
-  wr.u8(TAG_LIST)
+  wr.u8(TAG.List)
   wr.str('blocks')
-  wr.u8(TAG_COMPOUND)
+  wr.u8(TAG.Compound)
   wr.i32(pos.length)
   for (let i = 0; i < pos.length; i++) {
     const c = pos[i]!
-    wr.u8(TAG_LIST)
+    wr.u8(TAG.List)
     wr.str('pos')
-    wr.u8(TAG_INT)
+    wr.u8(TAG.Int)
     wr.i32(3)
     wr.i32(c[0])
     wr.i32(c[1])
     wr.i32(c[2])
-    wr.u8(TAG_INT)
+    wr.u8(TAG.Int)
     wr.str('state')
     wr.i32(c[3])
-    wr.u8(TAG_END)
+    wr.u8(TAG.End)
   }
 
   // entities: 空列表，结构方块要求字段存在
-  wr.u8(TAG_LIST)
+  wr.u8(TAG.List)
   wr.str('entities')
-  wr.u8(TAG_COMPOUND)
+  wr.u8(TAG.Compound)
   wr.i32(0)
 
-  wr.u8(TAG_INT)
+  wr.u8(TAG.Int)
   wr.str('DataVersion')
   wr.i32(DATA_VERSION)
 
   // 根节点结束
-  wr.u8(TAG_END)
+  wr.u8(TAG.End)
 
   return wr.bytes()
 }

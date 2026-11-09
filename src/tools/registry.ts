@@ -48,6 +48,23 @@ export const TOOLS: readonly ToolMeta[] = [
     preview: pick('light_blue_wool', 'white_wool', 'sand', 'oak_planks', 'dirt', 'black_concrete'),
   },
   {
+    id: 'map-art',
+    path: '/map-art',
+    name: '地图画生成器',
+    tagline: '图片写进地图物品，导出 map_#.dat 与 give 指令，不摆方块也能看画',
+    detail:
+      '128×128 固定画幅，61 种地图基础色 × 4 档明暗，CIEDE2000 匹配与三种抖动，导出 gzip NBT、ZIP 说明包、give 指令与 PNG 预览。',
+    status: 'ready',
+    preview: pick(
+      'white_wool',
+      'red_wool',
+      'blue_wool',
+      'green_wool',
+      'yellow_wool',
+      'black_concrete',
+    ),
+  },
+  {
     id: 'atlas',
     path: '/atlas',
     name: '方块图鉴',
@@ -55,7 +72,8 @@ export const TOOLS: readonly ToolMeta[] = [
     detail:
       '按分组浏览、搜中英文名与 ID、放大看贴图、一键复制 minecraft:xxx 与 give 命令。',
     status: 'ready',
-    preview: pick('red_concrete', 'orange_concrete', 'yellow_concrete', 'lime_concrete', 'cyan_wool', 'blue_concrete'),  },
+    preview: pick('red_concrete', 'orange_concrete', 'yellow_concrete', 'lime_concrete', 'cyan_wool', 'blue_concrete'),
+  },
   {
     id: 'nbt',
     path: '/nbt',
