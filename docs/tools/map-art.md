@@ -3,7 +3,7 @@ layout: page
 pageClass: tool-page
 footer: false
 title: 地图画生成器
-description: 图片转 Minecraft 地图画，支持直接写地图数据、平铺与立体阶梯施工，导出 map_#.dat、give 指令、.litematic 与分块 .nbt。
+description: 图片转地图画：写地图数据、平铺或立体阶梯，导出地图文件与施工文件。
 ---
 
 <ToolFrame>

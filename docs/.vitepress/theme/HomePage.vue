@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import { withBase } from 'vitepress'
 
-/**
- * 首页。
- *
- * 不用 VitePress 自带的 home 版式：那个版式的小标题 / 特性卡片排得太满，
- * 而且大段原生 HTML 写在 markdown 里会被当成缩进代码块（踩过一次）。
- * 干脆做成一个组件，版式自己控制，样式在 custom.css 里。
- */
+/** 首页版式自成一套，样式在 custom.css 里。 */
 const heroSrc = withBase('/hero-block.svg')
 </script>
 
@@ -46,7 +40,7 @@ const heroSrc = withBase('/hero-block.svg')
           <span class="home-card__no">01 / GENERATE</span>
           <span class="home-card__name">方块像素画生成器</span>
           <p class="home-card__desc">
-            图片转方块画，画笔、填充、九格物品栏逐格改，导出 .nbt / .litematic / .schem、施工图与材料清单。
+            图片转方块画，可以逐格改，导出结构文件、施工图与材料清单。
           </p>
           <span class="home-card__foot">16–256 格 · 10 套方案 →</span>
         </a>
@@ -54,7 +48,7 @@ const heroSrc = withBase('/hero-block.svg')
           <span class="home-card__no">02 / MAP ART</span>
           <span class="home-card__name">地图画生成器</span>
           <p class="home-card__desc">
-            写地图数据、平铺或立体阶梯，导出 map_#.dat、give 指令与 .litematic 施工文件。
+            写地图数据、平铺或立体阶梯，导出地图文件、give 指令与施工文件。
           </p>
           <span class="home-card__foot">128 × 128 · 立体阶梯 →</span>
         </a>
@@ -62,7 +56,7 @@ const heroSrc = withBase('/hero-block.svg')
           <span class="home-card__no">03 / LOOK UP</span>
           <span class="home-card__name">方块图鉴</span>
           <p class="home-card__desc">
-            978 种方块的原版贴图、中文名与 ID，16 个分组、随打随搜，一键复制 give 命令。
+            978 种方块的贴图、中文名与 ID，可搜索，一键复制命令。
           </p>
           <span class="home-card__foot">978 种 · 贴图放大 →</span>
         </a>
@@ -70,7 +64,7 @@ const heroSrc = withBase('/hero-block.svg')
           <span class="home-card__no">04 / VERIFY</span>
           <span class="home-card__name">结构文件查看器</span>
           <p class="home-card__desc">
-            拖入 .nbt / .litematic / .schem 分层看结构，点格子查方块名与坐标，画布可缩放，是导出的逆运算。
+            拖入结构文件，分层看结构、点格子查方块名，画布可缩放拖拽。
           </p>
           <span class="home-card__foot">分层查看 · 点选查块 →</span>
         </a>
@@ -85,7 +79,7 @@ const heroSrc = withBase('/hero-block.svg')
           <span>快速开始 · 五分钟出第一张图</span><span>01 →</span>
         </a>
         <a class="home-link" href="./guide/how-it-works.html">
-          <span>生成原理 · 为什么用 CIEDE2000</span><span>02 →</span>
+          <span>生成原理 · 颜色是怎么匹配的</span><span>02 →</span>
         </a>
         <a class="home-link" href="./guide/structure-file.html">
           <span>结构文件 · 怎么放进存档</span><span>03 →</span>

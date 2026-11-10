@@ -7,6 +7,9 @@ title: 新增一个工具
 这份是给二次开发看的接线手册。**参考实现是 `src/tools/map-art/`**：它是按下面这套约定从零搭的，
 目录最干净，改动前先读一遍它比读本文档更快。
 
+仓库结构、代码约定、素材生成与部署说明另见根目录的
+[TECHNICAL.md](https://github.com/lyynew/mcArt/blob/main/TECHNICAL.md)。
+
 ## 一句话原则
 
 > 纯算法放 `.ts`（可单测） → 状态放一个 `store.ts` → 组件只渲染 → 页面只编排 → 站点接线四处登记。

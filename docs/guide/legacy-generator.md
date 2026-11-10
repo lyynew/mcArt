@@ -4,10 +4,8 @@ title: 旧版生成器说明
 
 # 旧版生成器 · 功能说明
 
-> 这份文档从旧版 README 原样保留，描述的是**旧版单文件实现**的功能。
-> 功能已逐项搬到新版，本文留作对照：新版没覆盖到的细节，以这里为准。
-> 想亲自试旧版，打开 [旧版页面](/legacy/){target="_blank"} 即可（单文件 HTML，不需要环境、不需要联网）。
-> 仓库里对应 `public/legacy/index.html`。
+> 这里记的是**旧版单文件页面**的功能，留作对照。
+> 想亲自试，打开 [旧版页面](/legacy/){target="_blank"} 即可，单文件 HTML，不用装环境。
 
 ## 快速开始
 
@@ -91,8 +89,5 @@ title: 旧版生成器说明
 | `H` | 抓手 | `Ctrl+Z` | 撤销 |
 | `空格` | 临时拖动画布 | `Ctrl+Shift+Z` | 重做 |
 
-## 实现要点
-
-- 单文件：样式、逻辑、142 张内置贴图（base64）都在 `index.html` 里
-- `原版材质/` 是贴图原始 PNG，`.build/` 里的 Python 脚本从中算出每个方块的平均色
-- 结构文件写入是自己实现的：NBT 序列化 + gzip（stored）+ zip（stored），不依赖第三方库
+旧版不联网、不依赖任何库，样式、逻辑和贴图都在一个 HTML 文件里。代码层面的说明见仓库的
+[TECHNICAL.md](https://github.com/lyynew/mcArt/blob/main/TECHNICAL.md)。

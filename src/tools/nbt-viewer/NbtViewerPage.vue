@@ -286,7 +286,7 @@ onBeforeUnmount(() => {
         <li>用生成器导出结构文件，或者拿别人分享的 .nbt / .litematic / .schem</li>
         <li>放哪都行：.nbt 在存档 <code>generated/minecraft/structures/</code>，.litematic 在 <code>.minecraft/schematics</code>，.schem 在 <code>worldedit/schematics</code></li>
         <li>拖进来就能看每一层铺了什么、一共要多少料</li>
-        <li>点画布上任意一格，能看到方块名、坐标和它在整个结构里的用量；右上角 − / + 缩放画布（桌面也可 Ctrl + 滚轮）</li>
+        <li>点画布上任意一格，能看到方块名、坐标和它在整个结构里的用量；滚轮缩放（以光标为中心）、拖动画布平移，右上角 − / + 与键盘 + / - / 0 也能缩放</li>
         <li>收录了 1.21.4 的绝大多数方块，<code>chest[facing=north]</code> 这类带状态的写法也能认出；少数未收录的会显示原始 ID</li>
       </ol>
     </McWindow>
@@ -339,7 +339,7 @@ onBeforeUnmount(() => {
           </div>
 
           <p v-else class="viewer__hint">
-            点格子看方块名与坐标 · 右上角 − / + 缩放画布（桌面也可 Ctrl + 滚轮）
+            点格子看方块名与坐标 · 滚轮缩放（以光标为中心）· 拖动画布平移 · 双指捏合缩放
           </p>
 
           <div v-if="layerCount > 1" class="viewer__layers">
@@ -543,6 +543,7 @@ onBeforeUnmount(() => {
 
 .viewer__stage {
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
   display: flex;
   padding: var(--sp-3);

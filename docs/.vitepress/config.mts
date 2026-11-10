@@ -1,14 +1,11 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitepress'
+import { bootLoader } from './boot-loader'
 
 /**
- * 文档站配置。
- *
- * 站点承担两件事：写文章的「文章」区，和跑工具的「工具」区。
- * 工具是 src/ 下的 Vue 页面组件，直接在 markdown 里挂载，见 docs/tools/*.md；
- * 因此这里要把 `@` 别名和 __APP_VERSION__ 一并透传给 Vite，
- * 让 src/ 下的工具与核心代码原样跑在文档站里。
+ * 工具组件在 markdown 里挂载（docs/tools/*.md），
+ * 所以要把 `@` 别名和 __APP_VERSION__ 透传给 Vite。
  */
 
 const pkg = JSON.parse(
@@ -25,7 +22,7 @@ export default defineConfig({
   title: 'mcArt',
   titleTemplate: ':title · mcArt',
   description:
-    'Minecraft 网页工具集：方块像素画生成器、地图画生成器、方块图鉴、结构文件查看器。纯前端，图片不上传。',
+    '方块像素画、地图画、方块图鉴、结构文件查看器。纯前端，图片不上传。',
   base,
   cleanUrls: false,
   lastUpdated: true,
@@ -45,6 +42,8 @@ export default defineConfig({
   ],
 
   vite: {
+    // dev 只吐一个空 #app，挂上首屏加载圈；生产构建不加载这个插件
+    plugins: [bootLoader()],
     define: { __APP_VERSION__: JSON.stringify(pkg.version) },
     resolve: {
       alias: { '@': fileURLToPath(new URL('../../src', import.meta.url)) },
@@ -109,7 +108,10 @@ export default defineConfig({
       '/dev/': [
         {
           text: '二次开发',
-          items: [{ text: '新增一个工具', link: '/dev/adding-a-tool' }],
+          items: [
+            { text: '新增一个工具', link: '/dev/adding-a-tool' },
+            { text: '技术文档（GitHub）', link: 'https://github.com/lyynew/mcArt/blob/main/TECHNICAL.md' },
+          ],
         },
       ],
     },
