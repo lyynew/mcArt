@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { McButton, McDropzone, McNote, McSlider, McWindow } from '@/design/components'
 import BlockSlot from '@/components/blocks/BlockSlot.vue'
-import { findBlock } from '@/core/blocks'
+import { findBlock, normalizeBlockId } from '@/core/blocks'
 import { STRUCT_MAX } from '@/core/nbt'
+import { copyText } from '@/shared/clipboard'
 import LayerCanvas from './LayerCanvas.vue'
 import { FORMAT_LABEL, readStructureFile, type LoadedStructure } from './read-structure-file'
-import { denseLayerOf, materialCounts, projectionOf } from './projection'
+import { denseLayerOf, materialCounts, projectionOf, type PickedCell } from './projection'
 import { demoStructure } from './demo-structure'
 
 /**
@@ -22,10 +23,13 @@ const loaded = ref<LoadedStructure | null>(null)
 const layer = ref(0)
 const error = ref('')
 const loading = ref(false)
+/** 画布上点中的格子；换文件、换层都会清掉 */
+const picked = ref<PickedCell | null>(null)
 /** 有文件悬停在窗口上，显示整页的接住提示 */
 const dragging = ref(false)
 
 async function apply(next: LoadedStructure): Promise<void> {
+  picked.value = null
   loaded.value = next
   // 默认停在方块最多的那层：第 0 层常常是空的，容易让人以为解析失败
   layer.value = denseLayerOf(next.structure, projectionOf(next.structure.size))
@@ -74,6 +78,37 @@ const materials = computed(() =>
 const solidBlocks = computed(() => materials.value.reduce((n, m) => n + m.count, 0))
 
 const kinds = computed(() => materials.value.length)
+
+/** 每种方块的用量：点选面板要回答「这个方块全结构有多少块」 */
+const countById = computed(() => new Map(materials.value.map((m) => [m.id, m.count])))
+
+const pickedBlock = computed(() => (picked.value ? blockOf(picked.value.id) : null))
+
+const pickedName = computed(() => {
+  const p = picked.value
+  return p ? (pickedBlock.value?.zh ?? normalizeBlockId(p.id)) : ''
+})
+
+const pickedCount = computed(() =>
+  picked.value ? (countById.value.get(normalizeBlockId(picked.value.id)) ?? 0) : 0,
+)
+
+const copied = ref(false)
+let copiedTimer: ReturnType<typeof setTimeout> | null = null
+
+async function copyPicked(): Promise<void> {
+  if (!picked.value) return
+  copied.value = await copyText(picked.value.id)
+  if (copiedTimer) clearTimeout(copiedTimer)
+  copiedTimer = setTimeout(() => {
+    copied.value = false
+  }, 1600)
+}
+
+// 换层后同一个格子是另一块方块，选中框留在原处会指向错误的对象
+watch(layer, () => {
+  picked.value = null
+})
 
 const sizeText = computed(() => {
   const s = loaded.value?.structure.size
@@ -161,12 +196,19 @@ function onDrop(e: DragEvent): void {
 }
 
 /* —— 键盘切层 ——
-   只接左右与翻页键：上下键留给滚动，别和页面抢。 */
+   只接左右与翻页键：上下键留给滚动，别和页面抢。Esc 取消选中。 */
 function onKeydown(e: KeyboardEvent): void {
-  if (!loaded.value || layerCount.value <= 1) return
+  if (!loaded.value) return
   const el = e.target as HTMLElement | null
   const tag = el?.tagName
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return
+
+  if (e.key === 'Escape' && picked.value) {
+    picked.value = null
+    return
+  }
+
+  if (layerCount.value <= 1) return
 
   if (e.key === 'Home') {
     e.preventDefault()
@@ -197,6 +239,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  if (copiedTimer) clearTimeout(copiedTimer)
   window.removeEventListener('dragenter', onDragEnter)
   window.removeEventListener('dragover', onDragOver)
   window.removeEventListener('dragleave', onDragLeave)
@@ -243,6 +286,7 @@ onBeforeUnmount(() => {
         <li>用生成器导出结构文件，或者拿别人分享的 .nbt / .litematic / .schem</li>
         <li>放哪都行：.nbt 在存档 <code>generated/minecraft/structures/</code>，.litematic 在 <code>.minecraft/schematics</code>，.schem 在 <code>worldedit/schematics</code></li>
         <li>拖进来就能看每一层铺了什么、一共要多少料</li>
+        <li>点画布上任意一格，能看到方块名、坐标和它在整个结构里的用量；右上角 − / + 缩放画布（桌面也可 Ctrl + 滚轮）</li>
         <li>收录了 1.21.4 的绝大多数方块，<code>chest[facing=north]</code> 这类带状态的写法也能认出；少数未收录的会显示原始 ID</li>
       </ol>
     </McWindow>
@@ -264,8 +308,39 @@ onBeforeUnmount(() => {
 
         <McWindow title="分层预览" flush class="viewer__preview">
           <div class="viewer__stage">
-            <LayerCanvas :structure="loaded.structure" :layer="layer" />
+            <LayerCanvas
+              :structure="loaded.structure"
+              :layer="layer"
+              :selected="picked?.index ?? null"
+              @pick="picked = $event"
+            />
           </div>
+
+          <div v-if="picked" class="viewer__picked">
+            <BlockSlot :block="pickedBlock" :size="0" class="viewer__picked-slot" />
+            <span class="viewer__picked-name">{{ pickedName }}</span>
+            <code class="viewer__picked-id">{{ picked.id }}</code>
+            <span class="viewer__picked-meta">
+              x {{ picked.pos[0] }} · y {{ picked.pos[1] }} · z {{ picked.pos[2] }}
+              · 全结构 {{ pickedCount.toLocaleString('zh-CN') }} 块
+            </span>
+            <McButton size="sm" class="viewer__picked-copy" @click="copyPicked">
+              {{ copied ? '已复制' : '复制 ID' }}
+            </McButton>
+            <button
+              type="button"
+              class="viewer__picked-close"
+              aria-label="取消选中"
+              title="取消选中（Esc）"
+              @click="picked = null"
+            >
+              ×
+            </button>
+          </div>
+
+          <p v-else class="viewer__hint">
+            点格子看方块名与坐标 · 右上角 − / + 缩放画布（桌面也可 Ctrl + 滚轮）
+          </p>
 
           <div v-if="layerCount > 1" class="viewer__layers">
             <McSlider
@@ -474,7 +549,82 @@ onBeforeUnmount(() => {
 }
 
 .viewer__layers {
-  padding: 0 var(--sp-3) var(--sp-3);
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+}
+
+/* —— 点选结果条：名字、ID、坐标、用量都在画布正下方，不用来回找 —— */
+.viewer__picked {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  box-sizing: border-box;
+  min-height: 34px;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-note);
+  background: rgb(0 0 0 / 5%);
+  border-top: 1px solid rgb(0 0 0 / 12%);
+}
+
+.viewer__picked-slot {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+}
+
+.viewer__picked-name {
+  color: var(--mc-ink-strong);
+}
+
+.viewer__picked-id {
+  min-width: 0;
+  font-family: var(--font-mc);
+  font-size: var(--fs-micro);
+  color: var(--mc-ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.viewer__picked-meta {
+  margin-left: auto;
+  color: var(--mc-ink-soft);
+  white-space: nowrap;
+}
+
+.viewer__picked-copy {
+  flex: 0 0 auto;
+}
+
+.viewer__picked-close {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  color: #fff;
+  background: var(--mc-btn);
+  border: var(--mc-bd) solid #000;
+  text-shadow: var(--mc-ts-dark);
+  cursor: pointer;
+}
+
+.viewer__picked-close:hover {
+  background: var(--mc-btn-hover);
+}
+
+/* 未选中时占位与结果条等高：选中前后画布尺寸不变，点一下不会整片跳 */
+.viewer__hint {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 34px;
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-note);
+  line-height: 1.5;
+  color: var(--mc-ink-soft);
 }
 
 .viewer__layer-row {

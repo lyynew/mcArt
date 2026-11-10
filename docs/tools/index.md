@@ -36,8 +36,8 @@ title: 工具
       <span class="tool-card__name">结构文件查看器</span>
       <span class="tool-card__tag">可用</span>
     </span>
-    <span class="tool-card__desc">拖入 .nbt / .litematic / .schem，按层浏览方块分布、统计材料，检查尺寸有没有超过结构方块 48×48 的上限。是导出的逆运算。</span>
-    <span class="tool-card__meta">分层查看 · 尺寸校验 · 材料统计</span>
+    <span class="tool-card__desc">拖入 .nbt / .litematic / .schem，按层浏览方块分布，点格子看方块名与坐标，画布可缩放，另附材料统计与 48×48 尺寸校验。是导出的逆运算。</span>
+    <span class="tool-card__meta">分层查看 · 点选查块 · 缩放画布 · 材料统计</span>
   </a>
 </div>
 

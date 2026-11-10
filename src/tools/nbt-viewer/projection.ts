@@ -60,6 +60,33 @@ export function cellsOf(
   return grid
 }
 
+/**
+ * 画面里的格子下标 → 结构坐标，也就是 `cellsOf` 的逆运算。
+ *
+ * 点击画布要靠它把「第几列第几行」翻回 x/y/z 给用户看。
+ * 三种投影的行列朝向各不相同，翻错了会给出错坐标，所以和 cellsOf 放在一起维护。
+ */
+export function coordOf(
+  index: number,
+  layer: number,
+  projection: Projection,
+): [number, number, number] {
+  const { kind, cols, rows } = projection
+  const col = index % cols
+  const row = Math.floor(index / cols)
+
+  if (kind === 'facade') return [col, rows - 1 - row, layer]
+  if (kind === 'side') return [layer, col, rows - 1 - row]
+  return [col, layer, row]
+}
+
+/** 画布上点中的一格：结构坐标 + 该格的原始方块串（可能带 [状态]） */
+export interface PickedCell {
+  index: number
+  id: string
+  pos: [number, number, number]
+}
+
 /** 统计每种方块的用量（不含空气），从多到少 */
 export function materialCounts(structure: ParsedStructure): { id: string; count: number }[] {
   const tally = new Map<string, number>()

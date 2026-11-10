@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ParsedStructure } from '@/core/nbt-read'
-import { cellsOf, denseLayerOf, materialCounts, projectionOf } from './projection'
+import { cellsOf, coordOf, denseLayerOf, materialCounts, projectionOf } from './projection'
 
 /**
  * 结构文件的投影与取格。
@@ -81,7 +81,40 @@ describe('cellsOf', () => {
   })
 })
 
-describe('materialCounts', () => {  it('统计数量并按多到少排序，忽略空气，id 归一成裸 ID', () => {
+describe('coordOf', () => {
+  it('俯视下一个已知格子的坐标对得上', () => {
+    const s = structure([3, 2, 3], [{ pos: [2, 0, 2], name: 'minecraft:stone' }])
+    const p = projectionOf(s.size)
+    // 俯视索引 = x + z * cols
+    expect(coordOf(2 * 3 + 2, 0, p)).toEqual([2, 0, 2])
+  })
+
+  it('是 cellsOf 的逆运算：三种投影里每一格都能翻回原坐标', () => {
+    const cases: { size: [number, number, number]; cells: [number, number, number][] }[] = [
+      { size: [5, 4, 1], cells: [[0, 0, 0], [4, 3, 0], [2, 1, 0]] },
+      { size: [1, 4, 5], cells: [[0, 0, 0], [0, 3, 4], [0, 1, 2]] },
+      { size: [5, 3, 4], cells: [[0, 0, 0], [4, 2, 3], [1, 1, 2]] },
+    ]
+
+    for (const c of cases) {
+      const s = structure(
+        c.size,
+        c.cells.map((pos, i) => ({ pos, name: `minecraft:b${i}` })),
+      )
+      const p = projectionOf(c.size)
+      for (let layer = 0; layer < c.size[p.axis]; layer++) {
+        cellsOf(s, layer, p).forEach((id, index) => {
+          if (!id) return
+          // 方块名末位就是它在 c.cells 里的下标
+          expect(coordOf(index, layer, p)).toEqual(c.cells[Number(id.slice(-1))])
+        })
+      }
+    }
+  })
+})
+
+describe('materialCounts', () => {
+  it('统计数量并按多到少排序，忽略空气，id 归一成裸 ID', () => {
     const s = structure([4, 1, 4], [
       { pos: [0, 0, 0], name: 'minecraft:stone' },
       { pos: [1, 0, 0], name: 'minecraft:stone' },

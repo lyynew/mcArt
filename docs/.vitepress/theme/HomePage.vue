@@ -70,9 +70,9 @@ const heroSrc = withBase('/hero-block.svg')
           <span class="home-card__no">04 / VERIFY</span>
           <span class="home-card__name">结构文件查看器</span>
           <p class="home-card__desc">
-            拖入 .nbt / .litematic / .schem 分层看结构、统计材料、检查 48×48 上限，是导出的逆运算。
+            拖入 .nbt / .litematic / .schem 分层看结构，点格子查方块名与坐标，画布可缩放，是导出的逆运算。
           </p>
-          <span class="home-card__foot">分层查看 · 材料统计 →</span>
+          <span class="home-card__foot">分层查看 · 点选查块 →</span>
         </a>
       </div>
     </section>
