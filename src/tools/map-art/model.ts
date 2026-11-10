@@ -6,6 +6,7 @@
  * 数据来源：Minecraft Wiki「Map item format / Data version / Java Edition level format」
  * 与 plonck/palette（MIT）从 1.21.11 客户端导出的 blocks.csv。
  */
+import type { DitherMode } from '@/core/dither'
 
 /** 一张地图固定 128×128，colors 数组必须正好这么长 */
 export const MAP_SIZE = 128
@@ -18,7 +19,7 @@ export const COLOR_TRANSPARENT = 0
 export const STRUCT_CHUNK = 48
 
 export type SamplingMode = 'smooth' | 'pixel'
-export type DitherMode = 'none' | 'floyd' | 'atkinson' | 'bayer' | 'bayer8'
+export type { DitherMode }
 export type BackgroundMode = 'transparent' | 'white' | 'black'
 
 /**

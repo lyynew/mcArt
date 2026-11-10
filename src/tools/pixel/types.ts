@@ -1,4 +1,5 @@
 import type { PaletteId } from '@/core/palettes'
+import type { DitherMode } from '@/core/dither'
 
 /** 编辑工具 */
 export type ToolId = 'brush' | 'eraser' | 'picker' | 'fill' | 'replace' | 'pan'
@@ -6,8 +7,10 @@ export type ToolId = 'brush' | 'eraser' | 'picker' | 'fill' | 'replace' | 'pan'
 /** 结构文件朝向：平铺地面 / 立到墙上 */
 export type Orientation = 'flat' | 'wall'
 
-/** 画幅档位 */
-export const SIZE_PRESETS = [32, 48, 64, 96, 128, 160] as const
+/** 画幅范围与档位 */
+export const SIZE_MIN = 16
+export const SIZE_MAX = 256
+export const SIZE_PRESETS = [32, 48, 64, 96, 128, 160, 192, 256] as const
 
 /** 缩放范围（px/格） */
 export const ZOOM_MIN = 2
@@ -27,7 +30,9 @@ export interface EditorSettings {
   contrast: number
   /** 饱和度 -60..60 */
   sat: number
-  dither: boolean
+  ditherMode: DitherMode
+  /** 抖动强度 0–100 */
+  ditherStrength: number
   despeckle: boolean
   showGrid: boolean
   /** 方块质感（给每格加明暗边，仅预览） */
@@ -60,7 +65,8 @@ export function createSettings(): EditorSettings {
     paletteId: 'basic',
     contrast: 0,
     sat: 0,
-    dither: false,
+    ditherMode: 'none',
+    ditherStrength: 50,
     despeckle: true,
     showGrid: true,
     blockShading: true,

@@ -18,6 +18,7 @@ import {
   srgbToLinear,
   type Lab,
 } from '@/core/color'
+import { ATKINSON, BAYER4, BAYER8, BAYER_AMPLITUDE } from '@/core/dither'
 import { COLOR_TRANSPARENT, MAP_PIXELS, MAP_SIZE, type ColorOptions } from './model'
 import type { MapColor } from './map-colors'
 
@@ -33,27 +34,8 @@ export interface Quantized {
   meanError: number
 }
 
-const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5] as const
-const BAYER8 = [
-  0, 48, 12, 60, 3, 51, 15, 63,
-  32, 16, 44, 28, 35, 19, 47, 31,
-  8, 56, 4, 52, 11, 59, 7, 55,
-  40, 24, 36, 20, 43, 27, 39, 23,
-  2, 50, 14, 62, 1, 49, 13, 61,
-  34, 18, 46, 30, 33, 17, 45, 29,
-  10, 58, 6, 54, 9, 57, 5, 53,
-  42, 26, 38, 22, 41, 25, 37, 21,
-] as const
-
-/** 有序抖动的扰动幅度，约等于半个色阶 */
-const BAYER_AMPLITUDE = 26
 /** 去杂点时允许的最大感知色差 */
 const DESPECKLE_DELTA_E = 11
-
-/** Atkinson 只把 6/8 的误差散到 6 个邻居，比 Floyd 更克制、纯色区更干净 */
-const ATKINSON: readonly (readonly [number, number])[] = [
-  [1, 0], [2, 0], [-1, 1], [0, 1], [1, 1], [0, 2],
-]
 
 function clamp(v: number): number {
   return v < 0 ? 0 : v > 255 ? 255 : v

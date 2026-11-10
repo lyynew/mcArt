@@ -15,6 +15,7 @@ import { buildMapNbt } from './map-dat'
 import { COLOR_BY_ID } from './map-colors'
 import { createMapCanvas } from './render'
 import { buildLitematic } from '@/core/structure/litematic'
+import { buildSchem } from '@/core/structure/schem'
 import { buildPlacementNote, buildStructureChunks, type BuildInput } from './structure'
 import { createVoxelLayout } from './voxels'
 import type { HeightMap } from './heightmap'
@@ -69,7 +70,7 @@ export function instructions(options: MapOptions): string {
     '',
     '地图已写入 locked=1，游戏不会按地形重绘覆盖画面。',
     '透明像素写成色号 0，在地图上显示为未探索区域。',
-    '若同时下载了施工文件（.litematic / 分块 .nbt），施工完成后游戏会自行绘制同一幅图；',
+    '若同时下载了施工文件（.litematic / .schem / 分块 .nbt），施工完成后游戏会自行绘制同一幅图；',
     '这份 .dat 可以先当作画面预览，不必先跑一遍地图。',
     '',
     '本文件由 mcArt 生成，图片不上传，全部在浏览器本地计算。',
@@ -115,7 +116,7 @@ export interface BuildExportInput {
   name: string
 }
 
-/** 两种施工导出共用同一份体素输入，保证 .litematic 与 .nbt 分块内容一致 */
+/** 三种施工导出共用同一份体素输入，保证 .litematic / .schem 与 .nbt 分块内容一致 */
 function buildInputOf(input: BuildExportInput): BuildInput {
   return {
     colors: input.colors,
@@ -135,6 +136,14 @@ export async function buildLitematicBytes(input: BuildExportInput): Promise<Uint
     dataVersion: voxel.dataVersion,
     description: '立体阶梯地图画 · 由 mcArt 生成',
     regionName: 'map-art',
+  })
+}
+
+export async function buildSchemBytes(input: BuildExportInput): Promise<Uint8Array> {
+  const voxel = buildInputOf(input)
+  return buildSchem(createVoxelLayout(voxel), {
+    name: input.name,
+    dataVersion: voxel.dataVersion,
   })
 }
 

@@ -46,7 +46,7 @@ Minecraft 网页工具集：方块像素画生成器、地图画生成器、方�
 | 工具 | 做什么 |
 | --- | --- |
 | 方块像素画生成器 `/tools/pixel` | 图片转方块画，能改能画，导出 `.nbt` / `.litematic` / `.schem`、施工图与材料清单 |
-| 地图画生成器 `/tools/map-art` | 三条路线：写地图数据 244 色 / 平铺 59 色 / 立体阶梯 177 色；导出 `map_#.dat`、`give`、`.litematic`、分块 `.nbt` 与 PNG |
+| 地图画生成器 `/tools/map-art` | 三条路线：写地图数据 244 色 / 平铺 59 色 / 立体阶梯 177 色；导出 `map_#.dat`、`give`、`.litematic`、`.schem`、分块 `.nbt` 与 PNG |
 | 方块图鉴 `/tools/atlas` | 142 种方块的贴图、平均色与 ID，一键复制 `give` 命令 |
 | 结构文件查看器 `/tools/nbt` | 拖入 `.nbt` 分层看结构、统计材料，是导出的逆运算 |
 

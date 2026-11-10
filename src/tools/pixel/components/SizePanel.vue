@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { McNote, McSegmented, McSlider, McWindow, type SegOption } from '@/design/components'
 import { debounce } from '@/shared/debounce'
 import { useEditor } from '../store/editor'
-import { SIZE_PRESETS } from '../types'
+import { SIZE_MAX, SIZE_MIN, SIZE_PRESETS } from '../types'
 
 /**
  * 画幅规格。
@@ -53,8 +53,8 @@ function onPreset(value: string): void {
     <McSlider
       v-model="draft"
       label="边长格数"
-      :min="16"
-      :max="160"
+      :min="SIZE_MIN"
+      :max="SIZE_MAX"
       :step="1"
       suffix=" 格"
     />

@@ -13,15 +13,15 @@ title: 工具
       <span class="tool-card__tag">可用</span>
     </span>
     <span class="tool-card__desc">上传图片，按最优色差匹配成方块画。可以逐格修改，最后导出 Java 版结构文件、Litematica 投影、WorldEdit 图纸、施工图与材料清单。</span>
-    <span class="tool-card__meta">16–160 格 · 10 套方案 · .nbt / .litematic / .schem / PNG / CSV</span>
+    <span class="tool-card__meta">16–256 格 · 10 套方案 · .nbt / .litematic / .schem / PNG / CSV</span>
   </a>
   <a class="tool-card" href="./map-art">
     <span class="tool-card__head">
       <span class="tool-card__name">地图画生成器</span>
       <span class="tool-card__tag">可用</span>
     </span>
-    <span class="tool-card__desc">三条路线：直接写地图数据（244 色）、平铺摆方块（59 色）、立体阶梯（177 色）。CIEDE2000 匹配与五种抖动，导出 <code>map_#.dat</code>、<code>give</code> 指令、<code>.litematic</code> 与分块 <code>.nbt</code>。</span>
-    <span class="tool-card__meta">128 × 128 · 244 / 59 / 177 色 · .dat / .litematic / .nbt / PNG</span>
+    <span class="tool-card__desc">三条路线：直接写地图数据（244 色）、平铺摆方块（59 色）、立体阶梯（177 色）。CIEDE2000 匹配与五种抖动，导出 <code>map_#.dat</code>、<code>give</code> 指令、<code>.litematic</code>、<code>.schem</code> 与分块 <code>.nbt</code>。</span>
+    <span class="tool-card__meta">128 × 128 · 244 / 59 / 177 色 · .dat / .litematic / .schem / .nbt / PNG</span>
   </a>
   <a class="tool-card" href="./atlas">
     <span class="tool-card__head">

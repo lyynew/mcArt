@@ -1,5 +1,6 @@
 import type { Orientation, ToolId } from '../types'
 import type { PaletteId } from '@/core/palettes'
+import type { DitherMode } from '@/core/dither'
 
 /**
  * 本地偏好持久化。
@@ -25,7 +26,10 @@ export interface PersistedState {
   blockShading: boolean
   focusSelected: boolean
   realTexture: boolean
-  dither: boolean
+  ditherMode: DitherMode
+  ditherStrength: number
+  /** 旧版的抖动总开关，只读不写，恢复时迁移成 ditherMode */
+  dither?: boolean
   despeckle: boolean
   n: number
 }

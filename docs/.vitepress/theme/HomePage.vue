@@ -48,7 +48,7 @@ const heroSrc = withBase('/hero-block.svg')
           <p class="home-card__desc">
             图片转方块画，画笔、填充、九格物品栏逐格改，导出 .nbt / .litematic / .schem、施工图与材料清单。
           </p>
-          <span class="home-card__foot">16–160 格 · 10 套方案 →</span>
+          <span class="home-card__foot">16–256 格 · 10 套方案 →</span>
         </a>
         <a class="home-card" href="./tools/map-art.html">
           <span class="home-card__no">02 / MAP ART</span>

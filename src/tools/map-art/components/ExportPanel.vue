@@ -9,6 +9,7 @@ import {
   buildDatBytes,
   buildLitematicBytes,
   buildPngBlob,
+  buildSchemBytes,
   buildStructureZipBytes,
   buildZipBytes,
   giveCommand,
@@ -108,7 +109,7 @@ function savePng(): Promise<void> {
   }))
 }
 
-/** 两种施工导出共用同一份输入，避免投影与结构分块对不上 */
+/** 三种施工导出共用同一份输入，避免投影、图纸与结构分块对不上 */
 function buildExportInput(): BuildExportInput {
   return {
     colors: result.value!.colors,
@@ -132,6 +133,14 @@ function saveLitematic(): Promise<void> {
     '投影文件',
     () => buildLitematicBytes(buildExportInput()),
     `mcArt-map-${mapOptions.id}.litematic`,
+  )
+}
+
+function saveSchem(): Promise<void> {
+  return saveBuild(
+    'WorldEdit 图纸',
+    () => buildSchemBytes(buildExportInput()),
+    `mcArt-map-${mapOptions.id}.schem`,
   )
 }
 
@@ -210,13 +219,16 @@ function saveStructureZip(): Promise<void> {
       <McButton :disabled="!result || !heightMap || working" @click="saveLitematic">
         下载 .litematic 投影
       </McButton>
+      <McButton :disabled="!result || !heightMap || working" @click="saveSchem">
+        下载 .schem 图纸
+      </McButton>
       <McButton :disabled="!result || !heightMap || working" @click="saveStructureZip">
         下载分块 .nbt（ZIP）
       </McButton>
     </div>
     <McNote>
-      投影文件用 Litematica 直接载入；结构分块按 48³ 切开，包内附每张的相对位置。
-      两者都含顶层方块、支撑方块与 noobline。
+      投影文件用 Litematica 载入、.schem 用 WorldEdit 的 //paste 粘贴；结构分块按 48³ 切开，
+      包内附每张的相对位置。三者都含顶层方块、支撑方块与 noobline。
     </McNote>
   </McWindow>
 

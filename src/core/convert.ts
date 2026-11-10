@@ -10,6 +10,7 @@
  * 算法只接受已经取好的像素，方便直接单测。
  */
 import { findNearest, labDist, rgbToLab } from './color'
+import { ATKINSON, BAYER4, BAYER8, BAYER_AMPLITUDE, type DitherMode } from './dither'
 import type { PaletteBlock } from './palettes'
 
 /** 空格用 -1 表示，其余是色板内下标 */
@@ -102,8 +103,10 @@ export function sampleGrid(
 }
 
 export interface QuantizeOptions {
-  /** 颜色抖动（Floyd–Steinberg，弱强度），色彩过渡更自然但会有噪点 */
-  dither?: boolean
+  /** 抖动算法，'none' 或省略 = 不抖动 */
+  dither?: DitherMode
+  /** 抖动强度 0–100：误差扩散是误差倍率，有序抖动是扰动幅度。默认 50 */
+  strength?: number
   /** 去杂点：孤立且颜色接近的格子并到周围，不伤眼睛与高光 */
   despeckle?: boolean
 }
@@ -133,7 +136,7 @@ export function quantize(
     return v
   }
 
-  if (!options.dither) {
+  if (!options.dither || options.dither === 'none') {
     for (let i = 0; i < total; i++) {
       const p = i * 4
       if (src[p + 3]! < 128) {
@@ -143,6 +146,11 @@ export function quantize(
       out[i] = pick(src[p]!, src[p + 1]!, src[p + 2]!)
     }
   } else {
+    const mode = options.dither
+    const ordered = mode === 'bayer' || mode === 'bayer8'
+    // 50 = 旧版固定系数 0.5，改滑杆只是换倍率，不改扩散结构
+    const strength = Math.max(0, Math.min(100, options.strength ?? 50)) / 100
+
     const buf = new Float32Array(total * 3)
     for (let i = 0; i < total; i++) {
       const p = i * 4
@@ -159,8 +167,6 @@ export function quantize(
       buf[j + 2] += eb
     }
 
-    const STRENGTH = 0.5
-
     for (let y = 0; y < n; y++) {
       for (let x = 0; x < n; x++) {
         const i = y * n + x
@@ -170,21 +176,40 @@ export function quantize(
           continue
         }
         const bi = i * 3
-        const r = Math.max(0, Math.min(255, buf[bi]!))
-        const g = Math.max(0, Math.min(255, buf[bi + 1]!))
-        const b = Math.max(0, Math.min(255, buf[bi + 2]!))
+        let r = Math.max(0, Math.min(255, buf[bi]!))
+        let g = Math.max(0, Math.min(255, buf[bi + 1]!))
+        let b = Math.max(0, Math.min(255, buf[bi + 2]!))
+
+        if (ordered) {
+          // 有序抖动：按位置给颜色加一个固定偏移再找最近色，不积累误差
+          const v = mode === 'bayer8'
+            ? BAYER8[(y % 8) * 8 + (x % 8)]!
+            : BAYER4[(y % 4) * 4 + (x % 4)]!
+          const levels = mode === 'bayer8' ? 64 : 16
+          const shift = (v / levels - 0.5) * 2 * BAYER_AMPLITUDE * strength
+          r = Math.max(0, Math.min(255, r + shift))
+          g = Math.max(0, Math.min(255, g + shift))
+          b = Math.max(0, Math.min(255, b + shift))
+          out[i] = pick(r, g, b)
+          continue
+        }
 
         const k = pick(r, g, b)
         out[i] = k
+        if (strength === 0) continue // 强度 0 与无抖动逐格一致
 
         const c = blocks[k]!.rgb
-        const er = (r - c[0]) * STRENGTH
-        const eg = (g - c[1]) * STRENGTH
-        const eb = (b - c[2]) * STRENGTH
-        add(x + 1, y, er * 0.4375, eg * 0.4375, eb * 0.4375)
-        add(x - 1, y + 1, er * 0.1875, eg * 0.1875, eb * 0.1875)
-        add(x, y + 1, er * 0.3125, eg * 0.3125, eb * 0.3125)
-        add(x + 1, y + 1, er * 0.0625, eg * 0.0625, eb * 0.0625)
+        const er = (r - c[0]) * strength
+        const eg = (g - c[1]) * strength
+        const eb = (b - c[2]) * strength
+        if (mode === 'floyd') {
+          add(x + 1, y, er * 0.4375, eg * 0.4375, eb * 0.4375)
+          add(x - 1, y + 1, er * 0.1875, eg * 0.1875, eb * 0.1875)
+          add(x, y + 1, er * 0.3125, eg * 0.3125, eb * 0.3125)
+          add(x + 1, y + 1, er * 0.0625, eg * 0.0625, eb * 0.0625)
+        } else {
+          for (const [dx, dy] of ATKINSON) add(x + dx, y + dy, er / 8, eg / 8, eb / 8)
+        }
       }
     }
   }

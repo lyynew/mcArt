@@ -1,7 +1,7 @@
 /**
  * 草稿自动保存（IndexedDB）。
  *
- * 为什么不用 localStorage：一张 160×160 的图连同原图要几 MB，
+ * 为什么不用 localStorage：一张 256×256 的图连同原图要几 MB，
  * localStorage 只有 5MB 左右且只能存字符串，转 base64 还会再涨三成。
  * IndexedDB 可以直接存 ArrayBuffer，容量也大得多。
  *

@@ -1,7 +1,8 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { ALL_BLOCKS, PALETTES, buildCustomPalette, type PaletteBlock, type PaletteId } from '@/core/palettes'
 import { EMPTY, applyManual, quantize, sampleGrid } from '@/core/convert'
-import { createSettings, HOTBAR_SIZE, type EditorSettings, type ToolId } from '../types'
+import { DITHER_MODES, type DitherMode } from '@/core/dither'
+import { createSettings, HOTBAR_SIZE, SIZE_MAX, SIZE_MIN, type EditorSettings, type ToolId } from '../types'
 import { createDemoImage, readSquareImage } from '../image-input'
 import {
   buffers,
@@ -52,19 +53,23 @@ if (restored) {
     hotbar.value = Array.from({ length: HOTBAR_SIZE }, (_, i) => restored.hotbar?.[i] ?? null)
   }
   if (restored.paletteId && restored.paletteId in PALETTES) settings.paletteId = restored.paletteId
-  if (typeof restored.n === 'number' && restored.n >= 16 && restored.n <= 160) settings.n = restored.n
+  if (typeof restored.n === 'number' && restored.n >= SIZE_MIN && restored.n <= SIZE_MAX) settings.n = restored.n
   if (typeof restored.tool === 'string') settings.tool = restored.tool
   if (typeof restored.brush === 'number') settings.brush = Math.min(3, Math.max(1, restored.brush))
   if (typeof restored.mirror === 'boolean') settings.mirror = restored.mirror
   if (typeof restored.structName === 'string') settings.structName = restored.structName
   if (restored.orient === 'flat' || restored.orient === 'wall') settings.orient = restored.orient
+  if (restored.ditherMode && DITHER_MODES.includes(restored.ditherMode)) settings.ditherMode = restored.ditherMode
+  else if (typeof restored.dither === 'boolean') settings.ditherMode = restored.dither ? 'floyd' : 'none'
+  if (typeof restored.ditherStrength === 'number') {
+    settings.ditherStrength = Math.min(100, Math.max(0, restored.ditherStrength))
+  }
   const bools = [
     'useAir',
     'showGrid',
     'blockShading',
     'focusSelected',
     'realTexture',
-    'dither',
     'despeckle',
   ] as const
   for (const key of bools) {
@@ -152,7 +157,8 @@ function ensureBuffers(): boolean {
 function applyQuantize(src: Uint8ClampedArray): void {
   const n = buffers.n
   const next = quantize(src, n, blocks.value, {
-    dither: settings.dither,
+    dither: settings.ditherMode,
+    strength: settings.ditherStrength,
     despeckle: settings.despeckle,
   })
   applyManual(next, buffers.manual, buffers.manualBlock, blocks.value, ALL_BLOCKS)
@@ -245,7 +251,7 @@ function setPalette(id: PaletteId): void {
 
 /**
  * 对比度与饱和度一次改完再重算。
- * 两个滑杆分别调用会触发两次完整重算，160×160 下能差出半秒。
+ * 两个滑杆分别调用会触发两次完整重算，256×256 下能差出半秒。
  */
 function setTone(contrast: number, sat: number): void {
   if (settings.contrast === contrast && settings.sat === sat) return
@@ -262,8 +268,13 @@ function setSat(v: number): void {
   setTone(settings.contrast, v)
 }
 
-function setDither(v: boolean): void {
-  settings.dither = v
+function setDitherMode(v: DitherMode): void {
+  settings.ditherMode = v
+  requantize()
+}
+
+function setDitherStrength(v: number): void {
+  settings.ditherStrength = Math.min(100, Math.max(0, v))
   requantize()
 }
 
@@ -570,7 +581,8 @@ const persist = debounce(() => {
     blockShading: settings.blockShading,
     focusSelected: settings.focusSelected,
     realTexture: settings.realTexture,
-    dither: settings.dither,
+    ditherMode: settings.ditherMode,
+    ditherStrength: settings.ditherStrength,
     despeckle: settings.despeckle,
     n: settings.n,
   }
@@ -592,7 +604,8 @@ watch(
     () => settings.blockShading,
     () => settings.focusSelected,
     () => settings.realTexture,
-    () => settings.dither,
+    () => settings.ditherMode,
+    () => settings.ditherStrength,
     () => settings.despeckle,
     () => settings.n,
   ],
@@ -650,7 +663,7 @@ async function readDraft(): Promise<DraftPayload | null> {
   const [canvas, source] = await Promise.all([loadCanvas(), loadSource()])
   if (!canvas) return null
   if (Date.now() - canvas.savedAt > DRAFT_TTL) return null
-  if (!canvas.n || canvas.n < 16 || canvas.n > 160) return null
+  if (!canvas.n || canvas.n < SIZE_MIN || canvas.n > SIZE_MAX) return null
   return { canvas, source }
 }
 
@@ -708,7 +721,8 @@ export function useEditor() {
     setTone,
     setContrast,
     setSat,
-    setDither,
+    setDitherMode,
+    setDitherStrength,
     setDespeckle,
     setTool,
     setBrush,

@@ -32,7 +32,8 @@ describe('quantize 与旧版一致', () => {
   })
 
   it('抖动', () => {
-    expect(Array.from(quantize(src, fixture.n, palette, { dither: true }))).toEqual(
+    // 旧版的固定强度 0.5 == 现在的 floyd + 默认强度 50
+    expect(Array.from(quantize(src, fixture.n, palette, { dither: 'floyd' }))).toEqual(
       fixture.cases.dither,
     )
   })
@@ -45,8 +46,31 @@ describe('quantize 与旧版一致', () => {
 
   it('抖动 + 去杂点', () => {
     expect(
-      Array.from(quantize(src, fixture.n, palette, { dither: true, despeckle: true })),
+      Array.from(quantize(src, fixture.n, palette, { dither: 'floyd', despeckle: true })),
     ).toEqual(fixture.cases.ditherDespeckle)
+  })
+})
+
+describe('quantize 的抖动算法与强度', () => {
+  it('强度 0 与不抖动逐格一致（误差扩散与有序抖动都成立）', () => {
+    for (const mode of ['floyd', 'atkinson', 'bayer', 'bayer8'] as const) {
+      expect(Array.from(quantize(src, fixture.n, palette, { dither: mode, strength: 0 }))).toEqual(
+        fixture.cases.plain,
+      )
+    }
+  })
+
+  it('Bayer 是确定性的，同参数两次结果相同', () => {
+    const a = Array.from(quantize(src, fixture.n, palette, { dither: 'bayer', strength: 80 }))
+    const b = Array.from(quantize(src, fixture.n, palette, { dither: 'bayer', strength: 80 }))
+    expect(a).toEqual(b)
+  })
+
+  it('四种算法满强度都只产出合法下标', () => {
+    for (const mode of ['floyd', 'atkinson', 'bayer', 'bayer8'] as const) {
+      const out = quantize(src, fixture.n, palette, { dither: mode, strength: 100 })
+      expect(out.every((k) => k === EMPTY || (k >= 0 && k < palette.length))).toBe(true)
+    }
   })
 })
 
