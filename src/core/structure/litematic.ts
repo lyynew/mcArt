@@ -64,6 +64,24 @@ export function packBlockStates(entries: Uint16Array, bits: number): bigint[] {
   return words.map((w) => BigInt.asIntN(64, w & MASK64))
 }
 
+/** packBlockStates 的逆运算：把 long array 解回调色板下标（回读与查看器用） */
+export function unpackBlockStates(words: ArrayLike<bigint>, bits: number, count: number): Uint16Array {
+  const mask = (1n << BigInt(bits)) - 1n
+  const out = new Uint16Array(count)
+  for (let i = 0; i < count; i++) {
+    const start = i * bits
+    const w = Math.floor(start / 64)
+    const offset = start % 64
+    let v = (BigInt.asUintN(64, words[w]!) >> BigInt(offset)) & mask
+    const spill = bits - (64 - offset)
+    if (spill > 0) {
+      v |= (BigInt.asUintN(64, words[w + 1]!) << BigInt(64 - offset)) & mask
+    }
+    out[i] = Number(v)
+  }
+  return out
+}
+
 export async function buildLitematic(layout: VoxelLayout, meta: LitematicMeta): Promise<Uint8Array> {
   const { sizeX, sizeY, sizeZ } = layout
   const volume = sizeX * sizeY * sizeZ

@@ -36,14 +36,14 @@ title: 工具
       <span class="tool-card__name">结构文件查看器</span>
       <span class="tool-card__tag">可用</span>
     </span>
-    <span class="tool-card__desc">拖入 .nbt，按层浏览方块分布、统计材料，检查尺寸有没有超过结构方块 48×48 的上限。是导出的逆运算。</span>
+    <span class="tool-card__desc">拖入 .nbt / .litematic / .schem，按层浏览方块分布、统计材料，检查尺寸有没有超过结构方块 48×48 的上限。是导出的逆运算。</span>
     <span class="tool-card__meta">分层查看 · 尺寸校验 · 材料统计</span>
   </a>
 </div>
 
 ## 四个工具怎么配合
 
-1. 在**方块像素画生成器**里做出画，导出 `.nbt`；
+1. 在**方块像素画生成器**里做出画，导出结构文件（`.nbt` / `.litematic` / `.schem`）；
 2. 对导出结果不放心，用**结构查看器**打开同一个文件，逐层核对方块与尺寸；
 3. 施工时想知道某种方块长什么样、ID 是什么，用**图鉴**查；
 4. 想要的是能拿在手里看的**地图物品**，改用**地图画生成器**——它不摆方块，

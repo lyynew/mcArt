@@ -185,8 +185,11 @@ export interface ParsedStructure {
 
 /** 按结构文件的约定取出关键字段 */
 export function parseStructure(bytes: Uint8Array): ParsedStructure {
-  const root = parseNbt(bytes)
+  return structureFromRoot(parseNbt(bytes))
+}
 
+/** 从已解析的根 compound 提取结构字段；多格式读取器（core/structure/read.ts）也走这里 */
+export function structureFromRoot(root: Record<string, NbtValue>): ParsedStructure {
   const size = root['size']
   if (!Array.isArray(size) || size.length !== 3) throw new Error('结构文件缺少 size')
 

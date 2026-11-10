@@ -28,7 +28,7 @@ const heroSrc = withBase('/hero-block.svg')
           <a class="home-btn" href="./guide/quick-start.html">读一遍指南</a>
         </div>
         <p class="home-stats">
-          <b>142</b> 种方块 <i>·</i> <b>10</b> 套方案 <i>·</i> Java 版 .nbt <i>·</i> 免费
+          <b>142</b> 种方块 <i>·</i> <b>10</b> 套方案 <i>·</i> 多格式导出 <i>·</i> 免费
         </p>
       </div>
 
@@ -70,7 +70,7 @@ const heroSrc = withBase('/hero-block.svg')
           <span class="home-card__no">04 / VERIFY</span>
           <span class="home-card__name">结构文件查看器</span>
           <p class="home-card__desc">
-            拖入 .nbt 分层看结构、统计材料、检查 48×48 上限，是导出的逆运算。
+            拖入 .nbt / .litematic / .schem 分层看结构、统计材料、检查 48×48 上限，是导出的逆运算。
           </p>
           <span class="home-card__foot">分层查看 · 材料统计 →</span>
         </a>

@@ -1,11 +1,11 @@
 import { BLOCKS_BY_ID } from '@/core/blocks'
-import type { ParsedStructure, ParsedStructureBlock } from '@/core/nbt-read'
-import type { LoadedStructure } from './read-structure-file'
+import type { ParsedStructureBlock } from '@/core/nbt-read'
+import type { LoadedStructure, ParsedStructureFile } from './read-structure-file'
 
 /**
  * 示例结构。
  *
- * 查看器没有文件时是一张白纸，光靠一句「把 .nbt 拖进来」很难让人相信它有用。
+ * 查看器没有文件时是一张白纸，光靠一句「把结构文件拖进来」很难让人相信它有用。
  * 这里直接给一份能看的东西：32×32、16 层的阶梯金字塔，每四层换一种石头。
  * 做成空心壳而不是实心：实心金字塔每层都是一整块实心方，切层看不出变化；
  * 空心壳每层是一圈方框，拖动滑杆能立刻看出「一层一层往里收」。
@@ -41,11 +41,12 @@ export function demoStructure(): LoadedStructure {
     }
   }
 
-  const structure: ParsedStructure = {
+  const structure: ParsedStructureFile = {
     size: [SIZE, LEVELS, SIZE],
     palette,
     blocks,
     dataVersion: 3953,
+    format: 'nbt',
   }
 
   return { name: '示例 · 阶梯金字塔', fileSize: 0, structure, demo: true }

@@ -5,14 +5,14 @@ import BlockSlot from '@/components/blocks/BlockSlot.vue'
 import { BLOCKS_BY_ID } from '@/core/blocks'
 import { STRUCT_MAX } from '@/core/nbt'
 import LayerCanvas from './LayerCanvas.vue'
-import { readStructureFile, type LoadedStructure } from './read-structure-file'
+import { FORMAT_LABEL, readStructureFile, type LoadedStructure } from './read-structure-file'
 import { denseLayerOf, materialCounts, projectionOf } from './projection'
 import { demoStructure } from './demo-structure'
 
 /**
  * 结构文件查看器。
  *
- * 是生成器导出的逆运算：把 .nbt 解回方块分布，按层看、按材料统计。
+ * 是生成器导出的逆运算：把 .nbt / .litematic / .schem 解回方块分布，按层看、按材料统计。
  * 也顺带能检查别人给的结构文件有没有超出结构方块的 48 格上限。
  *
  * 站内是整屏的，所以这一页有三个「满屏」的处理：
@@ -40,7 +40,7 @@ async function onFiles(files: File[]): Promise<void> {
     await apply(await readStructureFile(file))
   } catch (e) {
     loaded.value = null
-    error.value = e instanceof Error ? e.message : '解析失败，确认选的是 .nbt 结构文件'
+    error.value = e instanceof Error ? e.message : '解析失败，确认是 .nbt / .litematic / .schem 结构文件'
   } finally {
     loading.value = false
   }
@@ -88,9 +88,10 @@ const oversize = computed(() => {
 const fileText = computed(() => {
   const l = loaded.value
   if (!l) return ''
-  if (l.demo) return '示例结构 · 内置生成'
+  const label = FORMAT_LABEL[l.structure.format]
+  if (l.demo) return `示例结构 · 内置生成 · ${label}`
   const kb = l.fileSize / 1024
-  return `${l.name} · ${kb < 1024 ? `${kb.toFixed(1)} KB` : `${(kb / 1024).toFixed(1)} MB`}`
+  return `${l.name} · ${label} · ${kb < 1024 ? `${kb.toFixed(1)} KB` : `${(kb / 1024).toFixed(1)} MB`}`
 })
 
 function blockOf(id: string) {
@@ -210,7 +211,7 @@ onBeforeUnmount(() => {
     <div v-if="dragging" class="viewer__overlay">
       <div class="viewer__overlay-box">
         <strong>松手即可解析</strong>
-        <small>.nbt 结构文件 · 本地解析，不上传</small>
+        <small>.nbt / .litematic / .schem · 本地解析，不上传</small>
       </div>
     </div>
 
@@ -218,14 +219,14 @@ onBeforeUnmount(() => {
     <McWindow v-if="!loaded" title="结构文件查看器" class="viewer__empty-win">
       <McDropzone
         class="viewer__hero"
-        accept=".nbt,application/octet-stream"
+        accept=".nbt,.litematic,.schem,application/octet-stream"
         :disabled="loading"
         @files="onFiles"
       >
-        <strong class="viewer__hero-title">{{ loading ? '解析中…' : '把 .nbt 拖进来' }}</strong>
+        <strong class="viewer__hero-title">{{ loading ? '解析中…' : '把结构文件拖进来' }}</strong>
         <small class="viewer__hero-hint">
           点击选择文件，或者直接拖到页面任意位置<br />
-          gzip 压缩与未压缩都支持 · 文件不会上传，全部在本地解析
+          支持 .nbt / .litematic / .schem，gzip 与未压缩都行 · 文件不会上传，全部在本地解析
         </small>
       </McDropzone>
 
@@ -239,8 +240,8 @@ onBeforeUnmount(() => {
       </div>
 
       <ol class="viewer__howto">
-        <li>用生成器导出结构文件，或者拿别人的存档结构</li>
-        <li>路径一般是 <code>存档/generated/minecraft/structures/*.nbt</code></li>
+        <li>用生成器导出结构文件，或者拿别人分享的 .nbt / .litematic / .schem</li>
+        <li>放哪都行：.nbt 在存档 <code>generated/minecraft/structures/</code>，.litematic 在 <code>.minecraft/schematics</code>，.schem 在 <code>worldedit/schematics</code></li>
         <li>拖进来就能看每一层铺了什么、一共要多少料</li>
       </ol>
     </McWindow>
@@ -249,11 +250,11 @@ onBeforeUnmount(() => {
       <div class="viewer__main">
         <McWindow title="文件">
           <McDropzone
-            accept=".nbt,application/octet-stream"
+            accept=".nbt,.litematic,.schem,application/octet-stream"
             :disabled="loading"
             @files="onFiles"
           >
-            <strong class="viewer__drop-title">{{ loading ? '解析中…' : '换一个 .nbt' }}</strong>
+            <strong class="viewer__drop-title">{{ loading ? '解析中…' : '换一个结构文件' }}</strong>
             <small class="viewer__drop-hint">拖进来或点击选择</small>
           </McDropzone>
           <McNote>{{ fileText }}</McNote>
