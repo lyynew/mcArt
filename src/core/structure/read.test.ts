@@ -2,8 +2,9 @@ import { gunzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 import { buildStructure } from '../nbt'
 import type { BlockDef } from '../blocks'
+import { TAG, NbtWriter } from '../nbt-writer'
 import { buildLitematic } from './litematic'
-import { buildSchem } from './schem'
+import { buildSchem, pushVarint } from './schem'
 import { parseStructureBytes } from './read'
 import type { VoxelLayout } from './voxels'
 
@@ -87,5 +88,107 @@ describe('parseStructureBytes 往返', () => {
   it('垃圾字节给出可读的错误，不是原始异常', () => {
     expect(() => parseStructureBytes(new Uint8Array([1, 2, 3, 4]))).toThrow(/没认出|根标签/)
     expect(() => parseStructureBytes(new Uint8Array(32))).toThrow()
+  })
+})
+
+/**
+ * 真实世界的 .schem 变体（crepper-farm.schem 之类的外部文件踩过）：
+ *   - 规范 / WorldEdit 把 schema 包在根复合体的 Schematic 子标签里；
+ *   - Sponge v3 把 Palette/Data 收进 Blocks 复合体。
+ * 用 NbtWriter 手搓这两种形态，锁住识别逻辑。
+ */
+describe('外部 .schem 变体', () => {
+  /** 3×2×2 的已知内容：底层棋盘，顶层空气 */
+  function variantContent(): { data: number[]; names: string[] } {
+    const names = ['minecraft:air', 'minecraft:stone_bricks', 'minecraft:chest[facing=north,type=left]']
+    const data: number[] = []
+    for (let y = 0; y < 2; y++) {
+      for (let z = 0; z < 2; z++) {
+        for (let x = 0; x < 3; x++) {
+          pushVarint(data, y === 0 ? ((x + z) % 2 === 0 ? 1 : 2) : 0)
+        }
+      }
+    }
+    return { data, names }
+  }
+
+  function writePalette(wr: NbtWriter, names: string[]): void {
+    wr.u8(TAG.Compound).str('Palette')
+    for (let i = 0; i < names.length; i++) wr.u8(TAG.Int).str(names[i]!).i32(i)
+    wr.u8(TAG.End)
+  }
+
+  it('规范嵌套（根无名 + Schematic 子复合体）也能认出来', () => {
+    const { data, names } = variantContent()
+    const wr = new NbtWriter()
+    wr.u8(TAG.Compound).str('') // 无名根
+    wr.u8(TAG.Compound).str('Schematic')
+    wr.u8(TAG.Int).str('Version').i32(2)
+    wr.u8(TAG.Int).str('DataVersion').i32(4440)
+    wr.u8(TAG.Short).str('Width').i16(3)
+    wr.u8(TAG.Short).str('Height').i16(2)
+    wr.u8(TAG.Short).str('Length').i16(2)
+    writePalette(wr, names)
+    wr.u8(TAG.Int).str('PaletteMax').i32(names.length)
+    wr.u8(TAG.ByteArray).str('BlockData').i32(data.length).raw(data)
+    wr.u8(TAG.End) // Schematic
+    wr.u8(TAG.End) // root
+
+    const parsed = parseStructureBytes(wr.bytes())
+    expect(parsed.format).toBe('schem')
+    expect(parsed.size).toEqual([3, 2, 2])
+    expect(parsed.dataVersion).toBe(4440)
+    const map = actualMap(parsed)
+    expect(map.get('0,0,0')).toBe('minecraft:stone_bricks')
+    expect(map.get('1,0,0')).toBe('minecraft:chest[facing=north,type=left]')
+    expect(map.get('0,0,1')).toBe('minecraft:chest[facing=north,type=left]')
+    expect(map.get('1,0,1')).toBe('minecraft:stone_bricks')
+    expect(map.size).toBe(6) // 顶层全是空气
+  })
+
+  it('Sponge v3（Blocks{Palette, Data}）逐格读回，[状态] 调色板原样保留', () => {
+    const { data, names } = variantContent()
+    const wr = new NbtWriter()
+    wr.u8(TAG.Compound).str('')
+    wr.u8(TAG.Compound).str('Schematic')
+    wr.u8(TAG.Int).str('Version').i32(3)
+    wr.u8(TAG.Int).str('DataVersion').i32(5023)
+    wr.u8(TAG.Short).str('Width').i16(3)
+    wr.u8(TAG.Short).str('Height').i16(2)
+    wr.u8(TAG.Short).str('Length').i16(2)
+    wr.u8(TAG.Compound).str('Metadata')
+    wr.u8(TAG.String).str('Name').str('variant')
+    wr.u8(TAG.String).str('Software').str('test')
+    wr.u8(TAG.End)
+    wr.u8(TAG.Compound).str('Blocks')
+    writePalette(wr, names)
+    wr.u8(TAG.ByteArray).str('Data').i32(data.length).raw(data)
+    wr.u8(TAG.List).str('BlockEntities').u8(TAG.Compound).i32(0)
+    wr.u8(TAG.End) // Blocks
+    wr.u8(TAG.End) // Schematic
+    wr.u8(TAG.End) // root
+
+    const parsed = parseStructureBytes(wr.bytes())
+    expect(parsed.format).toBe('schem')
+    expect(parsed.size).toEqual([3, 2, 2])
+    expect(parsed.dataVersion).toBe(5023)
+    const map = actualMap(parsed)
+    expect(map.get('1,0,0')).toBe('minecraft:chest[facing=north,type=left]')
+    expect(map.get('1,1,0')).toBeUndefined() // 空气不进方块表
+    expect(map.size).toBe(6)
+  })
+
+  it('MCEdit 老 .schematic 给出明确的「另存为」提示', () => {
+    const wr = new NbtWriter()
+    wr.u8(TAG.Compound).str('Schematic')
+    wr.u8(TAG.Short).str('Width').i16(1)
+    wr.u8(TAG.Short).str('Height').i16(1)
+    wr.u8(TAG.Short).str('Length').i16(1)
+    wr.u8(TAG.String).str('Materials').str('Alpha')
+    wr.u8(TAG.ByteArray).str('Blocks').i32(1).raw([1])
+    wr.u8(TAG.ByteArray).str('Data').i32(1).raw([0])
+    wr.u8(TAG.End)
+
+    expect(() => parseStructureBytes(wr.bytes())).toThrow(/MCEdit|\.schematic/)
   })
 })
