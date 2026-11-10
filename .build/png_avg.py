@@ -119,7 +119,20 @@ def find_tex(bid):
     return None
 
 if __name__ == "__main__":
-    for f in ["white_concrete", "quartz_block_side", "snow", "magma", "black_concrete", "gold_block", "honeycomb_block"]:
-        p = os.path.join(TEX, f + ".png")
-        if os.path.exists(p):
-            print("%-22s #%02X%02X%02X  %s" % (f, *avg_color(p), read_png(p)[2](1, 1)))
+    import glob
+    import json
+    import sys
+
+    if "--json" in sys.argv:
+        # 全量模式：把 原版材质/ 里每张 PNG 的平均色打成 JSON，
+        # 供 scripts/build-block-extras.mjs 生成扩展方块表用。
+        out = {}
+        for f in sorted(glob.glob(os.path.join(TEX, "*.png"))):
+            name = os.path.basename(f)[:-4]
+            out[name] = "#%02X%02X%02X" % avg_color(f)
+        print(json.dumps(out))
+    else:
+        for f in ["white_concrete", "quartz_block_side", "snow", "magma", "black_concrete", "gold_block", "honeycomb_block"]:
+            p = os.path.join(TEX, f + ".png")
+            if os.path.exists(p):
+                print("%-22s #%02X%02X%02X  %s" % (f, *avg_color(p), read_png(p)[2](1, 1)))

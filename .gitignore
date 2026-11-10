@@ -28,5 +28,14 @@ docs/public/legacy/
 .build/blocks.js
 .build/tex.js
 
+# 识别表的中间数据（scripts/build-block-extras.mjs 联网自动拉取，不进仓库）
+.build/mc-tree.json
+.build/mc-ids.txt
+.build/mc-tex.txt
+.build/item-tex.txt
+.build/tex-need.txt
+.build/zh_cn.json
+.build/en_us.json
+
 # 临时测试脚本
 .build/t*.js

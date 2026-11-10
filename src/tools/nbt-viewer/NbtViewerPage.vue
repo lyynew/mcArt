@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { McButton, McDropzone, McNote, McSlider, McWindow } from '@/design/components'
 import BlockSlot from '@/components/blocks/BlockSlot.vue'
-import { BLOCKS_BY_ID } from '@/core/blocks'
+import { findBlock } from '@/core/blocks'
 import { STRUCT_MAX } from '@/core/nbt'
 import LayerCanvas from './LayerCanvas.vue'
 import { FORMAT_LABEL, readStructureFile, type LoadedStructure } from './read-structure-file'
@@ -95,7 +95,7 @@ const fileText = computed(() => {
 })
 
 function blockOf(id: string) {
-  return BLOCKS_BY_ID.get(id.replace(/^minecraft:/, '')) ?? null
+  return findBlock(id) ?? null
 }
 
 function percent(count: number): string {
@@ -243,6 +243,7 @@ onBeforeUnmount(() => {
         <li>用生成器导出结构文件，或者拿别人分享的 .nbt / .litematic / .schem</li>
         <li>放哪都行：.nbt 在存档 <code>generated/minecraft/structures/</code>，.litematic 在 <code>.minecraft/schematics</code>，.schem 在 <code>worldedit/schematics</code></li>
         <li>拖进来就能看每一层铺了什么、一共要多少料</li>
+        <li>收录了 1.21.4 的绝大多数方块，<code>chest[facing=north]</code> 这类带状态的写法也能认出；少数未收录的会显示原始 ID</li>
       </ol>
     </McWindow>
 

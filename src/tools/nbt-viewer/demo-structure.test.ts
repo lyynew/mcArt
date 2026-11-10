@@ -37,3 +37,30 @@ describe('demoStructure', () => {
     expect(total).toBe(structure.blocks.length)
   })
 })
+
+describe('materialCounts 归一', () => {
+  it('同种方块不同状态合并成一行，空气不计', () => {
+    const tallied = materialCounts({
+      size: [3, 1, 1],
+      palette: [
+        'minecraft:chest[facing=north]',
+        'minecraft:chest[facing=south]',
+        'minecraft:stone_bricks',
+        'minecraft:air',
+        'minecraft:cave_air',
+      ],
+      blocks: [
+        { pos: [0, 0, 0], state: 0 },
+        { pos: [1, 0, 0], state: 1 },
+        { pos: [2, 0, 0], state: 2 },
+        { pos: [0, 1, 0], state: 3 },
+        { pos: [1, 1, 0], state: 4 },
+      ],
+      dataVersion: 0,
+    })
+    expect(tallied).toEqual([
+      { id: 'chest', count: 2 },
+      { id: 'stone_bricks', count: 1 },
+    ])
+  })
+})

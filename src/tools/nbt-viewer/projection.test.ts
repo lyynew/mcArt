@@ -81,7 +81,7 @@ describe('cellsOf', () => {
   })
 })
 
-describe('materialCounts', () => {  it('统计数量并按多到少排序，忽略空气', () => {
+describe('materialCounts', () => {  it('统计数量并按多到少排序，忽略空气，id 归一成裸 ID', () => {
     const s = structure([4, 1, 4], [
       { pos: [0, 0, 0], name: 'minecraft:stone' },
       { pos: [1, 0, 0], name: 'minecraft:stone' },
@@ -90,8 +90,8 @@ describe('materialCounts', () => {  it('统计数量并按多到少排序，忽�
       { pos: [0, 0, 1], name: 'minecraft:dirt' },
     ])
     expect(materialCounts(s)).toEqual([
-      { id: 'minecraft:stone', count: 3 },
-      { id: 'minecraft:dirt', count: 1 },
+      { id: 'stone', count: 3 },
+      { id: 'dirt', count: 1 },
     ])
   })
 

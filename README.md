@@ -108,7 +108,9 @@ docs/                         VitePress 站点（线上主体）
 src/
   design/         设计令牌（tokens.css）、基础层（base.css，挂在 .mc-scope）、基础组件 McWindow / McButton …
   components/     跨工具复用的业务组件（方块格子、分组网格）
-  core/           纯逻辑：方块数据、贴图、读图、颜色、转换、NBT 读写/写入、gzip/zip
+  core/           纯逻辑：方块表（blocks.ts 色板源 142 种 + block-extras.ts 识别扩展，
+                  合并成 findBlock/BLOCKS_BY_ID 注册表）、贴图、读图、颜色、转换、
+                  结构读写（.nbt / .litematic / .schem）、gzip/zip
   shared/         与业务无关的小工具：下载、剪贴板、防抖、超时
   tools/
     ToolShell.vue 工具页标准三栏外壳（新工具统一用它）
@@ -120,10 +122,10 @@ src/
     nbt-viewer/   结构文件查看器
 public/
   legacy/         旧版单文件页面，功能对照基准
-原版材质/          142 张原版方块贴图，是贴图与平均色的唯一来源
+原版材质/          原版方块贴图，是贴图与平均色的唯一来源（色板源 142 张 + 识别扩展）
 材质清单.txt       方块分组、色值、贴图文件名对照
 .build/           生成方块数据与平均色的 Python 脚本（改色板时才用）
-scripts/          贴图与旧版页面同步、算法基准生成
+scripts/          贴图与旧版页面同步、算法基准生成、识别扩展表生成（build-block-extras.mjs）
 tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 .github/workflows/deploy.yml   推 main 自动发布到 GitHub Pages
 ```
@@ -134,6 +136,13 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 
 ## 代码约定
 
+- **方块表分两层，别混用**。`core/blocks.ts` 的 `BLOCKS`（142 种）是像素画色板的唯一来源，
+  palettes.ts 只从它推导，加条目会改变用户已存草稿的匹配结果；
+  `core/block-extras.ts`（生成物）收识别用的其余大多数方块，两者合出 `findBlock` 注册表。
+  扩展表由 `scripts/build-block-extras.mjs` 从官方 1.21.4 资产生成，改它别手改生成文件。
+- **查表前先归一**。结构文件的方块串可能带 `minecraft:` 前缀、`[facing=north]` 状态、
+  或墙上形态（墙上告示牌/旗帜/头颅/火把），一律过 `normalizeBlockId` 再查，
+  否则同一种方块会在材料统计里拆成好几行（`findBlock` 已封装）。
 - **大数组不进响应式**。画布是 25,600 格，用 `Int16Array` + canvas 命令式绘制，
   改动靠版本号（`revision`）通知重绘。做成 `reactive` 会直接卡死。
 - **纯逻辑放在 `core/` 或工具自己的 `.ts`**，不碰 DOM，可单测；DOM 相关的（读图、导出、下载）放

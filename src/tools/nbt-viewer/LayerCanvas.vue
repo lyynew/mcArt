@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { ParsedStructure } from '@/core/nbt-read'
-import { BLOCKS_BY_ID } from '@/core/blocks'
+import { findBlock, normalizeBlockId } from '@/core/blocks'
 import { textureImage, textureUrl } from '@/core/textures'
 import { cellsOf, projectionOf } from './projection'
 
@@ -75,7 +75,7 @@ function draw(): void {
 
     const x = (i % cols) * cell
     const y = Math.floor(i / cols) * cell
-    const block = BLOCKS_BY_ID.get(id.replace(/^minecraft:/, ''))
+    const block = findBlock(id)
 
     ctx.fillStyle = block?.hex ?? '#8b8b8b'
     ctx.fillRect(x, y, cell, cell)
@@ -106,10 +106,10 @@ function draw(): void {
 }
 
 async function preload(): Promise<void> {
-  const ids = new Set(props.structure.palette.map((id) => id.replace(/^minecraft:/, '')))
+  const ids = new Set(props.structure.palette.map((id) => normalizeBlockId(id)))
   await Promise.all(
     [...ids].map(async (id) => {
-      const block = BLOCKS_BY_ID.get(id)
+      const block = findBlock(id)
       if (!block) return
       const url = textureUrl(block.tex)
       if (!url || ready.has(url)) return

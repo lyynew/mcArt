@@ -1,3 +1,4 @@
+import { normalizeBlockId } from '@/core/blocks'
 import type { ParsedStructure } from '@/core/nbt-read'
 
 /**
@@ -63,8 +64,11 @@ export function cellsOf(
 export function materialCounts(structure: ParsedStructure): { id: string; count: number }[] {
   const tally = new Map<string, number>()
   for (const b of structure.blocks) {
-    const id = structure.palette[b.state]
-    if (!id || id === 'minecraft:air') continue
+    const raw = structure.palette[b.state]
+    if (!raw) continue
+    // 归一后再计数：chest[facing=north] 与 chest[facing=south] 是同一种材料
+    const id = normalizeBlockId(raw)
+    if (id === 'air' || id === 'cave_air' || id === 'void_air' || id === 'structure_void') continue
     tally.set(id, (tally.get(id) ?? 0) + 1)
   }
   return [...tally.entries()]

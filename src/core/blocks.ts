@@ -1,12 +1,16 @@
 /**
- * 方块总表 —— 全站唯一数据源。
+ * 方块总表 —— 像素画色板源。
  *
  * 每条对应一种可用方块：中文名、英文名、平均色、方块 ID、分组、贴图文件名。
  * 平均色取自 `原版材质/` 里对应 PNG 的实测均值（见 .build/png_avg.py），
  * 转换算法用它做 CIEDE2000 匹配；贴图文件名是 `原版材质/<tex>.png` 的主名。
  *
  * 由 scripts/migrate-blocks.mjs 从旧版单文件迁移而来，共 142 种。
+ * 这 142 种是像素画色板的唯一来源（palettes.ts 只从这里推导），别随手加条目；
+ * 识别用的其余大多数方块在 block-extras.ts（由 scripts/build-block-extras.mjs 生成），
+ * 查表走本文件的 BLOCKS_BY_ID / findBlock，两边自动合并。
  */
+import { EXTRA_BLOCKS } from './block-extras'
 
 export interface BlockDef {
   /** 中文名，界面与材料清单用 */
@@ -176,7 +180,51 @@ export function fullId(block: BlockDef): string {
   return `minecraft:${block.id}`
 }
 
-/** 按方块 ID 反查，O(1)；贴图覆盖、结构加载都要用 */
+/**
+ * 全量识别表：色板源（BLOCKS）+ 识别扩展（EXTRA_BLOCKS）。
+ * 查名字、认贴图都走合并后的注册表；像素画色板推导只看 BLOCKS。
+ */
+export const ALL_BLOCK_DEFS: readonly BlockDef[] = [...BLOCKS, ...EXTRA_BLOCKS]
+
+/** 按方块 ID 反查，O(1)；贴图覆盖、结构加载、结构查看都要用 */
 export const BLOCKS_BY_ID: ReadonlyMap<string, BlockDef> = new Map(
-  BLOCKS.map((b) => [b.id, b]),
+  ALL_BLOCK_DEFS.map((b) => [b.id, b]),
 )
+
+/** 墙上形态归一到落地方块：同一面墙上的告示牌不该在材料统计里拆成两行 */
+const WALL_FORMS: readonly (readonly [RegExp, string])[] = [
+  [/^(.*)_wall_hanging_sign$/, '$1_hanging_sign'],
+  [/^(.*)_wall_sign$/, '$1_sign'],
+  [/^(.*)_wall_banner$/, '$1_banner'],
+  [/^(.*)_wall_skull$/, '$1_skull'],
+  [/^(.*)_wall_head$/, '$1_head'],
+  [/^wall_torch$/, 'torch'],
+  [/^soul_wall_torch$/, 'soul_torch'],
+  [/^redstone_wall_torch$/, 'redstone_torch'],
+]
+
+/**
+ * 把结构文件里的原始方块串归一成裸 ID：
+ * 剥掉 `minecraft:` 命名空间与 `[facing=north,...]` 状态后缀，
+ * 墙上形态（墙上告示牌 / 旗帜 / 头颅 / 火把）也归到落地方块。
+ *
+ * 调色板条目长什么样由导出方决定——WorldEdit 的 .schem 会写
+ * `minecraft:chest[facing=north,...]`，同一箱子换个朝向就是另一条调色板，
+ * 不归一的话查表查不中、材料统计还会把同一种方块拆成好几行。
+ */
+export function normalizeBlockId(raw: string): string {
+  let id = raw.trim()
+  const bracket = id.indexOf('[')
+  if (bracket >= 0) id = id.slice(0, bracket)
+  const colon = id.indexOf(':')
+  if (colon >= 0) id = id.slice(colon + 1)
+  for (const [re, to] of WALL_FORMS) {
+    if (re.test(id)) return id.replace(re, to)
+  }
+  return id
+}
+
+/** 查表：先归一再查，`minecraft:oak_log[axis=y]` 也能查到橡木原木 */
+export function findBlock(raw: string): BlockDef | undefined {
+  return BLOCKS_BY_ID.get(normalizeBlockId(raw))
+}
