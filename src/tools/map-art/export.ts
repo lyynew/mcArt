@@ -14,8 +14,9 @@ import { canvasToBlob } from '@/shared/download'
 import { buildMapNbt } from './map-dat'
 import { COLOR_BY_ID } from './map-colors'
 import { createMapCanvas } from './render'
-import { buildLitematic } from './litematic'
+import { buildLitematic } from '@/core/structure/litematic'
 import { buildPlacementNote, buildStructureChunks, type BuildInput } from './structure'
+import { createVoxelLayout } from './voxels'
 import type { HeightMap } from './heightmap'
 import { versionOf, type BuildOptions, type MapOptions } from './model'
 
@@ -128,7 +129,13 @@ function buildInputOf(input: BuildExportInput): BuildInput {
 }
 
 export async function buildLitematicBytes(input: BuildExportInput): Promise<Uint8Array> {
-  return buildLitematic({ ...buildInputOf(input), name: input.name })
+  const voxel = buildInputOf(input)
+  return buildLitematic(createVoxelLayout(voxel), {
+    name: input.name,
+    dataVersion: voxel.dataVersion,
+    description: '立体阶梯地图画 · 由 mcArt 生成',
+    regionName: 'map-art',
+  })
 }
 
 /** 结构分块 + 摆放说明打成一个 ZIP */

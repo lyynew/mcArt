@@ -12,8 +12,8 @@ title: 工具
       <span class="tool-card__name">方块像素画生成器</span>
       <span class="tool-card__tag">可用</span>
     </span>
-    <span class="tool-card__desc">上传图片，按最优色差匹配成方块画。可以逐格修改，最后导出 Java 版结构文件、施工图与材料清单。</span>
-    <span class="tool-card__meta">16–160 格 · 10 套方案 · .nbt / PNG / CSV</span>
+    <span class="tool-card__desc">上传图片，按最优色差匹配成方块画。可以逐格修改，最后导出 Java 版结构文件、Litematica 投影、WorldEdit 图纸、施工图与材料清单。</span>
+    <span class="tool-card__meta">16–160 格 · 10 套方案 · .nbt / .litematic / .schem / PNG / CSV</span>
   </a>
   <a class="tool-card" href="./map-art">
     <span class="tool-card__head">

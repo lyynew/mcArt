@@ -1,11 +1,12 @@
 import { gunzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 import { parseNbt, type NbtValue } from '@/core/nbt-read'
+import { buildLitematic } from '@/core/structure/litematic'
 import { MAP_PIXELS, MAP_SIZE } from './model'
 import { buildHeightMap } from './heightmap'
-import { buildLitematic, packBlockStates } from './litematic'
+import { createVoxelLayout } from './voxels'
 
-/** 按 Litematica 的规则把 long array 解回下标，用于验证写入端的位打包 */
+/** 按 Litematica 的规则把 long array 解回下标，验证整条「高度图 → 投影」链路 */
 function unpack(words: BigInt64Array, bits: number, count: number): number[] {
   const mask = (1n << BigInt(bits)) - 1n
   const out: number[] = []
@@ -35,31 +36,22 @@ function staircase() {
   return { colors, m }
 }
 
-describe('packBlockStates', () => {
-  it('条目跨 64 位边界时仍能逐项解回（bits=5 / 7）', () => {
-    for (const bits of [2, 5, 7]) {
-      const entries = Uint16Array.from({ length: 97 }, (_, i) => (i * 7) % (1 << bits))
-      const words = packBlockStates(entries, bits)
-      expect(words).toHaveLength(Math.ceil((entries.length * bits) / 64))
-      expect(words.every((w) => w >= -(1n << 63n) && w < (1n << 63n))).toBe(true)
-      const back = unpack(BigInt64Array.from(words), bits, entries.length)
-      expect(back).toEqual(Array.from(entries))
-    }
-  })
-})
-
-describe('buildLitematic', () => {
-  it('根结构、Metadata 与 Region 都符合 Version 6 规格', async () => {
+describe('buildLitematic（地图画链路）', () => {
+  it('阶梯高度图导出的 Region 尺寸与体素符合预期', async () => {
     const { colors, m } = staircase()
-    const bytes = await buildLitematic({
+    const layout = createVoxelLayout({
       colors,
       heights: m.heights,
       noobline: m.noobline,
       maxHeight: m.maxHeight,
       supportBlock: 'dirt',
       withNoobline: true,
+    })
+    const bytes = await buildLitematic(layout, {
       name: 'mcArt-map-0',
       dataVersion: 4671,
+      description: '立体阶梯地图画 · 由 mcArt 生成',
+      regionName: 'map-art',
     })
     expect(bytes[0]).toBe(0x1f)
     expect(bytes[1]).toBe(0x8b)

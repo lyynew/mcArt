@@ -456,7 +456,7 @@ body {
   color: var(--line-strong);
 }
 
-/* 右侧：大方块，背后是同一张 22px 方格，只是线更深一点 */
+/* 右侧：下界之星晶体，背后保留同一张 22px 方格。 */
 .home-hero__art {
   position: relative;
   display: grid;
@@ -474,8 +474,25 @@ body {
 .home-hero__art img {
   width: 240px;
   height: 240px;
-  image-rendering: pixelated;
-  filter: drop-shadow(12px 14px 0 rgb(27 26 22 / 12%));
+  filter: drop-shadow(0 10px 12px rgb(66 106 88 / 12%));
+  animation: home-nether-star-float 7s ease-in-out infinite;
+}
+
+@keyframes home-nether-star-float {
+  0%,
+  100% {
+    transform: translateY(2px) rotate(-1deg);
+  }
+
+  50% {
+    transform: translateY(-6px) rotate(1deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero__art img {
+    animation: none;
+  }
 }
 
 .home-hero__tag {

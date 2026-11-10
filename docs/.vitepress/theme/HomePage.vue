@@ -33,8 +33,8 @@ const heroSrc = withBase('/hero-block.svg')
       </div>
 
       <div class="home-hero__art">
-        <img :src="heroSrc" alt="等距草方块" />
-        <div class="home-hero__tag">16 × 16 · 原版贴图</div>
+        <img :src="heroSrc" alt="银白晶体切面的下界之星，周围漂浮着像素星屑" width="256" height="256" />
+        <div class="home-hero__tag">下界之星 · 像素灵感</div>
       </div>
     </section>
 
@@ -46,7 +46,7 @@ const heroSrc = withBase('/hero-block.svg')
           <span class="home-card__no">01 / GENERATE</span>
           <span class="home-card__name">方块像素画生成器</span>
           <p class="home-card__desc">
-            图片转方块画，画笔、填充、九格物品栏逐格改，导出 .nbt、施工图与材料清单。
+            图片转方块画，画笔、填充、九格物品栏逐格改，导出 .nbt / .litematic / .schem、施工图与材料清单。
           </p>
           <span class="home-card__foot">16–160 格 · 10 套方案 →</span>
         </a>

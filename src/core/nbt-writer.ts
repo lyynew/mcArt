@@ -25,12 +25,13 @@ export class NbtWriter {
     return this
   }
 
-  /** Litematica 的 BlockStates 是 long array，位运算必须用 BigInt 才不会丢符号位 */
+  /** Litematica 的 BlockStates 是 long array，位运算必须用 BigInt 才不会丢符号位。
+   *  NBT 整体是大端序，long 的 8 个字节同样高位在前——写成小端会让
+   *  BlockStates 整体字节翻转，游戏里加载出乱码（2026-11 修过一次）。 */
   i64(v: bigint): this {
-    let u = BigInt.asUintN(64, v)
+    const u = BigInt.asUintN(64, v)
     for (let i = 7; i >= 0; i--) {
-      this.buf.push(Number(u & 255n))
-      u >>= 8n
+      this.buf.push(Number((u >> BigInt(i * 8)) & 255n))
     }
     return this
   }

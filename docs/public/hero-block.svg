@@ -1,32 +1,72 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" shape-rendering="crispEdges">
-  <!-- mcArt 标志的等距草方块，放大到像素网格上；本站自制，非第三方素材 -->
-  <polygon points="128,24 232,84 128,144 24,84" fill="#86bb5e" />
-  <polygon points="24,84 128,144 128,224 24,164" fill="#9c7a56" />
-  <polygon points="232,84 232,164 128,224 128,144" fill="#856347" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="nether-star-hero-title nether-star-hero-desc">
+  <title id="nether-star-hero-title">mcArt · 下界之星</title>
+  <desc id="nether-star-hero-desc">银白色的像素晶体，暖金星核与淡青光晕，周围漂浮着零散星屑。</desc>
+  <!-- 本站自绘矢量插画，非原版贴图；与 logo 共用轮廓，增加光晕和晶体细节。 -->
+  <defs>
+    <path id="hero-star" d="M30 4H34V12H38V22H42V26H52V30H60V34H52V38H42V42H38V52H34V60H30V52H26V42H22V38H12V34H4V30H12V26H22V22H26V12H30Z" />
+    <clipPath id="hero-star-clip"><use href="#hero-star" /></clipPath>
+    <radialGradient id="hero-aura">
+      <stop offset="0" stop-color="#f6eab3" stop-opacity=".5" />
+      <stop offset=".42" stop-color="#cce8d7" stop-opacity=".38" />
+      <stop offset="1" stop-color="#a2d8c7" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="hero-core-glow">
+      <stop offset="0" stop-color="#fffde3" stop-opacity=".9" />
+      <stop offset="1" stop-color="#fffde3" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="hero-edge" x1="12" y1="8" x2="51" y2="57" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#71948a" />
+      <stop offset=".5" stop-color="#52756d" />
+      <stop offset="1" stop-color="#729c8f" />
+    </linearGradient>
+  </defs>
 
-  <polygon points="24,84 128,144 128,160 24,100" fill="#6fa246" />
-  <polygon points="232,84 232,100 128,160 128,144" fill="#5c8c3c" />
+  <circle cx="128" cy="128" r="116" fill="url(#hero-aura)" />
 
-  <!-- 顶面：深浅不一的方块感 -->
-  <polygon points="96,42 112,51 96,60 80,51" fill="#74a94f" />
-  <polygon points="160,61 176,70 160,79 144,70" fill="#74a94f" />
-  <polygon points="128,99 144,108 128,117 112,108" fill="#a3cc7d" />
-  <polygon points="64,80 80,89 64,98 48,89" fill="#7cb356" />
-  <polygon points="192,84 208,93 192,102 176,93" fill="#5f9040" />
+  <!-- 错落的像素星屑：留出空间，不用机械对称的装饰。 -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M204 37V53M196 45H212" stroke="#b7a366" stroke-width="2.5" />
+    <path d="M43 166V178M37 172H49" stroke="#84b8a5" stroke-width="2" />
+    <path d="M197 204V212M193 208H201" stroke="#9cbbab" stroke-width="2" />
+    <path d="M67 54L72 59L67 64L62 59Z" stroke="#91baac" stroke-width="1.5" />
+  </g>
+  <rect x="211" y="91" width="5" height="5" rx="1" fill="#b6d2bf" transform="rotate(14 213.5 93.5)" />
+  <rect x="74" y="207" width="5" height="5" rx="1" fill="#ccbd83" transform="rotate(-12 76.5 209.5)" />
+  <rect x="37" y="107" width="3" height="3" fill="#b3cec1" />
+  <rect x="170" y="25" width="3" height="3" fill="#d9cfaa" />
 
-  <!-- 侧面：零散的泥土与草根像素 -->
-  <rect x="48" y="112" width="16" height="8" fill="#8a6a49" />
-  <rect x="80" y="136" width="16" height="8" fill="#a8845e" />
-  <rect x="104" y="176" width="16" height="8" fill="#7e6143" />
-  <rect x="40" y="140" width="8" height="8" fill="#6fa246" />
-  <rect x="72" y="164" width="8" height="8" fill="#6fa246" />
-  <rect x="176" y="128" width="16" height="8" fill="#755a3d" />
-  <rect x="152" y="160" width="16" height="8" fill="#96734f" />
-  <rect x="200" y="144" width="8" height="8" fill="#5c8c3c" />
-
-  <polyline points="24,84 128,24 232,84" fill="none" stroke="#14110c" stroke-width="7" />
-  <polyline points="24,84 24,164 128,224 232,164 232,84" fill="none" stroke="#14110c" stroke-width="7" />
-  <line x1="128" y1="144" x2="128" y2="224" stroke="#14110c" stroke-width="7" />
-  <line x1="24" y1="84" x2="128" y2="144" stroke="#14110c" stroke-width="7" />
-  <line x1="232" y1="84" x2="128" y2="144" stroke="#14110c" stroke-width="7" />
+  <g transform="translate(16 16) scale(3.5)">
+    <g transform="rotate(-7 32 32)">
+      <use href="#hero-star" fill="#71958a" opacity=".14" transform="translate(1.2 1.8)" />
+      <use href="#hero-star" fill="#d5e9de" />
+      <g clip-path="url(#hero-star-clip)">
+    <path d="M32 4V32L26 22V12H30V4Z" fill="#fffef4" />
+    <path d="M32 4H34V12H38V22L32 32Z" fill="#d5e9e1" />
+    <path d="M4 30H12V26H22L32 32H4Z" fill="#fffde3" />
+    <path d="M4 32H32L22 38H12V34H4Z" fill="#c7ddd3" />
+    <path d="M32 32L42 26H52V30H60V32Z" fill="#ecf5df" />
+    <path d="M32 32H60V34H52V38H42Z" fill="#9fc7ba" />
+    <path d="M32 32V60H30V52H26V42Z" fill="#edf4db" />
+    <path d="M32 32L38 42V52H34V60H32Z" fill="#abd1c3" />
+    <path d="M22 22H26L32 32L22 26Z" fill="#e3ede3" />
+    <path d="M38 22H42V26L32 32Z" fill="#b7d5ca" />
+    <path d="M32 32L42 38V42H38Z" fill="#86b5a7" />
+    <path d="M22 38L32 32L26 42H22Z" fill="#bfd9cb" />
+    <path d="M32 20L44 32L32 44L20 32Z" fill="#fff4b8" />
+    <path d="M32 20V32H20Z" fill="#ffffef" />
+    <path d="M32 20L44 32H32Z" fill="#fff7c9" />
+    <path d="M32 32H44L32 44Z" fill="#e1d88c" />
+    <path d="M20 32H32V44Z" fill="#f6f0bb" />
+    <path d="M29 27H34V32H29Z" fill="#ffffff" fill-opacity=".9" />
+        <path d="M30 5H32V12H30ZM5 30H12V32H5Z" fill="#ffffff" opacity=".65" />
+        <path d="M34 48H37V52H34ZM48 34H52V37H48Z" fill="#78a997" opacity=".45" />
+        <path d="M27 25H30V28H27ZM35 35H38V38H35Z" fill="#fffef0" opacity=".75" />
+      </g>
+      <use href="#hero-star" fill="none" stroke="url(#hero-edge)" stroke-width="1.1" stroke-linejoin="round" />
+      <path d="M30 8V14H26V21M8 30H14V26H21" fill="none" stroke="#ffffff" stroke-width=".8" stroke-linecap="round" opacity=".9" />
+      <path d="M38 43V49H34V55M43 38H49V34H55" fill="none" stroke="#6f9f8c" stroke-width=".65" opacity=".6" />
+      <circle cx="30" cy="29" r="8" fill="url(#hero-core-glow)" />
+      <path d="M30 26V32M27 29H33" fill="none" stroke="#ffffff" stroke-width=".8" stroke-linecap="round" />
+    </g>
+  </g>
 </svg>

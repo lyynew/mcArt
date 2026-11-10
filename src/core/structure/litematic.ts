@@ -14,13 +14,18 @@
  * 位运算全程用 BigInt：NBT 的 long 是带符号的，用 Number 会丢掉第 63 位，
  * 后面所有方块都会跟着错。
  */
-import { gzipBytes } from '@/core/archive'
-import { TAG, NbtWriter } from '@/core/nbt-writer'
-import { createVoxelLayout, type VoxelInput } from './voxels'
+import { gzipBytes } from '../archive'
+import { TAG, NbtWriter } from '../nbt-writer'
+import { voxelFullId, type VoxelLayout } from './voxels'
 
-export interface LitematicInput extends VoxelInput {
+export interface LitematicMeta {
+  /** 存档里显示的结构名 */
   name: string
   dataVersion: number
+  author?: string
+  description?: string
+  /** Regions 下的区域名，单区域导出时用一个固定名字即可 */
+  regionName?: string
 }
 
 const MASK64 = (1n << 64n) - 1n
@@ -59,8 +64,7 @@ export function packBlockStates(entries: Uint16Array, bits: number): bigint[] {
   return words.map((w) => BigInt.asIntN(64, w & MASK64))
 }
 
-export async function buildLitematic(input: LitematicInput): Promise<Uint8Array> {
-  const layout = createVoxelLayout(input)
+export async function buildLitematic(layout: VoxelLayout, meta: LitematicMeta): Promise<Uint8Array> {
   const { sizeX, sizeY, sizeZ } = layout
   const volume = sizeX * sizeY * sizeZ
 
@@ -74,9 +78,8 @@ export async function buildLitematic(input: LitematicInput): Promise<Uint8Array>
   for (let y = 0; y < sizeY; y++) {
     for (let z = 0; z < sizeZ; z++) {
       for (let x = 0; x < sizeX; x++, p++) {
-        const id = layout.blockAt(x, y, z)
-        if (id === null) continue
-        const full = `minecraft:${id}`
+        const full = voxelFullId(layout.blockAt(x, y, z))
+        if (full === 'minecraft:air') continue
         let index = indexOf.get(full)
         if (index === undefined) {
           index = palette.length
@@ -96,12 +99,12 @@ export async function buildLitematic(input: LitematicInput): Promise<Uint8Array>
   wr.u8(TAG.Compound).str('')
   wr.u8(TAG.Int).str('Version').i32(6)
   wr.u8(TAG.Int).str('SubVersion').i32(0)
-  wr.u8(TAG.Int).str('MinecraftDataVersion').i32(input.dataVersion)
+  wr.u8(TAG.Int).str('MinecraftDataVersion').i32(meta.dataVersion)
 
   wr.u8(TAG.Compound).str('Metadata')
-  wr.u8(TAG.String).str('Name').str(input.name)
-  wr.u8(TAG.String).str('Author').str('mcArt')
-  wr.u8(TAG.String).str('Description').str('立体阶梯地图画 · 由 mcArt 生成')
+  wr.u8(TAG.String).str('Name').str(meta.name)
+  wr.u8(TAG.String).str('Author').str(meta.author ?? 'mcArt')
+  wr.u8(TAG.String).str('Description').str(meta.description ?? '由 mcArt 生成')
   wr.u8(TAG.Int).str('RegionCount').i32(1)
   wr.u8(TAG.Int).str('TotalVolume').i32(volume)
   wr.u8(TAG.Int).str('TotalBlocks').i32(totalBlocks)
@@ -111,7 +114,7 @@ export async function buildLitematic(input: LitematicInput): Promise<Uint8Array>
   wr.u8(TAG.End)
 
   wr.u8(TAG.Compound).str('Regions')
-  wr.u8(TAG.Compound).str('map-art')
+  wr.u8(TAG.Compound).str(meta.regionName ?? 'build')
   vec3(wr, 'Position', 0, 0, 0)
   vec3(wr, 'Size', sizeX, sizeY, sizeZ)
 

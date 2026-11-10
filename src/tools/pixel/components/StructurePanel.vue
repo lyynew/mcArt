@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { McButton, McInput, McNote, McSegmented, McSwitch, McWindow, type SegOption } from '@/design/components'
 import { useEditor } from '../store/editor'
-import { useExporter } from '../composables/useExporter'
+import { useExporter, type BuildFormat } from '../composables/useExporter'
 import type { Orientation } from '../types'
 
 /**
- * 结构文件：命名、朝向、是否填空气、导出 .nbt。
- * 画幅超过 48 格时会自动分块并打包成 zip，说明写在包内。
+ * 结构文件：命名、朝向、格式、是否填空气。
+ * .nbt 超过 48 格自动分块打包成 zip；.litematic / .schem 单文件，无分块。
  */
 const editor = useEditor()
 const { settings } = editor
-const { busy, exportStructure } = useExporter()
+const { busy, exportBuild } = useExporter()
+
+const format = ref<BuildFormat>('nbt')
 
 const sizeText = computed(() =>
   settings.orient === 'wall'
@@ -24,10 +26,26 @@ const orientOptions: SegOption[] = [
   { value: 'wall', label: '立到墙上' },
 ]
 
-const tiled = computed(() => settings.n > 48)
+const formatOptions: SegOption[] = [
+  { value: 'nbt', label: '.nbt', title: '原版结构方块' },
+  { value: 'litematic', label: '.litematic', title: 'Litematica 全息投影' },
+  { value: 'schem', label: '.schem', title: 'WorldEdit 图纸' },
+]
+
+const formatNotes: Record<BuildFormat, string> = {
+  nbt: '原版结构方块加载，存档 generated/minecraft/structures/ 目录',
+  litematic: 'Litematica 全息投影，生存照着铺；单文件，不用分块',
+  schem: 'WorldEdit / FAWE 的 //paste，创造模式粘贴；单文件，不用分块',
+}
+
+const tiled = computed(() => format.value === 'nbt' && settings.n > 48)
 
 function onOrient(value: string): void {
   settings.orient = value as Orientation
+}
+
+function onFormat(value: string): void {
+  format.value = value as BuildFormat
 }
 </script>
 
@@ -44,15 +62,25 @@ function onOrient(value: string): void {
       @update:model-value="onOrient"
     />
 
-    <McSwitch v-model="settings.useAir" label="空格填成空气" class="struct__air" />
+    <McSegmented
+      :options="formatOptions"
+      :model-value="format"
+      :columns="3"
+      dense
+      style="margin-top: var(--sp-2)"
+      @update:model-value="onFormat"
+    />
 
-    <McButton variant="primary" style="margin-top: var(--sp-2)" :disabled="busy" @click="exportStructure">
-      {{ busy ? '打包中…' : '导出 .nbt' }}
+    <McSwitch v-if="format === 'nbt'" v-model="settings.useAir" label="空格填成空气" class="struct__air" />
+
+    <McButton variant="primary" style="margin-top: var(--sp-2)" :disabled="busy" @click="exportBuild(format)">
+      {{ busy ? '打包中…' : `导出 .${format}` }}
     </McButton>
 
     <McNote v-if="tiled">
       超过 48 格会自动切成 {{ Math.ceil(settings.n / 48) ** 2 }} 块，打包成 zip 并附载入说明
     </McNote>
+    <McNote v-else>{{ formatNotes[format] }}</McNote>
   </McWindow>
 </template>
 
