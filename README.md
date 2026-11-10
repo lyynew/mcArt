@@ -21,7 +21,7 @@ Minecraft 网页工具集：方块像素画生成器、地图画生成器、方�
 | 开发 | `/dev/` | 新增工具的接线手册与目录约定 |
 
 工具不是复制进文档站的第二份实现：`docs/tools/*.md` 只写一行组件挂载，
-组件本身还住在 `src/tools/`，和独立应用共用同一份代码、同一套状态管理。
+组件本身还住在 `src/tools/`，是全站唯一的一份实现与状态管理。
 新工具统一用 `src/tools/ToolShell.vue` 做三栏外壳，接线清单见
 [docs/dev/adding-a-tool.md](docs/dev/adding-a-tool.md)。
 
@@ -57,9 +57,6 @@ Minecraft 网页工具集：方块像素画生成器、地图画生成器、方�
 旧版单文件页面仍在 `public/legacy/index.html`（站点上对应 `/legacy/`），
 由 `npm run sync:legacy` 复制到 `docs/public/` 一起发布，作为对照基准保留。
 
-独立应用入口（`index.html` + `src/main.ts` + `src/app/`）也还在，用 `npm run dev:app` 起。
-它是迁移期的回退方案，等工具视觉统一后会被删掉。
-
 ## 移动端
 
 生成器在手机与平板上可用，触控按手指的语义单独做过：
@@ -88,9 +85,6 @@ npm run preview    # 用生产产物起本地服务
 npm run test       # 单元测试
 npm run typecheck  # 只做类型检查
 
-npm run dev:app    # 过渡期：起旧的独立应用入口（不含文章区）
-npm run build:app  # 过渡期：构建旧的独立应用
-
 npm run sync       # 同步贴图 + 旧版页面（dev / build 前会自动跑）
 npm run fixtures   # 重新生成算法基准文件（一般不需要）
 ```
@@ -112,7 +106,6 @@ docs/                         VitePress 站点（线上主体）
   dev/                        二次开发：新增工具的接线手册
   public/                     logo、favicon、旧版页面副本（生成）
 src/
-  app/            顶栏、页面外壳、路由（仅独立应用入口用）
   design/         设计令牌（tokens.css）、基础层（base.css，挂在 .mc-scope）、基础组件 McWindow / McButton …
   components/     跨工具复用的业务组件（方块格子、分组网格）
   core/           纯逻辑：方块数据、贴图、读图、颜色、转换、NBT 读写/写入、gzip/zip
@@ -125,10 +118,8 @@ src/
                   / voxels / structure / litematic / render / export / store / components
     atlas/        方块图鉴
     nbt-viewer/   结构文件查看器
-  pages/          独立应用入口的首页
 public/
   legacy/         旧版单文件页面，功能对照基准
-  favicon.svg
 原版材质/          142 张原版方块贴图，是贴图与平均色的唯一来源
 材质清单.txt       方块分组、色值、贴图文件名对照
 .build/           生成方块数据与平均色的 Python 脚本（改色板时才用）

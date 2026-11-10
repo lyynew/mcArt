@@ -28,6 +28,6 @@
     "docs/.vitepress/**/*.ts",
     "docs/.vitepress/**/*.mts",
     "docs/.vitepress/**/*.vue",
-    "vite.config.ts"
+    "vitest.config.ts"
   ]
 }

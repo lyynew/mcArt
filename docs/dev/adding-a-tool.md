@@ -11,7 +11,7 @@ title: 新增一个工具
 
 > 纯算法放 `.ts`（可单测） → 状态放一个 `store.ts` → 组件只渲染 → 页面只编排 → 站点接线四处登记。
 
-工具本体只有一份，同时被文档站（`<ToolXxx />`）和过渡期的独立应用入口使用，不要复制第二份实现。
+工具本体只有一份，由文档站的 `<ToolXxx />` 挂载，不要复制第二份实现。
 
 ## 目录约定
 
@@ -82,12 +82,12 @@ src/tools/<name>/
 
 ## 接线清单（四处，缺一不可）
 
-1. `src/tools/registry.ts` —— 加一条 `ToolMeta`（首页卡片、状态标签从这里取）
-2. `src/app/router.ts` —— 加一条按需加载的路由（过渡期独立入口）
-3. `docs/.vitepress/theme/index.ts` —— `app.component('ToolXxx', defineClientComponent(...))`。
+1. `docs/.vitepress/theme/index.ts` —— `app.component('ToolXxx', defineClientComponent(...))`。
    **必须用 `defineClientComponent`**：构建时不做 SSR，canvas / IndexedDB / window 才不会进预渲染。
-4. `docs/.vitepress/config.mts` —— 工具下拉、文章侧栏；再补 `docs/tools/<name>.md`、
-   `docs/tools/index.md` 卡片、首页 `HomePage.vue` 卡片
+2. `docs/tools/<name>.md` —— 页面本体，只写 frontmatter + `<ToolFrame><ToolXxx /></ToolFrame>`
+   （`layout: page` + `pageClass: tool-page` + `footer: false`）。
+3. `docs/.vitepress/config.mts` —— 顶部「工具」下拉加链接；有侧栏的区再补侧栏项。
+4. `docs/tools/index.md` 工具卡片、`docs/.vitepress/theme/HomePage.vue` 首页卡片 —— 文案与入口。
 
 ## 交付前自查
 

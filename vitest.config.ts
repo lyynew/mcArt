@@ -1,16 +1,17 @@
-import { defineConfig, mergeConfig } from 'vitest/config'
-import viteConfig from './vite.config.ts'
+import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from 'vitest/config'
 
 /**
- * 单测复用 Vite 的别名与插件配置，避免 @/ 在测试里解析不到。
- * 现在还没有测试文件，先放宽 passWithNoTests，等核心算法移植进来再收紧。
+ * 单测只跑 src 下的纯算法（*.test.ts），不碰 .vue，
+ * 因此只需要 `@` 别名，不需要 Vue 插件。
+ * 站点构建配置在 docs/.vitepress/config.mts，两边互不依赖。
  */
-export default mergeConfig(
-  viteConfig,
-  defineConfig({
-    test: {
-      include: ['src/**/*.test.ts'],
-      passWithNoTests: true,
-    },
-  }),
-)
+export default defineConfig({
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
+  test: {
+    include: ['src/**/*.test.ts'],
+    passWithNoTests: true,
+  },
+})

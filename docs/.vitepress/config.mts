@@ -6,9 +6,9 @@ import { defineConfig } from 'vitepress'
  * 文档站配置。
  *
  * 站点承担两件事：写文章的「文章」区，和跑工具的「工具」区。
- * 工具是现成的 Vue 页面组件，直接在 markdown 里挂载，见 docs/tools/*.md；
+ * 工具是 src/ 下的 Vue 页面组件，直接在 markdown 里挂载，见 docs/tools/*.md；
  * 因此这里要把 `@` 别名和 __APP_VERSION__ 一并透传给 Vite，
- * 让工具代码在文档站里跑起来和独立应用里一模一样。
+ * 让 src/ 下的工具与核心代码原样跑在文档站里。
  */
 
 const pkg = JSON.parse(
