@@ -39,15 +39,11 @@ const boxStyle = computed(() =>
   props.size > 0 ? { width: `${props.size}px`, height: `${props.size}px` } : undefined,
 )
 
-const skin = computed(() => {
-  const b = props.block
-  if (!b) return undefined
-  const url = textureUrl(b.tex)
-  return {
-    backgroundColor: b.hex,
-    backgroundImage: url ? `url("${url}")` : undefined,
-  }
-})
+/**
+ * 贴图地址。图鉴一屏能排出几百个格子，用 <img loading="lazy"> 让浏览器
+ * 只请求滚动到附近的贴图；平均色同时铺在底层，贴图没加载完也不会露白。
+ */
+const faceUrl = computed(() => (props.block ? textureUrl(props.block.tex) : undefined))
 </script>
 
 <template>
@@ -57,7 +53,17 @@ const skin = computed(() => {
     :style="boxStyle"
     :title="title ?? block?.zh"
   >
-    <span v-if="block" class="slot__face" :style="skin" />
+    <img
+      v-if="block && faceUrl"
+      class="slot__face slot__face--img"
+      :src="faceUrl"
+      :style="{ backgroundColor: block.hex }"
+      alt=""
+      loading="lazy"
+      decoding="async"
+      draggable="false"
+    />
+    <span v-else-if="block" class="slot__face" :style="{ backgroundColor: block.hex }" />
     <span v-if="label" class="slot__label">{{ label }}</span>
     <span v-if="count" class="slot__count">{{ count }}</span>
   </div>
@@ -78,9 +84,15 @@ const skin = computed(() => {
 .slot__face {
   position: absolute;
   inset: 3px;
-  background-position: center;
-  background-size: cover;
   image-rendering: pixelated;
+}
+
+/* 绝对定位的替换元素不会自动被 inset 撑开，宽高得显式给（减去两侧各 3px 的边） */
+.slot__face--img {
+  display: block;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  object-fit: cover;
 }
 
 .slot__label {

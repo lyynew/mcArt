@@ -2,8 +2,8 @@
 import { computed, ref } from 'vue'
 import { McInput, McNote, McSwitch, McWindow } from '@/design/components'
 import { isCoarsePointer } from '@/shared/pointer'
-import { FAMILIES } from '@/core/blocks'
-import { ALL_BLOCKS, FAMILY_LABELS, type PaletteBlock } from '@/core/palettes'
+import { FAMILIES, FAMILY_LABELS } from '@/core/blocks'
+import { ALL_BLOCKS, type PaletteBlock } from '@/core/palettes'
 import { useEditor } from '../store/editor'
 import BlockGrid from '@/components/blocks/BlockGrid.vue'
 import HotbarSlots from './HotbarSlots.vue'
@@ -18,9 +18,9 @@ const { settings, blocks, counts } = editor
 const keyword = ref('')
 const onlyUsed = ref(false)
 
-const groups = computed<BlockGridGroup[]>(() => {
+const groups = computed<BlockGridGroup<PaletteBlock>[]>(() => {
   const q = keyword.value.trim().toLowerCase()
-  const result: BlockGridGroup[] = []
+  const result: BlockGridGroup<PaletteBlock>[] = []
 
   for (const family of FAMILIES) {
     const items = blocks.value

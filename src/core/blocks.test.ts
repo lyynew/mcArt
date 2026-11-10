@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { ALL_BLOCK_DEFS, BLOCKS, BLOCKS_BY_ID, findBlock, normalizeBlockId } from './blocks'
+import {
+  ALL_BLOCK_DEFS,
+  BLOCKS,
+  BLOCKS_BY_ID,
+  FAMILIES,
+  FAMILY_CATALOG,
+  FAMILY_LABELS,
+  PALETTE_IDS,
+  findBlock,
+  normalizeBlockId,
+} from './blocks'
 
 describe('normalizeBlockId', () => {
   it('剥掉命名空间与 [状态] 后缀', () => {
@@ -47,6 +57,35 @@ describe('findBlock', () => {
     }
     expect(BLOCKS_BY_ID.size).toBe(ALL_BLOCK_DEFS.length)
     expect(ALL_BLOCK_DEFS.length).toBeGreaterThan(BLOCKS.length)
+  })
+})
+
+describe('分组目录', () => {
+  it('覆盖注册表里出现的每个分组，图鉴不会漏方块', () => {
+    const catalog = new Set(FAMILY_CATALOG.map((f) => f.id))
+    const used = new Set(ALL_BLOCK_DEFS.map((b) => b.fam))
+    expect([...used].filter((f) => !catalog.has(f))).toEqual([])
+  })
+
+  it('色板源的 8 个分组都在目录里，顺序仍是老顺序', () => {
+    for (const fam of FAMILIES) {
+      expect(FAMILY_CATALOG.some((f) => f.id === fam)).toBe(true)
+    }
+    const inCatalog = FAMILY_CATALOG.map((f) => f.id)
+    const positions = FAMILIES.map((f) => inCatalog.indexOf(f))
+    expect(positions).toEqual([...positions].sort((a, b) => a - b))
+  })
+
+  it('每个分组都有显示名，且没有重复项', () => {
+    for (const f of FAMILY_CATALOG) expect(FAMILY_LABELS[f.id]).toBeTruthy()
+    expect(new Set(FAMILY_CATALOG.map((f) => f.id)).size).toBe(FAMILY_CATALOG.length)
+  })
+})
+
+describe('PALETTE_IDS', () => {
+  it('正好是色板源那 142 种，且都在注册表里', () => {
+    expect(PALETTE_IDS.size).toBe(BLOCKS.length)
+    for (const id of PALETTE_IDS) expect(BLOCKS_BY_ID.has(id)).toBe(true)
   })
 })
 

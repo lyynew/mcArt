@@ -172,8 +172,39 @@ export const BLOCKS: readonly BlockDef[] = [
   { zh: '哭泣的黑曜石', en: 'Crying Obsidian', hex: '#210A3C', id: 'crying_obsidian', fam: '彩色', tex: 'crying_obsidian' },
 ]
 
-/** 分组顺序按首次出现排列，与旧版一致 */
+/** 色板源的分组顺序，按首次出现排列，与旧版一致。像素画色板推导只看这 8 组 */
 export const FAMILIES: readonly string[] = ["混凝土","羊毛","陶瓦","石材","砂土","木质","金属宝石","彩色"]
+
+/**
+ * 浏览用的分组目录，覆盖全量注册表的所有分组（含识别扩展）。
+ *
+ * 数组顺序就是界面顺序：前八组沿用像素画色板的老顺序（用户已经熟了），
+ * 之后接矿石、建筑构件、装饰、自然、维度，最后是功能方块与杂项。
+ * 名称给界面直接用，短一点更适合当筛选按钮——和方块数据里的 `fam` 值一一对应，别改 `id`。
+ */
+export const FAMILY_CATALOG: readonly { readonly id: string; readonly label: string }[] = [
+  { id: '混凝土', label: '混凝土' },
+  { id: '羊毛', label: '羊毛' },
+  { id: '陶瓦', label: '陶瓦' },
+  { id: '石材', label: '石材' },
+  { id: '砂土', label: '砂土与砂岩' },
+  { id: '木质', label: '木质' },
+  { id: '金属宝石', label: '金属与宝石' },
+  { id: '矿石', label: '矿石' },
+  { id: '彩色', label: '彩色' },
+  { id: '建筑构件', label: '构件' },
+  { id: '装饰', label: '装饰' },
+  { id: '自然', label: '自然' },
+  { id: '下界', label: '下界' },
+  { id: '末地', label: '末地' },
+  { id: '功能', label: '功能' },
+  { id: '其他', label: '其它' },
+]
+
+/** 分组显示名；查不到就退回分组 ID 本身 */
+export const FAMILY_LABELS: Readonly<Record<string, string>> = Object.fromEntries(
+  FAMILY_CATALOG.map((f) => [f.id, f.label]),
+)
 
 /** 带命名空间的完整 ID，命令与结构文件里用这个 */
 export function fullId(block: BlockDef): string {
@@ -190,6 +221,12 @@ export const ALL_BLOCK_DEFS: readonly BlockDef[] = [...BLOCKS, ...EXTRA_BLOCKS]
 export const BLOCKS_BY_ID: ReadonlyMap<string, BlockDef> = new Map(
   ALL_BLOCK_DEFS.map((b) => [b.id, b]),
 )
+
+/**
+ * 色板源 ID 集合：靠 `BLOCKS` 参与像素画配色的那 142 种。
+ * 图鉴拿它给方块打「可用于像素画」的标，其余方块只用于识别与查看。
+ */
+export const PALETTE_IDS: ReadonlySet<string> = new Set(BLOCKS.map((b) => b.id))
 
 /** 墙上形态归一到落地方块：同一面墙上的告示牌不该在材料统计里拆成两行 */
 const WALL_FORMS: readonly (readonly [RegExp, string])[] = [

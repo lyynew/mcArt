@@ -28,8 +28,8 @@ title: 工具
       <span class="tool-card__name">方块图鉴</span>
       <span class="tool-card__tag">可用</span>
     </span>
-    <span class="tool-card__desc">142 种方块的原版贴图、平均色与 ID。按分组浏览，搜中英文名，一键复制 <code>minecraft:xxx</code> 与 <code>give</code> 命令。</span>
-    <span class="tool-card__meta">142 种方块 · 贴图放大 · 命令复制</span>
+    <span class="tool-card__desc">978 种方块的原版贴图、中文名与 ID。16 个分组，搜中文名 / 英文名 / ID，标出哪 142 种能用于像素画，一键复制 <code>minecraft:xxx</code> 与 <code>give</code> 命令。</span>
+    <span class="tool-card__meta">978 种 · 16 个分组 · 命令复制</span>
   </a>
   <a class="tool-card" href="./nbt">
     <span class="tool-card__head">

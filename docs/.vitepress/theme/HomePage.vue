@@ -62,9 +62,9 @@ const heroSrc = withBase('/hero-block.svg')
           <span class="home-card__no">03 / LOOK UP</span>
           <span class="home-card__name">方块图鉴</span>
           <p class="home-card__desc">
-            142 种方块的原版贴图、平均色与 ID，按分组浏览，一键复制 give 命令。
+            978 种方块的原版贴图、中文名与 ID，16 个分组、随打随搜，一键复制 give 命令。
           </p>
-          <span class="home-card__foot">142 种 · 贴图放大 →</span>
+          <span class="home-card__foot">978 种 · 贴图放大 →</span>
         </a>
         <a class="home-card" href="./tools/nbt.html">
           <span class="home-card__no">04 / VERIFY</span>

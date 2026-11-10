@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { McButton, McInput, McModal } from '@/design/components'
-import { FAMILIES } from '@/core/blocks'
-import { ALL_BLOCKS, FAMILY_LABELS, type PaletteBlock } from '@/core/palettes'
+import { FAMILIES, FAMILY_LABELS } from '@/core/blocks'
+import { ALL_BLOCKS, type PaletteBlock } from '@/core/palettes'
 import { useEditor } from '../store/editor'
 import BlockGrid from '@/components/blocks/BlockGrid.vue'
 import type { BlockGridGroup } from '@/components/blocks/types'
@@ -24,9 +24,9 @@ watch(open, (isOpen) => {
   pending.value = new Set(editor.customIds.value)
 })
 
-const groups = computed<BlockGridGroup[]>(() => {
+const groups = computed<BlockGridGroup<PaletteBlock>[]>(() => {
   const q = keyword.value.trim().toLowerCase()
-  const out: BlockGridGroup[] = []
+  const out: BlockGridGroup<PaletteBlock>[] = []
 
   for (const family of FAMILIES) {
     const items = ALL_BLOCKS.filter((b) => b.fam === family)

@@ -1,15 +1,16 @@
-<script setup lang="ts">
-import type { PaletteBlock } from '@/core/palettes'
+<script setup lang="ts" generic="T extends BlockDef">
+import type { BlockDef } from '@/core/blocks'
 import BlockSlot from './BlockSlot.vue'
 import type { BlockGridGroup } from './types'
 
 /**
- * 分组色板网格。
+ * 分组方块网格。
  * 纯展示：分组、角标、选中态都由调用方算好，这里只负责排布与点击。
+ * 泛型 T 跟着传进来的分组走，选中事件就能把调用方自己的方块类型原样还回去。
  */
 withDefaults(
   defineProps<{
-    groups: BlockGridGroup[]
+    groups: BlockGridGroup<T>[]
     /** 单格边长 */
     size?: number
     emptyText?: string
@@ -17,7 +18,7 @@ withDefaults(
   { size: 36, emptyText: '没有匹配的方块' },
 )
 
-const emit = defineEmits<{ (e: 'select', block: PaletteBlock): void }>()
+const emit = defineEmits<{ (e: 'select', block: T): void }>()
 </script>
 
 <template>

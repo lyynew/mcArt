@@ -1,18 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { McButton, McWindow } from '@/design/components'
 import BlockSlot from '@/components/blocks/BlockSlot.vue'
-import type { PaletteBlock } from '@/core/palettes'
-import { fullId } from '@/core/blocks'
+import { fullId, FAMILY_LABELS, PALETTE_IDS, type BlockDef } from '@/core/blocks'
+import { textureUrl } from '@/core/textures'
 import { copyText } from '@/shared/clipboard'
 
 /**
  * 方块详情卡：大图 + 名称 + ID + 复制命令。
  * 图鉴的主要用途就是「拿到 ID 去游戏里用」，所以复制按钮放在最显眼的位置。
  */
-const props = defineProps<{ block: PaletteBlock }>()
+const props = defineProps<{ block: BlockDef }>()
 
 const copied = ref('')
+
+/** 色板源那 142 种才参与像素画配色，其余只用于识别与查看 */
+const inPalette = computed(() => PALETTE_IDS.has(props.block.id))
+const hasTexture = computed(() => Boolean(textureUrl(props.block.tex)))
 
 async function copy(label: string, text: string): Promise<void> {
   const ok = await copyText(text)
@@ -34,7 +38,12 @@ function giveCommand(): string {
       <div class="detail__names">
         <h2 class="detail__zh">{{ block.zh }}</h2>
         <p class="detail__en">{{ block.en }}</p>
-        <p class="detail__fam">{{ block.fam }}</p>
+        <div class="detail__tags">
+          <span class="detail__tag">{{ FAMILY_LABELS[block.fam] ?? block.fam }}</span>
+          <span class="detail__tag" :class="inPalette ? 'detail__tag--on' : 'detail__tag--off'">
+            {{ inPalette ? '可用于像素画' : '仅识别' }}
+          </span>
+        </div>
       </div>
     </div>
 
@@ -46,8 +55,8 @@ function giveCommand(): string {
         <span class="detail__swatch" :style="{ background: block.hex }" />
         {{ block.hex }}
       </dd>
-      <dt>贴图文件</dt>
-      <dd class="detail__mono">{{ block.tex }}.png</dd>
+      <dt>贴图</dt>
+      <dd class="detail__mono">{{ hasTexture ? `${block.tex}.png` : '无（实体模型）' }}</dd>
     </dl>
 
     <div class="detail__actions">
@@ -85,15 +94,25 @@ function giveCommand(): string {
   color: var(--mc-ink-soft);
 }
 
-.detail__fam {
-  display: inline-block;
+.detail__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
   margin-top: var(--sp-2);
+}
+
+.detail__tag {
   padding: 1px 6px;
   font-size: var(--fs-note);
   color: #fff;
   background: var(--mc-accent);
   border: 1px solid #2b2b2b;
   text-shadow: var(--mc-ts-dark);
+}
+
+/* 「仅识别」用冷灰底，和「可用于像素画」的金色区分开 */
+.detail__tag--off {
+  background: #6b6b6b;
 }
 
 .detail__list {

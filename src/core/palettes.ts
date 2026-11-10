@@ -26,18 +26,6 @@ export const ALL_BLOCKS: readonly PaletteBlock[] = BLOCKS.map((b, all) => ({
   i: -1,
 }))
 
-/** 分组的中文显示名，比数据里的名字更适合当标题 */
-export const FAMILY_LABELS: Readonly<Record<string, string>> = {
-  混凝土: '混凝土',
-  羊毛: '羊毛',
-  陶瓦: '陶瓦',
-  石材: '石材',
-  砂土: '砂土与砂岩',
-  木质: '木质',
-  金属宝石: '金属与宝石',
-  彩色: '彩色方块',
-}
-
 export function blocksOfFamily(fam: string): PaletteBlock[] {
   return ALL_BLOCKS.filter((b) => b.fam === fam)
 }
