@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { ParsedStructure } from '@/core/nbt-read'
 import { findBlock, normalizeBlockId } from '@/core/blocks'
-import { textureImage, textureUrl } from '@/core/textures'
+import { drawTexture, textureImage, textureUrl } from '@/core/textures'
 import { anchorScrollDelta, clampCell, zoomStep } from '@/core/viewport'
 import { cellsOf, coordOf, projectionOf, type PickedCell } from './projection'
 
@@ -222,7 +222,7 @@ function draw(): void {
     if (block && base >= 6) {
       const url = textureUrl(block.tex)
       const img = url ? ready.get(url) : undefined
-      if (img) ctx.drawImage(img, x, y, base, base)
+      if (img) drawTexture(ctx, img, x, y, base)
     }
   }
 }

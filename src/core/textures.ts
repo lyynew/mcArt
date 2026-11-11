@@ -32,6 +32,40 @@ export function textureUrl(tex: string | undefined): string | undefined {
 }
 
 /**
+ * 以窄边为边长，取图片左上角的一块正方形。
+ *
+ * 原版有 21 张贴图不是单个 16×16 方块，而是把动画帧 / 多个面纵向堆成
+ * 16×N（water_still 是 16×512，magma 是 16×48）。整张画进方格里会被压扁，
+ * 所以只取最开始那一帧——这也是游戏里方块的初始外观。
+ * `.build/png_avg.py` 算平均色时取的是同一块区域，配色与显示才对得上。
+ *
+ * 返回 0 表示图片还没解码（或尺寸非法），调用方应退回平均色。
+ */
+export function squareSide(width: number, height: number): number {
+  const side = Math.min(width, height)
+  return Number.isFinite(side) && side > 0 ? side : 0
+}
+
+/**
+ * 把贴图按左上角方形画进目标方格。
+ *
+ * 方形贴图等价于普通的 drawImage(img, x, y, size, size)；
+ * 堆叠贴图只画第一帧，不再把整条压成 1:1。
+ * 内置贴图和用户自选的材质包都走这里，规则只有一份。
+ */
+export function drawTexture(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  size: number,
+): void {
+  const side = squareSide(img.naturalWidth || img.width, img.naturalHeight || img.height)
+  if (!side) return
+  ctx.drawImage(img, 0, 0, side, side, x, y, size, size)
+}
+
+/**
  * 画布绘制用的图片缓存。
  * 同一张图只解码一次，142 张全部加载也就是一次 Promise 数组。
  */

@@ -1,4 +1,5 @@
 import type { PaletteBlock } from '@/core/palettes'
+import { drawTexture } from '@/core/textures'
 
 /**
  * 画布绘制。
@@ -96,7 +97,7 @@ export function paintBoard(canvas: HTMLCanvasElement, o: BoardPaintOptions): voi
         const b = blocks[k]
         const img = realTextures && b ? textures.get(b.tex) : undefined
         if (img) {
-          ctx.drawImage(img, px, py, cell, cell)
+          drawTexture(ctx, img, px, py, cell)
         } else if (b) {
           ctx.fillStyle = b.hex
           ctx.fillRect(px, py, cell, cell)

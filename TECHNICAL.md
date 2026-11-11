@@ -142,6 +142,8 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 
 `原版材质/` 是贴图与平均色的唯一来源，`材质清单.txt` 记录分组、色值与文件名对照。贴图不直接引用该目录：`scripts/sync-textures.mjs` 增量拷贝到 `src/assets/textures/`（该目录在 `.gitignore` 里），再交给 Vite 做内容哈希输出。旧版单文件页面同理，`scripts/sync-legacy.mjs` 把它从 `public/legacy/` 复制到 `docs/public/legacy/` 一起发布；`public/legacy/index.html` 是源文件，也是 sync-legacy 与 make-fixtures 的基准，不能删。
 
+**有 21 张贴图不是单个方块**，而是把动画帧 / 多个面纵向堆成 `16×N`（`water_still` 是 16×512，`magma` 是 16×48）。整张画进方格会被压成一团横条纹，所以显示时统一只取**左上角、以窄边为边长的那一块**（正好是游戏里的第一帧）：canvas 走 `core/textures.ts` 的 `squareSide` / `drawTexture`，图鉴格子的 `<img>` 用 `object-fit: cover` + `object-position: left top`。`.build/png_avg.py` 算平均色时取同一块区域，配色和显示才对得上。规则只在这两处，别在同步脚本里裁源文件，也别改 `原版材质/` —— 完整帧数据要留着，用户自选的材质包也走同一套绘制逻辑。
+
 其他脚本：
 
 - `scripts/build-block-extras.mjs` —— 从官方 1.21.4 的 assets / lang / textures 生成 `src/core/block-extras.ts`；生成器写文本用 Python 的 `writeTextPlain`，node 写出的文本会被 E-SafeNet 加密。

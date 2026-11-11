@@ -100,10 +100,15 @@ def read_png(path):
 
 def avg_color(path, rows=None):
     w, h, get = read_png(path)
-    rows = min(h, w) if rows is None else rows
+    # 只取左上角、以窄边为边长的那一块方形：原版有 16×N 的动画帧堆叠贴图，
+    # 整张平均会把后面几十帧一起算进去，和画布上显示的第一帧对不上。
+    # 与 src/core/textures.ts 的 squareSide / drawTexture 是同一条规则。
+    side = min(w, h)
+    rows = side if rows is None else rows
+    cols = side
     r = g = b = n = 0
     for y in range(rows):
-        for x in range(w):
+        for x in range(cols):
             R, G, B, A = get(x, y)
             if A < 128:
                 continue

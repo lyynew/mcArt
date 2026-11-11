@@ -87,12 +87,17 @@ const faceUrl = computed(() => (props.block ? textureUrl(props.block.tex) : unde
   image-rendering: pixelated;
 }
 
-/* 绝对定位的替换元素不会自动被 inset 撑开，宽高得显式给（减去两侧各 3px 的边） */
+/*
+ * 绝对定位的替换元素不会自动被 inset 撑开，宽高得显式给（减去两侧各 3px 的边）。
+ * 原版有 16×N 的动画帧堆叠贴图，cover 默认居中会截到中间某一帧；
+ * 对齐到左上角才和画布一样取第一帧（见 core/textures.ts 的 drawTexture）。
+ */
 .slot__face--img {
   display: block;
   width: calc(100% - 6px);
   height: calc(100% - 6px);
   object-fit: cover;
+  object-position: left top;
 }
 
 .slot__label {
