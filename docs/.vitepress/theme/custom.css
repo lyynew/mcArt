@@ -336,12 +336,10 @@ body {
   z-index: 1;
   color: var(--ink);
 
-  /* 原有 22px 纸面网格直接挂在主页层；即使动效关闭、Canvas 为空也不会消失。 */
-  background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size: 22px 22px;
-  background-position: 0 0;
+  /* 纸面网格只由 body 画一层，这里不要再画：
+     两层的 22px 原点不同（body 在 (0,0)，.home 在容器内边距之后，差 20px），
+     线距不是整数倍就会错开，视觉上像是页面中间多叠了一层网格。 */
+  background: none;
 }
 
 .home-hero {
