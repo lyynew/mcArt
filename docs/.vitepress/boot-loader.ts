@@ -5,7 +5,12 @@
  * 这段把加载圈直接塞进 #app：Vue 挂载时会清空容器，占位自动消失，
  * 不需要额外的移除脚本，也不会残留到生产产物（插件 apply: 'serve'）。
  * 样式全部内联——首屏这时连主题 CSS 都还没下载。
+ *
+ * 顺带把首屏状态脚本也插进 <head>：dev 不跑 SSR，config.head 里的内联
+ * 脚本不会出现在初始 HTML 里，深浅色与 mc-armed 就会和生产不一致。
  */
+import { initialStateScript } from './head-script'
+
 const DOTS = [
   [50, 10], [30, 15], [15, 30], [10, 50],
   [15, 70], [30, 85], [50, 90], [70, 85],
@@ -37,13 +42,15 @@ const BOOT = `<div id="mcart-boot" role="status" aria-live="polite">
 // 不标注 vite 的 Plugin 类型：仓库里 root vite 与 VitePress 自带的 vite
 // 是两个版本，标了反而会因为 ServerOptions 不一致报类型错。
 // 只用得到这三个字段，结构类型足够。
-export function bootLoader() {
+export function bootLoader(base: string) {
   return {
     name: 'mcart-boot-loader',
     apply: 'serve' as const,
     transformIndexHtml(html: string) {
+      const script = `<script>${initialStateScript(base)}</script>`
+      const withState = html.includes('</head>') ? html.replace('</head>', `${script}</head>`) : html
       // 只在空壳上动手，生产构建的 SSR 内容不受影响
-      return html.replace('<div id="app"></div>', `<div id="app">${BOOT}</div>`)
+      return withState.replace('<div id="app"></div>', `<div id="app">${BOOT}</div>`)
     },
   }
 }

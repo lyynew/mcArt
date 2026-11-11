@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitepress'
 import { bootLoader } from './boot-loader'
+import { initialStateScript } from './head-script'
 
 /**
  * 工具组件在 markdown 里挂载（docs/tools/*.md），
@@ -27,7 +28,13 @@ export default defineConfig({
   cleanUrls: false,
   lastUpdated: true,
 
+  // 深浅色与动效合成一组开关放在导航栏（theme/SiteControls.vue），
+  // 所以关掉默认主题自带的独立外观按钮，避免出现两个深色开关
+  appearance: false,
+
   head: [
+    // 首屏前定主题、定动效、并给首页挂上待施工标记；见 head-script.ts
+    ['script', {}, initialStateScript(base)],
     ['link', { rel: 'icon', type: 'image/svg+xml', href: `${base}favicon.svg` }],
     ['meta', { name: 'theme-color', content: '#f6f5f0' }],
     ['meta', { property: 'og:type', content: 'website' }],
@@ -42,8 +49,8 @@ export default defineConfig({
   ],
 
   vite: {
-    // dev 只吐一个空 #app，挂上首屏加载圈；生产构建不加载这个插件
-    plugins: [bootLoader()],
+    // dev 只吐一个空 #app，挂上首屏加载圈与首屏状态脚本；生产构建不加载这个插件
+    plugins: [bootLoader(base)],
     define: { __APP_VERSION__: JSON.stringify(pkg.version) },
     resolve: {
       alias: { '@': fileURLToPath(new URL('../../src', import.meta.url)) },
@@ -147,9 +154,6 @@ export default defineConfig({
     lastUpdated: { text: '最后更新于', formatOptions: { dateStyle: 'medium' } },
     returnToTopLabel: '回到顶部',
     sidebarMenuLabel: '目录',
-    darkModeSwitchLabel: '主题',
-    lightModeSwitchTitle: '切换到浅色',
-    darkModeSwitchTitle: '切换到深色',
     externalLinkIcon: true,
 
     footer: {

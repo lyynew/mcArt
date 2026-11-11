@@ -4,6 +4,7 @@ import type { Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme-without-fonts'
 import ToolFrame from './ToolFrame.vue'
 import HomePage from './HomePage.vue'
+import SiteLayout from './Layout.vue'
 import { defineToolComponent } from './defineToolComponent'
 
 /**
@@ -14,6 +15,8 @@ import { defineToolComponent } from './defineToolComponent'
  *   1. 工具样式全部挂在 .mc-scope 下，只在工具容器内生效；
  *   2. 工具组件只在浏览器挂载后加载，构建时不做 SSR，
  *      等待期间由 defineToolComponent 顶一个像素加载圈，不留空白。
+ *
+ * 布局只覆写插槽（导航栏的显示开关），其余沿用默认主题。
  */
 import '@/design/tokens.css'
 import '@/design/base.css'
@@ -22,6 +25,7 @@ import './custom.css'
 
 export default {
   extends: DefaultTheme,
+  Layout: SiteLayout,
 
   enhanceApp({ app }) {
     app.component('HomePage', HomePage)

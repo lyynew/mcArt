@@ -37,7 +37,9 @@ npm run fixtures   # 重新生成算法基准文件（一般不需要）
 ```
 docs/                         VitePress 站点（线上主体）
   .vitepress/config.mts       导航、侧栏、base、别名与版本注入
-  .vitepress/theme/           继承默认主题：注册工具组件、工具页整屏布局
+  .vitepress/head-script.ts   首屏内联脚本：定主题、定动效、给首页挂待施工标记
+  .vitepress/theme/           继承默认主题：注册工具组件、工具页整屏布局、
+                              导航显示开关（SiteControls）、首页施工动画的粘合层
   index.md / about.md         首页、关于
   guide/                      使用说明
   tools/                      工具页（一行组件挂载）
@@ -46,6 +48,8 @@ docs/                         VitePress 站点（线上主体）
 src/
   design/         设计令牌（tokens.css）、基础层（base.css，挂在 .mc-scope）、
                   基础组件 McWindow / McButton …
+    builder/      首页施工动画引擎（纯逻辑 + canvas，不依赖 Vue）
+    ambient/      首页背景环境层（图案库、网格落点、生命周期、渲染）
   components/     跨工具复用的业务组件（方块格子、分组网格）
   core/           纯逻辑：方块表、贴图、读图、颜色、转换、结构读写、gzip/zip
   shared/         与业务无关的小工具：下载、剪贴板、防抖、超时
@@ -74,6 +78,33 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 - 字体文件在 `docs/.vitepress/theme/fonts/`，授权文本随站点发布在 `docs/public/LICENSE-ARK-PIXEL.txt`。字体作者 TakWolf，项目地址 https://github.com/TakWolf/ark-pixel-font 。
 
 工具样式的作用域收敛在 `src/design/base.css`，所有规则挂在 `.mc-scope` 下；`ToolFrame` 带这个类，文档页一个像素都不受影响。工具内部保留游戏内 GUI 的浅灰面板（像素风、按格子对齐）。整屏高度归 `custom.css` 的 `.Layout.tool-page`，不要在工具里另写一套。
+
+## 首页施工动画
+
+首页首屏是一段「有人在一起拼页面」的动画：几个像素光标在页面上移动、拉选框、打字，把内容一块块建出来。引擎在 `src/design/builder/`，与 Vue 无关；`theme/useHomeBuilder.ts` 只做挂载与起停。
+
+- **进度驱动光标**：每块内容有一个归一化进度 `p`，`timeline.poseOf(kind, rect, p)` 直接算出光标此刻的位置与形态（箭头 / 十字 / 竖线）。不是「光标动完再触发动画」，所以加速、跳帧、直接置满都自洽——跳过动画就是把所有块 `p = 1`。
+- **模块分工**：`timeline`（时间轴与姿态）、`scheduler`（谁去建哪块：文档顺序前 3 块里挑最近的）是两个纯函数模块，有单测；`sprites`（位图掩码 + 离屏缓存）、`renderer`（canvas）、`engine`（rAF、生命周期）才碰 DOM。
+- **不闪白页**：内容默认可见。首屏脚本在首页且动效开启时挂 `html.mc-armed`，只把 `[data-build]` 藏起来；引擎就绪后立刻摘掉这个类、改由内联样式接管。脚本 3.2 秒内没等到引擎也会自动摘掉，宁可没有动画也不能留下白页。
+- **可还原**：`destroy()` 会把 `innerHTML` 与内联样式还原，所以「关掉动效」等于回到静态站，而不是停在半成品。改这块务必保持这个契约。
+- **偏好只有一份**：`theme/prefs.ts` 的响应式 `prefs` 加上 `<html>` 上的 `dark` 类、`data-motion`、`data-speed`，设置面板和动画引擎都读它；首屏内联脚本（`head-script.ts`）负责在绘制前写好，避免刷新闪烁。深浅色切换会派发 `mcart:appearance`，引擎与背景层据此重算颜色。
+- **只认点击，不认滚动**：滚动不打断动画（块坐标是页面坐标，滚动只改「往哪看」）；点页面任意处才跳到最后。建完之后光标不清场，继续在可视区里慢慢漂（`IDLE_FRAME` 把空闲帧率降到约 28fps）。
+- **速度三档**：`舒缓 0.8× / 正常 1.25× / 快速 2×`（`prefs.ts` 的 `SPEED_SCALE`）。`setSpeed()` 只改倍率不重启动画，进度按秒推进，切换立刻生效。
+- **怎么加一块**：给元素加 `data-build="head|text|card|rule"`（打字 / 擦出 / 画框后擦出 / 划线），其余什么都不用做。不想被动效碰的元素照常不写标记。
+- **性能**：单个 rAF 循环、帧间隔钳到 50ms、canvas 缓冲只覆盖一屏且 dpr 上限 1.6、块做视口裁剪、只画正在施工的块，标签统一夹在屏幕内。
+
+## 背景环境层
+
+首页由 `docs/index.md` 挂载 `theme/HomePage.vue`，正文后的 `.home-backdrop` 通过 `useBackdrop.ts` 的组件本地画布 ref 接入 `src/design/ambient/`。仍使用单个固定视口 Canvas，不改变主页排版、施工动画或工具功能。
+
+- **图案与视觉**：`patterns.ts` 用严格图例定义 9 种 5–8 格的 Minecraft 像素图案（苦力怕、生命值、钻石剑/镐、草方块、火把、末影之眼、蘑菇、苹果）。统一草绿、泥土、钻石、红石及材质暗部，不在格子上叠字符、噪点或扫光。原主页的 22px 方格纸面仍挂在 `.home` CSS 层，动效关闭时也不会消失；图案 Canvas 叠在其上，不随漂移改变网格。未知图例、空图案和行宽不一致直接报错。既有 `scatterPattern` 保留兼容，但不参与主页轮换。
+- **占用与去重**：`pool.ts` 为完整生命期持有图案占用，旧图彻底淡出并从场景移除才释放。除名称外还计算去除留白、与像素顺序无关的内容指纹，别名画成同一图案也共享占用。优先最久未使用者，同优先级随机打散；图案或空间耗尽就等待，不重复补位，不逐帧反复试探。
+- **调度与落点**：`scene.ts` 负责错峰生成、淡出期间的有限交叉过渡以及缩放后的重新摆放。`grid.ts` 按空闲扇区选点，占位预留整个漂移轨迹的包络，淡出元素同样参与避让。默认桌面最多 7 张、窄屏 3 张，最多额外 2 张用于过渡；尺寸不足时安全减少数量。
+- **轨迹与节奏**：`motion.ts` 采用有界的连续周期轨迹及 smoothstep 缓入，不随机转向或重置位置。图案整体淡入 1.8 秒、停留 12–20 秒、淡出 2.2 秒，生成间隔 0.85 秒；低幅度呼吸不改变图案内部材质。全部预算、尺寸和节奏由 `config.ts` 集中配置，并使用明确的 TypeScript 类型与参数校验。
+- **渲染**：`renderer.ts` 缓存原生像素精灵，最近邻放大、不旋转、不模糊；整幅图案的原点和单元尺寸对齐整数设备像素。默认图案像素为 12 CSS px，窄屏缩至 9 px，与纸面方格解耦。色彩沿用站点令牌，低透明度、窄屏额外衰减，仍位于 `z-index: -1` 且不接收指针事件。
+- **生命周期与性能**：`field.ts` 仅负责唯一 rAF 和 DOM 监听，默认最高 60fps（可配置）、时间步钳到 100ms、DPR 上限 2、背板约 800 万像素上限，resize 合并到下一帧。页面隐藏时取消循环，返回后不追赶；显式 stop 不会被可见性事件重启。系统减少动效默认保留静态图案而不申请 rAF，但首页粘合层以站点开关为最终真相：用户明确开启后仍可动画，避免系统默认覆盖手动选择。站点动效开关控制整层启停，destroy 幂等取消帧、解绑尺寸/主题/可见性/媒体查询监听、清空占用与精灵缓存并释放背板。
+
+**验证**：占用池与场景测试覆盖淡入/淡出重叠、库耗尽、别名去重、公平轮换、极小屏幕与反复缩放；固定种子模拟 24 小时、每 0.5 秒检查唯一性、占用一致性、轨迹包络避让和数量上限。生命周期测试覆盖后台恢复、慢帧钳位、精灵复用、100 次挂载/卸载、减少动效及整数设备像素绘制。模拟验证的是逻辑长期稳定性，不等于真实浏览器 24 小时性能实测。
 
 ## 移动端
 
@@ -127,6 +158,15 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 - `tools/map-art/heightmap.test.ts` —— 高度差符号逐格等于明暗档、逐列对齐确实省支撑
 - `tools/map-art/structure.test.ts` —— 48³ 分块尺寸与 `parseStructure` 兼容回读
 - `tools/map-art/litematic.test.ts` —— 位打包跨 64 位边界可解回、Version 6 根结构合规
+- `design/builder/timeline.test.ts` —— 各类块的时长与显出比例单调、打字不越界、姿态坐标恒有限
+- `design/builder/scheduler.test.ts` —— 调度窗口内就近取块、窗口外再近也不选、空闲游走不扎堆
+- `design/ambient/patterns.test.ts` —— 字符画行宽校验、图案尺寸与色彩约束、散点同种子可复现
+- `design/ambient/life.test.ts` —— 三段寿命的边界与进度、错峰权重单调、呼吸与扫描波的值域、取字稳定
+- `design/ambient/pool.test.ts` —— 全生命期占用、内容别名去重、库耗尽与公平轮换
+- `design/ambient/motion.test.ts` —— 连续轨迹、有界位移、阶段过渡单调
+- `design/ambient/scene.test.ts` —— 淡出重叠去重、受限屏幕、24 小时模拟轮换与反复缩放
+- `design/ambient/field.test.ts` —— 帧与监听清理、后台恢复、减少动效、缓存及背板预算
+- `design/ambient/grid.test.ts` —— 矩形留白相交、加权采样、落点不越界且互不重叠、连续摆放会铺开、塞满后返回 null
 
 `.litematic` 另外用独立的 Python `litemapy` 对 18 万体素做过逐格交叉验证。质量回归还有一条：4×4 块平均色的 ΔE 对比。
 

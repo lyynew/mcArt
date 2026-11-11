@@ -332,7 +332,16 @@ body {
 }
 
 .home {
+  position: relative;
+  z-index: 1;
   color: var(--ink);
+
+  /* 原有 22px 纸面网格直接挂在主页层；即使动效关闭、Canvas 为空也不会消失。 */
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-position: 0 0;
 }
 
 .home-hero {
@@ -779,4 +788,93 @@ body {
 .Layout.tool-page .VPNavBar {
   border-bottom: 1px solid var(--line-strong);
   box-shadow: inset 0 -2px 0 var(--green);
+}
+
+
+/* ============================================================
+   首页施工动画（引擎在 src/design/builder/）
+   ------------------------------------------------------------
+   首屏脚本先给 <html> 挂 mc-armed，把待施工的块藏起来；引擎就绪
+   后摘掉这个类、改由它写内联样式，所以脚本挂了也只是「没有动画」，
+   不会留下白页。数据、布局全在这里，引擎只管时间与坐标。
+   ============================================================ */
+
+/* 动画开始前：只有挂了 data-build 的块先隐身，导航、页脚照常可见 */
+html.mc-armed [data-build] {
+  opacity: 0;
+}
+
+/* 打字块需要有定位祖先，光标条才能绝对定位到字符上 */
+[data-build='head'] {
+  position: relative;
+}
+
+/* 逐字显形：字符始终占位（只切 visibility），因此排版不会边打边抖 */
+.bt-ch {
+  visibility: hidden;
+}
+
+.bt-ch.is-on {
+  visibility: visible;
+}
+
+/* 3px 硬边光标条，steps 闪烁，不做淡入淡出 */
+.bt-caret {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 3px;
+  background: var(--green);
+  animation: bt-caret-blink 1s steps(1) infinite;
+}
+
+@keyframes bt-caret-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Minecraft 像素背景：图案层叠在主页固定的 22px 纸面网格之上。铺在正文之后、纸面之前（引擎在 src/design/ambient/）。
+   必须用负 z-index：0 会排在内联文字之上，字就会压在正文上。 */
+.home-backdrop {
+  image-rendering: pixelated;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* 光标画布：全屏盖在内容之上，但压在导航栏（z-index 30）之下 */
+.home-cursors {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* 施工期间别让点击顺带选中文字 */
+html.mc-building [data-build] {
+  user-select: none;
+}
+
+/* 关掉动效时，页面上的装饰动画也一起停 */
+html[data-motion='off'] .home-hero__art img {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bt-caret {
+    animation: none;
+  }
 }

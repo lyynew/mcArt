@@ -39,3 +39,6 @@ docs/public/legacy/
 
 # 临时测试脚本
 .build/t*.js
+
+# VitePress 加载 config 时的临时文件（构建被打断会留下）
+docs/.vitepress/config.mts.timestamp-*
