@@ -3,6 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitepress'
 import { bootLoader } from './boot-loader'
 import { initialStateScript } from './head-script'
+import { socialLinks } from './social-links'
 
 /**
  * 工具组件在 markdown 里挂载（docs/tools/*.md），
@@ -15,8 +16,6 @@ const pkg = JSON.parse(
 
 /** GitHub Pages 发布在 /mcArt/ 之下；本地开发用根路径 */
 const base = process.env.GITHUB_ACTIONS ? '/mcArt/' : '/'
-
-const repo = 'https://github.com/lyynew/mcArt'
 
 export default defineConfig({
   lang: 'zh-CN',
@@ -123,7 +122,8 @@ export default defineConfig({
       ],
     },
 
-    socialLinks: [{ icon: 'github', link: repo }],
+    // GitHub + 抖音 + 哔哩哔哩；窄屏由 VitePress 自动收进「…」下拉与汉堡菜单
+    socialLinks,
 
     search: {
       provider: 'local',

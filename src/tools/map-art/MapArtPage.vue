@@ -6,6 +6,8 @@ import SourcePanel from './components/SourcePanel.vue'
 import TuningPanel from './components/TuningPanel.vue'
 import PreviewPanel from './components/PreviewPanel.vue'
 import ExportPanel from './components/ExportPanel.vue'
+import SourceIntake from '@/tools/shared/SourceIntake.vue'
+import { requestCrop } from '@/tools/shared/source-intake'
 
 /**
  * 地图画生成器。
@@ -14,7 +16,7 @@ import ExportPanel from './components/ExportPanel.vue'
  * 参数、算法、导出、状态分别在 store / *.ts / components 里，
  * 这一层不写任何业务计算，新增功能不用改页面骨架。
  */
-const { hasImage, loadDemo, loadFile } = useMapArt()
+const { hasImage, loadDemo, setSource } = useMapArt()
 const dragging = ref(false)
 let dragDepth = 0
 
@@ -52,7 +54,7 @@ function onDrop(e: DragEvent): void {
   if (e.defaultPrevented) return
   e.preventDefault()
   const file = e.dataTransfer?.files?.[0]
-  if (file) void loadFile(file)
+  if (file) requestCrop(file, file.name)
 }
 
 onMounted(() => {
@@ -72,7 +74,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <ToolShell mobile-stage-first>
+  <!-- 三栏与像素画页面对齐：同样的列宽、同样不设最大宽度 -->
+  <ToolShell
+    mobile-stage-first
+    max-width="none"
+    controls-width="232px"
+    aside-width="272px"
+  >
     <template #controls>
       <SourcePanel />
       <TuningPanel />
@@ -84,6 +92,8 @@ onBeforeUnmount(() => {
       <ExportPanel />
     </template>
   </ToolShell>
+
+  <SourceIntake @pick="setSource" />
 
   <div v-if="dragging" class="mapart__overlay">
     <div class="mapart__overlay-box">

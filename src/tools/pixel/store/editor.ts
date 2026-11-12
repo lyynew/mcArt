@@ -3,7 +3,8 @@ import { ALL_BLOCKS, PALETTES, buildCustomPalette, type PaletteBlock, type Palet
 import { EMPTY, applyManual, quantize, sampleGrid } from '@/core/convert'
 import { DITHER_MODES, type DitherMode } from '@/core/dither'
 import { createSettings, HOTBAR_SIZE, SIZE_MAX, SIZE_MIN, type EditorSettings, type ToolId } from '../types'
-import { createDemoImage, readSquareImage } from '../image-input'
+import type { SquareImage } from '@/core/image'
+import { createDemoImage } from '../image-input'
 import {
   buffers,
   markDirty,
@@ -205,12 +206,11 @@ function requantize(): void {
 
 /* ---------------- 图片 ---------------- */
 
-async function loadImage(blob: Blob, name = ''): Promise<void> {
-  const img = await readSquareImage(blob, name)
+/** 所有源图（上传、裁剪、内置材质、示例）最后都从这里进画布 */
+function applySource(img: SquareImage, fallbackName = ''): void {
   setSourceImage(img.pixels, img.size)
-  settings.imageName = img.name || name
+  settings.imageName = img.name || fallbackName
   void saveSource({ pixels: img.pixels.slice().buffer, size: img.size, name: settings.imageName })
-
   resetBuffers(settings.n)
   resetHistory()
   rebuild()
@@ -218,15 +218,13 @@ async function loadImage(blob: Blob, name = ''): Promise<void> {
   if (settings.selected < 0 && blocks.value.length) settings.selected = 0
 }
 
+/** 选过截取区域、或挑了内置方块贴图后走这里 */
+function loadSquareImage(img: SquareImage): void {
+  applySource(img)
+}
+
 function loadDemo(): void {
-  const img = createDemoImage()
-  setSourceImage(img.pixels, img.size)
-  settings.imageName = img.name
-  void saveSource({ pixels: img.pixels.slice().buffer, size: img.size, name: img.name })
-  resetBuffers(settings.n)
-  resetHistory()
-  rebuild()
-  if (settings.selected < 0 && blocks.value.length) settings.selected = 0
+  applySource(createDemoImage())
 }
 
 /* ---------------- 设置项 ---------------- */
@@ -711,7 +709,7 @@ export function useEditor() {
     canUndo,
     canRedo,
 
-    loadImage,
+    loadSquareImage,
     loadDemo,
     regenerate,
     readDraft,

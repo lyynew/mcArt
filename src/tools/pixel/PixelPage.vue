@@ -11,6 +11,8 @@ import BlockPalettePanel from './components/BlockPalettePanel.vue'
 import StructurePanel from './components/StructurePanel.vue'
 import ExportPanel from './components/ExportPanel.vue'
 import CustomPaletteModal from './components/CustomPaletteModal.vue'
+import SourceIntake from '@/tools/shared/SourceIntake.vue'
+import { requestCrop } from '@/tools/shared/source-intake'
 import { withTimeout } from '@/shared/async'
 import { useEditor } from './store/editor'
 
@@ -21,10 +23,9 @@ import { useEditor } from './store/editor'
  * 具体逻辑分别在 store（数据与动作）与 components（视图）里。
  */
 const editor = useEditor()
-const error = ref('')
 const customOpen = ref(false)
 
-async function onPaste(e: ClipboardEvent): Promise<void> {
+function onPaste(e: ClipboardEvent): void {
   const items = e.clipboardData?.items
   if (!items) return
   for (const item of items) {
@@ -32,11 +33,7 @@ async function onPaste(e: ClipboardEvent): Promise<void> {
     const file = item.getAsFile()
     if (!file) continue
     e.preventDefault()
-    try {
-      await editor.loadImage(file, '剪贴板图片')
-    } catch {
-      error.value = '剪贴板里的图片读不出来'
-    }
+    requestCrop(file, '剪贴板图片')
     return
   }
 }
@@ -78,8 +75,7 @@ onBeforeUnmount(() => {
     </aside>
 
     <CustomPaletteModal v-model="customOpen" />
-
-    <p v-if="error" class="pixel__error">{{ error }}</p>
+    <SourceIntake @pick="editor.loadSquareImage" />
   </div>
 </template>
 
@@ -113,18 +109,6 @@ onBeforeUnmount(() => {
   min-height: 0;
 }
 
-.pixel__error {
-  position: absolute;
-  left: 50%;
-  bottom: 18px;
-  transform: translateX(-50%);
-  padding: 4px 10px;
-  font-size: var(--fs-note);
-  color: #fff;
-  background: rgb(120 40 20 / 92%);
-  border: 1px solid #000;
-}
-
 @media (max-width: 1120px) {
   .pixel {
     grid-template-columns: 1fr;
@@ -151,9 +135,16 @@ onBeforeUnmount(() => {
 
   .pixel__stage {
     order: -1;
-    /* 舞台排在面板前面，给小视口高度（地址栏展开时）也留出足够的作图区 */
-    min-height: 62vh;
-    min-height: 58svh;
+    /*
+     * 舞台固定高度，不用 min-height 让内容撑：
+     * 以前放大画布（单格像素变大）会把舞台一起撑高，整页跟着变长，
+     * 工具栏与状态栏被推到屏幕外，画布右边也像「被切掉」。
+     * 定高之后画布只在舞台内部滚动（.canvaswrap），工具条与底栏始终可见，
+     * 配合「适应」按钮随时回到整张图都看得见的状态。
+     */
+    height: 62vh;
+    height: min(74svh, 640px);
+    min-height: 0;
   }
 }
 </style>

@@ -8,7 +8,7 @@
  * 纯算法都在 *.ts 里，因此可以脱离浏览器直接单测。
  */
 import { computed, reactive, ref, shallowRef, watch } from 'vue'
-import { readSquareImage, type SquareImage } from '@/core/image'
+import type { SquareImage } from '@/core/image'
 import { debounce } from '@/shared/debounce'
 import { createDemoImage } from './demo'
 import { buildHeightMap, type HeightMap } from './heightmap'
@@ -33,7 +33,6 @@ const build = reactive<BuildOptions>({ ...DEFAULT_BUILD_OPTIONS })
 const mapOptions = reactive<MapOptions>({ ...DEFAULT_MAP_OPTIONS })
 
 const message = ref('')
-const busy = ref(false)
 
 const hasImage = computed(() => source.value !== null)
 const isBuild = computed(() => build.mode !== 'data')
@@ -98,22 +97,10 @@ watch(
 )
 recompute.flush()
 
-async function loadFile(file: File): Promise<void> {
-  const looksLikeImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif|bmp|svg)$/i.test(file.name)
-  if (!looksLikeImage) {
-    message.value = '请选择 PNG / JPG / WebP 等图片文件'
-    return
-  }
-  busy.value = true
-  message.value = '正在解码图片…'
-  try {
-    source.value = await readSquareImage(file, file.name)
-    message.value = `已载入 ${file.name}`
-  } catch (e) {
-    message.value = e instanceof Error ? `读图失败：${e.message}` : '读图失败'
-  } finally {
-    busy.value = false
-  }
+/** 裁剪弹层 / 内置材质选择器选好之后，统一从这里送进生成器 */
+function setSource(img: SquareImage): void {
+  source.value = img
+  message.value = `已载入 ${img.name}`
 }
 
 function loadDemo(): void {
@@ -134,14 +121,13 @@ export function useMapArt() {
     build,
     mapOptions,
     message,
-    busy,
     hasImage,
     isBuild,
     grid,
     palette,
     result,
     heightMap,
-    loadFile,
+    setSource,
     loadDemo,
     clear,
   }

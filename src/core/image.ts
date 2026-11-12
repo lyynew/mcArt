@@ -1,10 +1,16 @@
 /**
- * 读图：把任意图片居中裁成正方形，并缩到可处理的大小。
+ * 读图：把任意图片按指定方形区域裁出来，并缩到可处理的大小。
  *
  * 与工具无关的基础能力，方块画生成器与地图画生成器共用。
+ * 不传 crop 时沿用原来的「居中裁最大正方形」；用户自己选过截取部位，
+ * 或内置材质取左上角第一帧，都通过 crop 指定（见 core/crop.ts）。
  * 这里只负责「拿到像素」，配色与量化都在各自的算法层，
  * 所以核心算法不需要认识 canvas，可以直接单测。
  */
+
+import { centeredCrop, clampCrop, type CropRect } from './crop'
+
+export type { CropRect } from './crop'
 
 export interface SquareImage {
   /** size × size 的 RGBA 数据 */
@@ -45,15 +51,20 @@ function dimensions(src: ImageBitmap | HTMLImageElement): { w: number; h: number
 }
 
 /**
- * 居中裁成方形并缩放。
+ * 按 crop 裁成方形并缩放。crop 用原图像素坐标，越界会自动夹回图片内。
  * 用 canvas 的高质量插值做一次平滑，后面按网格聚合时才不会出现硬台阶。
  */
-export async function readSquareImage(source: Blob, name = ''): Promise<SquareImage> {
+export async function readSquareImage(
+  source: Blob,
+  name = '',
+  crop?: CropRect,
+): Promise<SquareImage> {
   const bmp = await toBitmap(source)
   const { w, h } = dimensions(bmp)
   if (!w || !h) throw new Error('图片尺寸为 0')
 
-  const side = Math.min(w, h)
+  const rect = clampCrop(crop ?? centeredCrop(w, h), w, h)
+  const side = rect.size
   const size = Math.max(1, Math.min(MAX_SIDE, Math.round(side)))
 
   const canvas = document.createElement('canvas')
@@ -64,7 +75,7 @@ export async function readSquareImage(source: Blob, name = ''): Promise<SquareIm
 
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(bmp, (w - side) / 2, (h - side) / 2, side, side, 0, 0, size, size)
+  ctx.drawImage(bmp, rect.x, rect.y, side, side, 0, 0, size, size)
 
   const pixels = ctx.getImageData(0, 0, size, size).data
 

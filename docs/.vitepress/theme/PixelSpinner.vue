@@ -125,6 +125,23 @@ const dots = [
   outline-offset: 2px;
 }
 
+/* 白天模式：工作台是暖白纸，浅绿方块和米白字会糊掉，换成深绿 + 墨色。
+   父级 .mc-scope 的背景已经在 custom.css 里跟着主题切了，这里只管自己这圈点。 */
+html:not(.dark) .pixel-spinner__dot {
+  background: var(--green);
+  box-shadow: 2px 2px 0 rgb(0 0 0 / 18%);
+}
+
+html:not(.dark) .pixel-spinner__label {
+  color: var(--ink-2);
+  text-shadow: 1px 1px 0 #fff;
+}
+
+html:not(.dark) .pixel-spinner__msg {
+  color: var(--ink);
+  text-shadow: 1px 1px 0 #fff;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pixel-spinner__dot {
     animation: none;

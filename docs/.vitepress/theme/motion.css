@@ -1,0 +1,139 @@
+/* ============================================================
+   全站动效节奏（唯一速率来源）
+   ------------------------------------------------------------
+   档位由 <html> 上的 data-speed / data-motion 决定：
+     - 首屏内联脚本在页面绘制前就写好，SSR 首屏不需要等 Vue 挂载；
+     - prefs.ts 的 setMotionSpeed / setMotion 只改这两个属性，
+       CSS 变量即时重算，全站（文章区、工具区、设置面板、首页引擎）
+       一起变速或一起停下，不存在「改了一处、另一处没跟上」。
+     - 首页施工动画与环境背景的引擎倍率（SPEED_SCALE）与这里的
+       时长倍率方向一致：舒缓最长 / 快速最短，档位是同一套。
+
+   只做四类有明确层次需求的变化：导航切换、交互反馈、内容出现、
+   状态变化。全程不循环、不改尺寸/定位/间距，位移最多 5px。
+   ============================================================ */
+
+:root {
+  --anim-scale: 1;
+  --anim-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --dur-tap: calc(120ms * var(--anim-scale));
+  --dur-ui: calc(180ms * var(--anim-scale));
+  --dur-enter: calc(280ms * var(--anim-scale));
+
+  /* 工具区的按钮 / 开关 / 分段控件一直用 --mc-motion，接到同一档位上 */
+  --mc-motion: calc(90ms * var(--anim-scale));
+}
+
+html[data-speed='calm'] {
+  --anim-scale: 1.4;
+}
+
+html[data-speed='fast'] {
+  --anim-scale: 0.6;
+}
+
+/* 关动效 = 时长归零，入场动画的终态仍会保留，内容不会消失 */
+html[data-motion='off'] {
+  --anim-scale: 0;
+}
+
+/* 系统「减少动态效果」：首屏脚本已把它折算成 data-motion=off；
+   这一条是脚本没跑起来时的兜底。用户显式开启动效（on）时尊重用户。 */
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-motion='on']) {
+    --anim-scale: 0;
+  }
+}
+
+/* ---------------- 导航切换 / 链接反馈 ---------------- */
+
+/*
+ * 默认主题把导航链接写成 .VPNavBarMenuLink[data-v-xxx] { transition: color .25s }，
+ * 特异性 (0,2,0)；单次类名加 html/body 只有 (0,1,2)，压不住。
+ * 重复一次类名提到 (0,2,2)，档位切换才真的能改到它们的时长。
+ * 只过渡颜色与描边，不碰尺寸，布局零影响。
+ */
+html body .VPNavBarMenuLink.VPNavBarMenuLink,
+html body .VPNavScreenMenuLink.VPNavScreenMenuLink,
+html body .VPSidebarItem .VPLink.VPLink,
+html body .VPDocAsideOutlineItem .outline-link.outline-link,
+html body .VPFooter.VPFooter a,
+html body .home-footer.home-footer a,
+html body .home-link.home-link {
+  transition:
+    color var(--dur-ui) var(--anim-ease),
+    border-color var(--dur-ui) var(--anim-ease),
+    background-color var(--dur-ui) var(--anim-ease);
+}
+
+/* 正文链接单独写：工具卡 .vp-doc a.tool-card 有自己的 transform/shadow 过渡，别盖掉 */
+.vp-doc.vp-doc a:not(.tool-card) {
+  transition:
+    color var(--dur-ui) var(--anim-ease),
+    border-color var(--dur-ui) var(--anim-ease),
+    background-color var(--dur-ui) var(--anim-ease);
+}
+
+/* 主题切换等状态变化：底色平滑一格，不产生位移 */
+body,
+html body .VPNavBar.VPNavBar,
+html body .VPSidebar.VPSidebar,
+html body .mc-scope.mc-scope {
+  transition:
+    background-color var(--dur-ui) var(--anim-ease),
+    color var(--dur-ui) var(--anim-ease);
+}
+
+/* ---------------- 内容区块出现（一次，不循环） ---------------- */
+
+@keyframes mc-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 滚动容器上不用 transform，避免短暂改变内部定位参照 */
+@keyframes mc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/*
+ * 文章区：SPA 导航切换时内容节点重建，动画自然重播一次。
+ * 首页由施工动画引擎逐块接管，刻意不加整体淡入，避免两套动画叠在一起。
+ */
+.Layout:not(.home-page) .vp-doc > div {
+  animation: mc-enter var(--dur-enter) var(--anim-ease) both;
+}
+
+/* 工具页从加载圈切到工作台时的一次淡入 */
+.tool-frame {
+  animation: mc-fade var(--dur-enter) var(--anim-ease) both;
+}
+
+/* ---------------- 状态变化：弹出面板 ---------------- */
+
+@keyframes mc-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 面板是 v-if，每次打开都只播一次；不写循环动画 */
+.mc-settings__panel {
+  animation: mc-pop var(--dur-ui) var(--anim-ease) both;
+}

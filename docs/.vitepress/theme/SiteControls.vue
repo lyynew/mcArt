@@ -25,8 +25,11 @@ import {
 const ready = ref(false)
 const open = ref(false)
 const root = ref<HTMLElement | null>(null)
+const trigger = ref<HTMLElement | null>(null)
 const track = ref<HTMLElement | null>(null)
 const dragging = ref(false)
+/** 窄屏下面板改成视口定位，打开时量一次触发按钮的真实下沿 */
+const panelTop = ref(56)
 
 const motionOn = computed(() => ready.value && prefs.motion)
 const darkOn = computed(() => ready.value && prefs.appearance === 'dark')
@@ -44,6 +47,13 @@ function setFromClientX(clientX: number): void {
   const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
   const index = Math.round(ratio * (SPEED_ORDER.length - 1))
   setMotionSpeed(SPEED_ORDER[index])
+}
+
+function toggleOpen(): void {
+  if (!open.value && trigger.value) {
+    panelTop.value = Math.round(trigger.value.getBoundingClientRect().bottom + 10)
+  }
+  open.value = !open.value
 }
 
 function moveStep(delta: number): void {
@@ -109,13 +119,14 @@ onBeforeUnmount(() => {
 <template>
   <div ref="root" class="mc-settings">
     <button
+      ref="trigger"
       type="button"
       class="mc-settings__trigger"
       :aria-expanded="open"
       aria-haspopup="dialog"
       aria-label="显示设置"
       title="显示设置"
-      @click="open = !open"
+      @click="toggleOpen"
     >
       <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true">
         <g fill="currentColor">
@@ -130,7 +141,13 @@ onBeforeUnmount(() => {
       <span class="mc-settings__dot" :data-on="motionOn" aria-hidden="true" />
     </button>
 
-    <div v-if="open" class="mc-settings__panel" role="dialog" aria-label="显示设置">
+    <div
+      v-if="open"
+      class="mc-settings__panel"
+      role="dialog"
+      aria-label="显示设置"
+      :style="{ '--mc-panel-top': `${panelTop}px` }"
+    >
       <button
         type="button"
         class="mc-row"
@@ -220,7 +237,9 @@ onBeforeUnmount(() => {
   background: var(--surface);
   color: var(--ink-2);
   cursor: pointer;
-  transition: color 0.12s, border-color 0.12s;
+  transition:
+    color var(--dur-tap) var(--anim-ease),
+    border-color var(--dur-tap) var(--anim-ease);
 }
 
 .mc-settings__trigger:hover {
@@ -241,6 +260,7 @@ onBeforeUnmount(() => {
   width: 4px;
   height: 4px;
   background: transparent;
+  transition: background-color var(--dur-tap) var(--anim-ease);
 }
 
 .mc-settings__dot[data-on='true'] {
@@ -307,7 +327,7 @@ html.dark .mc-settings__panel {
   height: 18px;
   border: 1px solid var(--line-strong);
   background: var(--paper-2);
-  transition: background-color 0.14s, border-color 0.14s;
+  transition: background-color var(--dur-tap), border-color var(--dur-tap);
 }
 
 .mc-switch i {
@@ -317,7 +337,7 @@ html.dark .mc-settings__panel {
   width: 12px;
   height: 12px;
   background: var(--ink-3);
-  transition: transform 0.14s, background-color 0.14s;
+  transition: transform var(--dur-tap), background-color var(--dur-tap);
 }
 
 .mc-switch[data-on='true'] {
@@ -402,7 +422,7 @@ html.dark .mc-settings__panel {
   border-radius: 999px;
   background: #fff;
   box-shadow: 0 1px 2px rgb(0 0 0 / 22%), 0 0 0 1px rgb(0 0 0 / 6%);
-  transition: left 0.14s ease;
+  transition: left var(--dur-tap) var(--anim-ease);
   pointer-events: none;
 }
 
@@ -447,9 +467,24 @@ html.dark .mc-settings__panel {
   color: var(--green);
 }
 
+/*
+ * 窄屏：原来面板是「相对触发按钮 right: 0 的 300px 绝对定位」。
+ * 按钮靠屏幕右边，300px 往左伸就会越过左边界，最左侧的选项被裁掉，
+ * 而且父级导航栏还可能把它再裁一道。改成按视口左右各留 12px，
+ * 顶部对齐触发按钮下沿（由 JS 量出来的 --mc-panel-top），
+ * 高度不够时面板自己滚动，所有选项都点得到。
+ */
 @media (max-width: 480px) {
   .mc-settings__panel {
-    width: min(300px, calc(100vw - 28px));
+    position: fixed;
+    top: var(--mc-panel-top, 56px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: calc(100vh - var(--mc-panel-top, 56px) - 16px);
+    max-height: calc(100dvh - var(--mc-panel-top, 56px) - 16px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 }
 </style>

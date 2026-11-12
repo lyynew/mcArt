@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, toRef } from 'vue'
+import { onBeforeUnmount, onMounted, ref, toRef, watch } from 'vue'
 import { McWindow } from '@/design/components'
 import { useEditor } from '../store/editor'
 import { useCanvasView } from '../composables/useCanvasView'
@@ -44,14 +44,35 @@ const pointer = usePointerTools({
 
 const hotkeys = useHotkeys({ zoomBy: view.zoomBy, fit: view.fit })
 
+/** 放大到舞台装不下时，底栏提示一句「点适应看全图」，别让人以为画面丢了 */
+const overflowing = ref(false)
+let fitObserver: ResizeObserver | null = null
+
+function syncOverflow(): void {
+  const wrap = wrapper.value
+  const canvas = board.value
+  if (!wrap || !canvas) return
+  // 28px 是内边距与边框的余量，「刚好装下」不该算溢出
+  overflowing.value =
+    canvas.clientWidth > wrap.clientWidth - 28 || canvas.clientHeight > wrap.clientHeight - 28
+}
+
 onMounted(() => {
   hotkeys.attach()
   // passive:false 才能拦住页面滚动
   wrapper.value?.addEventListener('wheel', view.wheel, { passive: false })
+  if (typeof ResizeObserver !== 'undefined' && wrapper.value && board.value) {
+    fitObserver = new ResizeObserver(syncOverflow)
+    fitObserver.observe(wrapper.value)
+    fitObserver.observe(board.value)
+  }
+  watch(view.cell, () => requestAnimationFrame(syncOverflow))
 })
 
 onBeforeUnmount(() => {
   hotkeys.detach()
+  fitObserver?.disconnect()
+  fitObserver = null
   wrapper.value?.removeEventListener('wheel', view.wheel)
 })
 </script>
@@ -81,7 +102,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <StageStatus />
+    <StageStatus :overflowing="overflowing" />
 
     <div v-if="editor.busy.value" class="stage__busy">计算中…</div>
   </McWindow>
@@ -139,5 +160,18 @@ onBeforeUnmount(() => {
   background: rgb(0 0 0 / 65%);
   border: 1px solid #000;
   pointer-events: none;
+}
+
+/*
+ * 窄屏：舞台固定高度（PixelPage.vue），画布容器只按剩余空间分配，
+ * 放大的画布在自己内部滚动，不再把工具条与底栏顶出屏幕。
+ * pan-x pan-y 让单指在画布空白处仍能滚动容器，同时禁掉浏览器整页的
+ * 捏合缩放——双指缩放交给 useTouchGestures，两个手势不会打架。
+ */
+@media (max-width: 1120px) {
+  .canvaswrap {
+    flex-basis: 0;
+    touch-action: pan-x pan-y;
+  }
 }
 </style>

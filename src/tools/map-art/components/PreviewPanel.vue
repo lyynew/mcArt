@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { McButton, McWindow } from '@/design/components'
 import { useMapArt } from '../store'
 import { COLOR_BY_ID, describeColor } from '../map-colors'
 import { paintHeightMap, paintMap } from '../render'
 import { MAP_PIXELS, MAP_SIZE } from '../model'
+import { clampMapZoom, mapZoomLabel, mapZoomStep } from '../zoom'
 
-/** 预览：画面 / 高度图两种视图 + 统计 + 悬浮读数。渲染函数与 PNG 导出共用。 */
+/** 预览：画面 / 高度图两种视图 + 缩放 + 统计 + 悬浮读数。渲染函数与 PNG 导出共用。 */
 const { result, hasImage, isBuild, heightMap } = useMapArt()
 const canvas = ref<HTMLCanvasElement | null>(null)
+const stageEl = ref<HTMLElement | null>(null)
 const hover = ref<{ x: number; y: number; id: number } | null>(null)
 const view = ref<'color' | 'height'>('color')
 
@@ -25,7 +27,81 @@ function repaint(): void {
   else paintMap(el, result.value?.colors ?? emptyColors, COLOR_BY_ID)
 }
 
-onMounted(repaint)
+/* ---------------- 缩放 ---------------- */
+
+/** 1× 时的画布边长（随舞台尺寸变化），缩放只是它的倍数 */
+const base = ref(320)
+const zoom = ref(1)
+const canvasPx = computed(() => Math.round(base.value * zoom.value))
+const zoomLabel = computed(() => mapZoomLabel(zoom.value))
+const zoomed = computed(() => zoom.value > 1)
+
+function zoomBy(dir: number): void {
+  zoom.value = mapZoomStep(zoom.value, dir)
+}
+
+function fit(): void {
+  zoom.value = 1
+}
+
+/** 用 rect 而不是 clientWidth：滚动条出现/消失不会让基准尺寸反复跳 */
+function syncBase(): void {
+  const el = stageEl.value
+  if (!el) return
+  const r = el.getBoundingClientRect()
+  base.value = Math.max(96, Math.min(r.width, r.height) - 28)
+}
+
+function onWheel(e: WheelEvent): void {
+  // 触控板的横向滚动不算缩放
+  if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return
+  e.preventDefault()
+  zoom.value = clampMapZoom(mapZoomStep(zoom.value, e.deltaY < 0 ? 1 : -1))
+}
+
+/* 放大后按住画面可以拖着看，和像素画编辑器的手感保持一致 */
+let pan: { x: number; y: number; left: number; top: number } | null = null
+
+function onPanStart(e: PointerEvent): void {
+  if (!zoomed.value || e.button !== 0 || !stageEl.value) return
+  pan = {
+    x: e.clientX,
+    y: e.clientY,
+    left: stageEl.value.scrollLeft,
+    top: stageEl.value.scrollTop,
+  }
+  window.addEventListener('pointermove', onPanMove)
+  window.addEventListener('pointerup', onPanEnd, { once: true })
+}
+
+function onPanMove(e: PointerEvent): void {
+  if (!pan || !stageEl.value) return
+  stageEl.value.scrollLeft = pan.left - (e.clientX - pan.x)
+  stageEl.value.scrollTop = pan.top - (e.clientY - pan.y)
+}
+
+function onPanEnd(): void {
+  pan = null
+  window.removeEventListener('pointermove', onPanMove)
+}
+
+let observer: ResizeObserver | null = null
+
+onMounted(() => {
+  repaint()
+  syncBase()
+  if (typeof ResizeObserver !== 'undefined' && stageEl.value) {
+    observer = new ResizeObserver(syncBase)
+    observer.observe(stageEl.value)
+  }
+})
+
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  observer = null
+  window.removeEventListener('pointermove', onPanMove)
+})
+
 watch([result, heightMap, showHeight], repaint)
 
 function onMove(e: MouseEvent): void {
@@ -65,12 +141,19 @@ const buildStats = computed(() => {
 
 <template>
   <McWindow title="预览 · 128 × 128" flush class="preview">
-    <div class="preview__stage">
+    <div
+      ref="stageEl"
+      class="preview__stage"
+      :class="{ 'preview__stage--zoomed': zoomed }"
+      @wheel="onWheel"
+      @pointerdown="onPanStart"
+    >
       <canvas
         ref="canvas"
         class="preview__canvas"
         width="128"
         height="128"
+        :style="{ width: `${canvasPx}px`, height: `${canvasPx}px` }"
         aria-label="地图画预览"
         @mousemove="onMove"
         @mouseleave="hover = null"
@@ -78,10 +161,18 @@ const buildStats = computed(() => {
       <div v-if="!hasImage" class="preview__empty">载入一张图片，这里会显示 128 × 128 的调色结果</div>
     </div>
 
-    <div v-if="isBuild" class="preview__tools">
-      <McButton size="sm" :active="view === 'color'" @click="view = 'color'">画面</McButton>
-      <McButton size="sm" :active="view === 'height'" @click="view = 'height'">高度图</McButton>
-      <span class="preview__build">{{ buildStats }}</span>
+    <div class="preview__tools">
+      <template v-if="isBuild">
+        <McButton size="sm" :active="view === 'color'" @click="view = 'color'">画面</McButton>
+        <McButton size="sm" :active="view === 'height'" @click="view = 'height'">高度图</McButton>
+      </template>
+      <div class="preview__zoom">
+        <McButton size="sm" icon title="缩小（滚轮向下）" @click="zoomBy(-1)">−</McButton>
+        <span class="preview__zoom-label">{{ zoomLabel }}</span>
+        <McButton size="sm" icon title="放大（滚轮向上）" @click="zoomBy(1)">＋</McButton>
+        <McButton size="sm" :disabled="zoom === 1" title="适应窗口" @click="fit">适应</McButton>
+      </div>
+      <span v-if="isBuild" class="preview__build">{{ buildStats }}</span>
     </div>
 
     <div class="preview__bar">
@@ -99,39 +190,46 @@ const buildStats = computed(() => {
 .preview__stage {
   flex: 1 1 auto;
   min-height: 0;
-  display: grid;
-  place-items: center;
+  /* 放大后画布超出舞台：flex + margin:auto 能居中、也能滚到每一角 */
+  display: flex;
+  overflow: auto;
   position: relative;
   padding: var(--sp-4);
-  /*
-   * 容器查询容器：画布要「宽、高谁小听谁的」，光拿宽度不够。
-   * 视口一矮，按宽度算出的正方形就比容器高，往下盖住工具条与统计条，
-   * 还会把外层的滚动区撑出一段。尺寸容器能同时给出 100cqw / 100cqh。
-   * 高度来源分两种布局：宽屏 flex 锁死；窄屏靠 ToolShell 的 min-height: 70svh
-   * 兜底（尺寸封闭后内容不再撑高容器，没这行画布会塌成 0）。
-   */
-  container-type: size;
   /* 棋盘格：透明（未探索）像素要能一眼看出来 */
   background: repeating-conic-gradient(#2c2c2c 0% 25%, #383838 0% 50%) 50% / 16px 16px;
+  overscroll-behavior: contain;
+}
+
+.preview__stage--zoomed {
+  cursor: grab;
+}
+
+.preview__stage--zoomed:active {
+  cursor: grabbing;
 }
 
 .preview__canvas {
   display: block;
-  /* 取「容器宽 / 容器高 / 640 上限」三者最小，任何视口下都正好装进舞台 */
-  width: min(100cqw, 100cqh, 640px);
+  flex: 0 0 auto;
+  margin: auto;
   aspect-ratio: 1;
   image-rendering: pixelated;
   border: var(--mc-bd) solid #000;
   box-shadow: var(--mc-shadow-panel);
+  touch-action: none;
 }
 
 .preview__empty {
   position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   padding: var(--sp-3) var(--sp-4);
   background: rgb(20 18 14 / 82%);
   color: var(--mc-text);
   font-size: var(--fs-sm);
   text-align: center;
+  pointer-events: none;
 }
 
 .preview__tools {
@@ -144,8 +242,23 @@ const buildStats = computed(() => {
   background: var(--mc-plate);
 }
 
-.preview__build {
+.preview__zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
   margin-left: auto;
+}
+
+.preview__zoom-label {
+  min-width: 44px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--fs-note);
+  color: var(--mc-ink-strong);
+}
+
+.preview__build {
+  margin-left: var(--sp-3);
   font-size: var(--fs-note);
   color: var(--mc-ink-soft);
 }

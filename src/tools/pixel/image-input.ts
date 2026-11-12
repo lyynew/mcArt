@@ -1,13 +1,9 @@
 /**
- * 像素画生成器的读图入口。
+ * 像素画生成器的示例图。
  *
- * 通用的方形解码已经挪到 core/image.ts（地图画生成器也要用），
- * 这里只留本工具专属的示例图，并转出原来的两个名字，
- * 免得上层组件为了换个 import 路径改一圈。
+ * 读图（含自定义裁剪）统一在 core/image.ts，源图入口由
+ * tools/shared/SourceIntake.vue 接住，这里只留本工具专属的示例图。
  */
-export { readSquareImage } from '@/core/image'
-export type { SquareImage } from '@/core/image'
-
 import type { SquareImage } from '@/core/image'
 
 /**

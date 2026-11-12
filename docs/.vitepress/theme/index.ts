@@ -22,6 +22,8 @@ import '@/design/tokens.css'
 import '@/design/base.css'
 import './fonts.css'
 import './custom.css'
+// 放在最后：统一动效节奏要盖过组件库里 --mc-motion 的默认值
+import './motion.css'
 
 export default {
   extends: DefaultTheme,

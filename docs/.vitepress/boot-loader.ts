@@ -19,17 +19,27 @@ const DOTS = [
   .map(([x, y], i) => `<i style="left:${x}%;top:${y}%;animation-delay:${-i * 80}ms"></i>`)
   .join('')
 
+/**
+ * 深浅色用 html.dark 覆盖，不用 CSS 变量：这时主题 CSS 还没下载，
+ * 但 <head> 里的 initialStateScript 已经按本地/系统偏好挂好 dark 类了，
+ * 所以首屏那一帧就不会是「白底白字」或「浅底浅绿」。
+ * 覆盖规则要连带 #mcart-boot 这个 ID，否则压不过下面的 ID 选择器。
+ */
 const BOOT = `<div id="mcart-boot" role="status" aria-live="polite">
 <style>
 #mcart-boot{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;
-  background-color:#171811;
+  background-color:#f6f5f0;
+  background-image:linear-gradient(rgba(70,60,35,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(70,60,35,.045) 1px,transparent 1px);
+  background-size:22px 22px;font-family:ui-monospace,Consolas,monospace;color:#55534b}
+html.dark #mcart-boot{background-color:#171811;
   background-image:linear-gradient(rgba(235,225,190,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(235,225,190,.05) 1px,transparent 1px);
-  background-size:22px 22px;font-family:ui-monospace,Consolas,monospace;color:#b5ad95}
+  color:#b5ad95}
 #mcart-boot .b{display:flex;flex-direction:column;align-items:center;gap:22px}
 #mcart-boot .r{position:relative;width:72px;height:72px}
 #mcart-boot .r i{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;
-  background:#9ad36a;box-shadow:2px 2px 0 rgba(0,0,0,.55);opacity:.26;
+  background:#4d7a2a;box-shadow:2px 2px 0 rgba(0,0,0,.18);opacity:.26;
   animation:mcart-chase 960ms steps(1,end) infinite}
+html.dark #mcart-boot .r i{background:#9ad36a;box-shadow:2px 2px 0 rgba(0,0,0,.55)}
 @keyframes mcart-chase{0%,8.33%{opacity:1}8.34%,16.66%{opacity:.72}
   16.67%,24.99%{opacity:.46}25%,100%{opacity:.26}}
 #mcart-boot p{margin:0;font-size:13px;letter-spacing:.2em}

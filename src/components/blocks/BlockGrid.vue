@@ -80,5 +80,12 @@ const emit = defineEmits<{ (e: 'select', block: T): void }>()
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--slot));
   gap: 4px;
+  /*
+   * 选中态的金边是向外扩的（BlockSlot.is-on 的 2px 描边 + 8px 光晕）。
+   * 外层滚动容器写 overflow-y:auto 时，overflow-x 会被连带算成 auto，
+   * 于是最左 / 最上一列的外扩亮框正好落在裁剪边界上，被切掉半圈。
+   * 网格自己留一点余量，调色板、图鉴、自定义方案弹窗三处都受益。
+   */
+  padding: 4px;
 }
 </style>

@@ -43,6 +43,10 @@ export function useTouchGestures(options: {
     const board = canvas.value
     if (!board || e.touches.length !== 2) return
 
+    // 两指一落下就掐掉浏览器自己的整页捏合缩放。否则页面会被整体放大，
+    // 画布右边跑到屏幕外，还会和这里的自定义双指缩放叠在一起。
+    e.preventDefault()
+
     const a = e.touches[0]
     const b = e.touches[1]
     if (!a || !b) return

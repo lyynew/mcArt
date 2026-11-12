@@ -12,6 +12,11 @@ import type { ToolId } from '../types'
  * 提示分鼠标与手指两套：手机上写「滚轮缩放 · 空格拖动」等于没写，
  * 那边既没有滚轮也没有空格键。
  */
+const props = defineProps<{
+  /** 画布放大到舞台装不下：手机上给一句怎么回到完整视图的提示 */
+  overflowing?: boolean
+}>()
+
 const editor = useEditor()
 const { settings, stats } = editor
 
@@ -33,8 +38,18 @@ const HINTS_TOUCH: Record<ToolId, string> = {
   pan: '单指拖动画面 · 双指缩放',
 }
 
+/** 窄屏或触屏算「小屏」；桌面宽屏维持原来的工具提示，一个字都不改 */
+function smallScreen(): boolean {
+  return (
+    isCoarsePointer.value ||
+    (typeof window !== 'undefined' && window.matchMedia('(max-width: 1120px)').matches)
+  )
+}
+
 const hint = computed(() => {
   if (notice.value) return notice.value
+  // 放大到画布装不下时，先告诉他怎么回到全图，别让人以为画面丢了
+  if (props.overflowing && smallScreen()) return '画面超出窗口 · 点「适应」看全图'
   return (isCoarsePointer.value ? HINTS_TOUCH : HINTS_POINTER)[settings.tool]
 })
 

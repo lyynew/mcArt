@@ -200,6 +200,36 @@ body {
   border-bottom: 1px solid var(--line);
 }
 
+/*
+ * VitePress 默认给 h2 的锚点写了 top: 24px，那是配它自己的 padding-top: 24px
+ * （锚点正好落在那条上边框下面的文字行）。本站 h2 改成了「下边框 + 底部内边距」，
+ * 没有 padding-top，这个偏移就会把 # 推到标题下一行的左侧。
+ */
+.vp-doc h2 .header-anchor {
+  top: 0;
+}
+
+/*
+ * 窄屏（触屏）没有 hover，默认那颗 opacity: 0 的锚点永远不会出现；
+ * 而且内容区左边距小，负边距的 # 容易贴到屏幕边上被裁。
+ * 改成行内、跟在标题文字后面，标题与 # 一起完整呈现。
+ * 带上 html 前缀是为了压过默认主题里 `.vp-doc h2 .header-anchor` 的 top。
+ */
+@media (max-width: 768px) {
+  html .vp-doc .header-anchor {
+    position: static;
+    top: auto;
+    left: auto;
+    display: inline-block;
+    margin-left: 0.35em;
+    font-size: 0.72em;
+    vertical-align: 0.12em;
+    opacity: 1;
+    text-decoration: none;
+    color: var(--green);
+  }
+}
+
 .vp-doc h3 {
   font-size: 20px;
   line-height: 1.5;
@@ -416,7 +446,10 @@ body {
   background: var(--surface);
   color: var(--ink);
   box-shadow: var(--hard-shadow);
-  transition: transform 0.12s, box-shadow 0.12s, background-color 0.12s;
+  transition:
+    transform var(--dur-tap) var(--anim-ease),
+    box-shadow var(--dur-tap) var(--anim-ease),
+    background-color var(--dur-tap) var(--anim-ease);
 }
 
 .home-btn:hover {
@@ -554,7 +587,9 @@ body {
   background: var(--surface);
   box-shadow: var(--hard-shadow);
   text-decoration: none !important;
-  transition: transform 0.12s, box-shadow 0.12s;
+  transition:
+    transform var(--dur-tap) var(--anim-ease),
+    box-shadow var(--dur-tap) var(--anim-ease);
 }
 
 .home-card:hover {
@@ -690,7 +725,9 @@ body {
   color: inherit;
   font-weight: inherit;
   text-decoration: none;
-  transition: transform 0.12s, box-shadow 0.12s;
+  transition:
+    transform var(--dur-tap) var(--anim-ease),
+    box-shadow var(--dur-tap) var(--anim-ease);
 }
 
 .vp-doc a.tool-card:hover {
@@ -780,6 +817,36 @@ body {
     linear-gradient(rgb(235 225 190 / 5%) 1px, transparent 1px),
     linear-gradient(90deg, rgb(235 225 190 / 5%) 1px, transparent 1px);
   background-size: 22px 22px;
+}
+
+/* 白天模式：工作台换成和文章页同一张暖白纸 + 淡方格。
+   只换「背景」这一层，MC 的灰面板、画布底、弹层都保持游戏内 GUI 的样子；
+   它们自带底色和文字色，不受这里影响，也不会出现半套浅色半套深色。
+   面板外的零散文字（--mc-text）与链接色要跟着翻，否则白纸上看不见。 */
+html:not(.dark) .Layout.tool-page .mc-scope {
+  color: var(--ink);
+  color-scheme: light;
+  --mc-focus: var(--green);
+  background-color: var(--paper);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* 浅绿链接是给深底准备的；白纸上换成深绿。
+   --mc-accent-ink 不能整体翻：MC 徽章（深底）还要用它当亮字。 */
+html:not(.dark) .mc-scope a {
+  color: var(--green);
+}
+
+html:not(.dark) .mc-scope a.mc-chip:hover,
+html:not(.dark) .mc-scope .mc-chip--accent {
+  color: #9ad36a;
+}
+
+html:not(.dark) .mc-scope ::-webkit-scrollbar-track {
+  background: var(--paper-2);
 }
 
 /* 工具页上的导航保持纸面，但下沿加一道绿，像工作台的分界 */
