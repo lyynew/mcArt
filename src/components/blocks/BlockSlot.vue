@@ -40,10 +40,13 @@ const boxStyle = computed(() =>
 )
 
 /**
- * 贴图地址。图鉴一屏能排出几百个格子，用 <img loading="lazy"> 让浏览器
- * 只请求滚动到附近的贴图；平均色同时铺在底层，贴图没加载完也不会露白。
+ * 贴图地址。
+ *
+ * URL 是纯字符串拼装，同步拿到；真正的懒加载交给 <img loading="lazy">——
+ * 图鉴一屏几百个格子，浏览器只会请求滚到附近的那些。
+ * 平均色铺在底层，贴图没到位也不会露白。
  */
-const faceUrl = computed(() => (props.block ? textureUrl(props.block.tex) : undefined))
+const faceUrl = computed(() => textureUrl(props.block?.tex))
 </script>
 
 <template>

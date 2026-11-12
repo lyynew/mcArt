@@ -18,8 +18,8 @@ docs/.vitepress/cache/
 # 本地工作区数据（不是缓存，但不该进仓库）
 .workbuddy/
 
-# 贴图同步出来的副本（源在 原版材质/，由 npm run sync:textures 生成）
-src/assets/textures/
+# 贴图同步出来的副本（源在 原版材质/ 与 原版材质-items/，由 npm run sync:textures 生成）
+docs/textures/
 
 # 旧版单文件页面的副本（源在 public/legacy/，由 npm run sync:legacy 生成）
 docs/public/legacy/

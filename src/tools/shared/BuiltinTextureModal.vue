@@ -9,6 +9,7 @@
  */
 import { computed, ref } from 'vue'
 import { McButton, McInput, McModal, McNote } from '@/design/components'
+import TextureThumb from '@/components/blocks/TextureThumb.vue'
 import type { SquareImage } from '@/core/image'
 import {
   BUILTIN_FAMILIES,
@@ -74,7 +75,7 @@ async function pick(item: BuiltinTexture): Promise<void> {
           @click="pick(item)"
         >
           <span class="bt__thumb">
-            <img :src="item.url" :alt="item.label" loading="lazy" />
+            <TextureThumb :tex="item.tex" :alt="item.label" />
           </span>
           <span class="bt__label">{{ item.label }}</span>
           <small class="bt__tex">{{ item.tex }}</small>

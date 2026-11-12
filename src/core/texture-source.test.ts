@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { BLOCKS } from './blocks'
-import { TEXTURES, textureUrl } from './textures'
+import { ALL_BLOCK_DEFS, BLOCKS } from './blocks'
+import { textureUrl } from './textures'
 import {
   BUILTIN_FAMILIES,
   BUILTIN_TEXTURES,
@@ -9,12 +9,13 @@ import {
 } from './texture-source'
 
 describe('内置材质源图清单', () => {
-  it('每张贴图都有条目、URL 且能反查到方块名', () => {
-    expect(BUILTIN_TEXTURES).toHaveLength(Object.keys(TEXTURES).length)
+  it('只列方块用到的贴图，且每条都能反查到名字', () => {
+    const blockTextures = new Set(ALL_BLOCK_DEFS.map((b) => b.tex).filter(Boolean))
+    expect(BUILTIN_TEXTURES).toHaveLength(blockTextures.size)
     for (const item of BUILTIN_TEXTURES) {
-      expect(item.url).toBeTruthy()
       expect(item.label).toBeTruthy()
       expect(item.tex).toBeTruthy()
+      expect(item.tex.startsWith('items/')).toBe(false)
     }
     expect(BUILTIN_TEXTURES.length).toBeGreaterThan(100)
   })
@@ -33,9 +34,9 @@ describe('内置材质源图清单', () => {
 
 describe('内置材质搜索', () => {
   const sample = [
-    { tex: 'grass_block_side', label: '草方块', en: 'Grass Block', family: '自然', url: 'a' },
-    { tex: 'diamond_block', label: '钻石块', en: 'Diamond Block', family: '金属宝石', url: 'b' },
-    { tex: 'water_still', label: '水', en: 'Water', family: '自然', url: 'c' },
+    { tex: 'grass_block_side', label: '草方块', en: 'Grass Block', family: '自然' },
+    { tex: 'diamond_block', label: '钻石块', en: 'Diamond Block', family: '金属宝石' },
+    { tex: 'water_still', label: '水', en: 'Water', family: '自然' },
   ] as const
 
   it('中文、英文、贴图名都能搜到', () => {
@@ -51,7 +52,9 @@ describe('内置材质搜索', () => {
     expect(countBuiltinTextures(sample, '不存在')).toBe(0)
   })
 
-  it('内置贴图 URL 与注册表一致', () => {
-    expect(textureUrl('definitely_not_a_block')).toBeUndefined()
+  it('URL 由贴图名直接拼出，不查表', () => {
+    // 素材目录里没有的名字也会给出路径：是否存在由单测查文件系统保证，
+    // 运行时交给 <img> 的 onerror 兜底
+    expect(textureUrl('nope_not_here')).toMatch(/\/textures\/nope_not_here\.png$/)
   })
 })

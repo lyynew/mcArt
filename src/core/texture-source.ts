@@ -14,7 +14,7 @@
  */
 import { ALL_BLOCK_DEFS, BLOCKS, type BlockDef } from './blocks'
 import type { SquareImage } from './image'
-import { TEXTURES, drawTexture, squareSide, textureImage } from './textures'
+import { drawTexture, squareSide, textureImage } from './textures'
 
 export interface BuiltinTexture {
   /** 贴图主名，也是 TEXTURES 的键 */
@@ -25,7 +25,6 @@ export interface BuiltinTexture {
   en: string
   /** 分组，供筛选 */
   family: string
-  url: string
 }
 
 /** 一张贴图可能被多个方块共用（如木板类）：色板里的 142 种优先，名字更常用 */
@@ -34,12 +33,23 @@ for (const block of [...BLOCKS, ...ALL_BLOCK_DEFS]) {
   if (block.tex && !byTex.has(block.tex)) byTex.set(block.tex, block)
 }
 
-export const BUILTIN_TEXTURES: readonly BuiltinTexture[] = Object.entries(TEXTURES)
-  .map(([tex, url]) => {
+/**
+ * 列表从方块表反推：贴图名 → 方块。
+ *
+ * 只列方块用到的贴图（不是素材目录里的全部文件），物品不参与像素画生成，
+ * 放进「内置材质」里会让人以为选一把剑就能生成方块画。
+ * 用到的贴图可能被多个方块共用，按出现顺序去重。
+ */
+const usedTex: string[] = []
+for (const block of [...BLOCKS, ...ALL_BLOCK_DEFS]) {
+  if (block.tex && !usedTex.includes(block.tex)) usedTex.push(block.tex)
+}
+
+export const BUILTIN_TEXTURES: readonly BuiltinTexture[] = usedTex
+  .map((tex) => {
     const block = byTex.get(tex)
     return {
       tex,
-      url,
       label: block?.zh ?? tex,
       en: block?.en ?? tex,
       family: block?.fam ?? '其他',

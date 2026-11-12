@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs'
+import { createReadStream, readFileSync, statSync } from 'node:fs'
+import { extname, join, normalize, sep } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitepress'
 import { bootLoader } from './boot-loader'
@@ -13,6 +14,47 @@ import { socialLinks } from './social-links'
 const pkg = JSON.parse(
   readFileSync(new URL('../../package.json', import.meta.url), 'utf-8'),
 ) as { version: string }
+
+/**
+ * dev 下把 /textures/ 直接映射到 docs/textures/。
+ *
+ * 贴图故意不放在 public 里（原因见 scripts/copy-textures.mjs），
+ * 但开发时又要能从站点路径访问，所以自己挂一个静态中间件。
+ * 生产构建由 postbuild 把那批文件拷进产物，不经过这里。
+ */
+const TEXTURE_DIR = normalize(fileURLToPath(new URL('../textures/', import.meta.url)))
+
+function serveTextures() {
+  return {
+    name: 'mc-serve-textures',
+    // 类型用 any：这里只用到 connect 的 use，没必要为它引入 express 的类型
+    configureServer(server: any) {
+      server.middlewares.use((req: any, res: any, next: () => void) => {
+        const path = (req.url ?? '').split('?')[0]!
+        if (!path.startsWith('/textures/')) return next()
+
+        const rel = decodeURIComponent(path.slice('/textures/'.length))
+        const file = normalize(join(TEXTURE_DIR, rel))
+        // 目录穿越保护：解析后必须仍在素材目录里
+        if (!file.startsWith(TEXTURE_DIR.endsWith(sep) ? TEXTURE_DIR : TEXTURE_DIR + sep)) {
+          res.statusCode = 403
+          return res.end()
+        }
+
+        try {
+          if (!statSync(file).isFile()) return next()
+        } catch {
+          res.statusCode = 404
+          return res.end()
+        }
+
+        res.setHeader('Content-Type', extname(file) === '.png' ? 'image/png' : 'application/octet-stream')
+        res.setHeader('Cache-Control', 'no-cache')
+        createReadStream(file).pipe(res)
+      })
+    },
+  }
+}
 
 /** GitHub Pages 发布在 /mcArt/ 之下；本地开发用根路径 */
 const base = process.env.GITHUB_ACTIONS ? '/mcArt/' : '/'
@@ -49,7 +91,7 @@ export default defineConfig({
 
   vite: {
     // dev 只吐一个空 #app，挂上首屏加载圈与首屏状态脚本；生产构建不加载这个插件
-    plugins: [bootLoader(base)],
+    plugins: [bootLoader(base), serveTextures()],
     define: { __APP_VERSION__: JSON.stringify(pkg.version) },
     resolve: {
       alias: { '@': fileURLToPath(new URL('../../src', import.meta.url)) },

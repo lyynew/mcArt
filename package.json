@@ -17,7 +17,8 @@
     "pretest": "npm run sync",
     "test": "vitest run",
     "test:watch": "vitest",
-    "fixtures": "node scripts/make-fixtures.mjs"
+    "fixtures": "node scripts/make-fixtures.mjs",
+    "postbuild": "node scripts/copy-textures.mjs"
   },
   "dependencies": {
     "vue": "^3.5.45"

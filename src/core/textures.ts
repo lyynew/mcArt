@@ -1,40 +1,58 @@
 /**
- * 贴图注册表：方块贴图名 → 构建产物里的 URL。
+ * 贴图注册表：贴图名 → 站点上的图片 URL。
  *
- * 贴图本身由 `scripts/sync-textures.mjs` 在 dev/build 前从 `原版材质/` 同步到
- * `src/assets/textures/`，再由下面这个 glob 交给 Vite：
- * 每张图独立成文件、带内容哈希，能单独缓存，也不会有 143 张 base64 挤进 JS 的问题。
+ * 为什么贴图放在 `docs/public/textures/` 而不是 `src/assets/`：
+ *   26.3 有 2100 多张 16×16 小图。走 Vite 资源管线意味着每张图都要单独
+ *   生成哈希名、登记进产物——实测构建时间从 28 秒涨到 13 分钟，完全不可接受。
+ *   放进静态目录则只是一次文件复制，构建开销接近于零。
  *
- * glob 是 eager 的：映射表（约 142 条路径）进主包，但图片文件本身仍是按需请求。
+ * 代价是没有内容哈希，缓存可能滞后一个 CDN 周期（GitHub Pages 约 10 分钟）；
+ * 对这类素材可以接受，换素材时文件名通常也会跟着变。
+ *
+ * 键名规则：
+ *   方块贴图  dirt            → textures/dirt.png
+ *   物品贴图  items/diamond   → textures/items/diamond.png
+ * 两个命名空间分开，是因为方块与物品有 72 个同名贴图，合并会互相覆盖。
+ *
+ * 懒加载由使用方负责：组件用 `<img loading="lazy">`，画布按需解码（textureImage）。
+ * 这里只拼路径，不预先请求任何图片。
  */
 
-const modules = import.meta.glob('../assets/textures/*.png', {
-  eager: true,
-  query: '?url',
-  import: 'default',
-})
+const BASE = `${import.meta.env.BASE_URL}textures/`
 
-function stem(path: string): string {
-  return path.slice(path.lastIndexOf('/') + 1).replace(/\.png$/i, '')
+/**
+ * 旧名 → 26.3 的实际文件名。
+ *
+ * 26.3 把锁链拆成了铁链/铜链系列，柱状方块改成了 _side/_top 分离。
+ * 方块的 tex 字段沿用旧名（历史数据与自定义方案都可能引用），
+ * 在这里统一转换，比改数据安全——改数据会让旧引用直接断掉。
+ */
+export const TEXTURE_ALIAS: Readonly<Record<string, string>> = {
+  chain: 'iron_chain',
+  purpur_pillar: 'purpur_pillar_side',
+  quartz_pillar: 'quartz_pillar_side',
 }
 
-/** 键是贴图名（等同 `BlockDef.tex`），值是 URL */
-export const TEXTURES: Readonly<Record<string, string>> = Object.fromEntries(
-  Object.entries(modules).map(([path, url]) => [stem(path), url]),
-)
+/** 解析后的贴图名（别名转到实际文件） */
+export function resolveTextureName(tex: string): string {
+  return TEXTURE_ALIAS[tex] ?? tex
+}
 
-/** 可用贴图数量，用来跟方块总数做校验 */
-export const TEXTURE_COUNT = Object.keys(TEXTURES).length
-
-/** 取贴图 URL；没有对应贴图时返回 undefined，调用方退回平均色 */
+/**
+ * 取贴图 URL。
+ *
+ * 纯字符串拼装，同步返回；文件不存在时由 <img> 的 onerror 兜底，
+ * 画布侧则退回平均色。素材完整性由单测在构建前校验，不靠运行时判断。
+ */
 export function textureUrl(tex: string | undefined): string | undefined {
-  return tex ? TEXTURES[tex] : undefined
+  if (!tex) return undefined
+  return `${BASE}${resolveTextureName(tex)}.png`
 }
 
 /**
  * 以窄边为边长，取图片左上角的一块正方形。
  *
- * 原版有 21 张贴图不是单个 16×16 方块，而是把动画帧 / 多个面纵向堆成
+ * 原版有 52 张贴图不是单个 16×16 方块，而是把动画帧 / 多个面纵向堆成
  * 16×N（water_still 是 16×512，magma 是 16×48）。整张画进方格里会被压扁，
  * 所以只取最开始那一帧——这也是游戏里方块的初始外观。
  * `.build/png_avg.py` 算平均色时取的是同一块区域，配色与显示才对得上。
@@ -66,8 +84,8 @@ export function drawTexture(
 }
 
 /**
- * 画布绘制用的图片缓存。
- * 同一张图只解码一次，142 张全部加载也就是一次 Promise 数组。
+ * 画布绘制用的图片缓存：同一张图只解码一次。
+ * 画布不看 loading="lazy"，所以由调用方决定什么时候要——按需来。
  */
 const imageCache = new Map<string, Promise<HTMLImageElement>>()
 
