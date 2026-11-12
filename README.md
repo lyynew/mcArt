@@ -12,7 +12,7 @@
 | --- | --- |
 | [方块像素画生成器](https://lyynew.github.io/mcArt/tools/pixel.html) | 图片转方块画，可以逐格改，导出 `.nbt` / `.litematic` / `.schem`、施工图与材料清单 |
 | [地图画生成器](https://lyynew.github.io/mcArt/tools/map-art.html) | 写地图数据、平铺或立体阶梯，导出 `map_#.dat`、`give` 命令与施工文件 |
-| [方块图鉴](https://lyynew.github.io/mcArt/tools/atlas.html) | 978 种方块的贴图、中文名与 ID，可搜索，一键复制命令 |
+| [图鉴](https://lyynew.github.io/mcArt/tools/atlas.html) | 978 种方块 + 563 种物品的贴图、中文名与 ID，可搜索，一键复制命令 |
 | [结构文件查看器](https://lyynew.github.io/mcArt/tools/nbt.html) | 打开 `.nbt` / `.litematic` / `.schem`，分层看结构、点格子查方块、统计材料 |
 
 第一次用可以从[快速开始](https://lyynew.github.io/mcArt/guide/quick-start.html)看起，五分钟出第一张图。拿不准用哪个工具，看[常见问题](https://lyynew.github.io/mcArt/guide/faq.html)。

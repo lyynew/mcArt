@@ -57,7 +57,7 @@ src/
     ToolShell.vue 工具页标准三栏外壳
     pixel/        像素画生成器
     map-art/      地图画生成器（新工具的参考实现）
-    atlas/        方块图鉴
+    atlas/        图鉴（方块按分组 / 物品按首字母）
     nbt-viewer/   结构文件查看器
 public/
   legacy/         旧版单文件页面，功能对照基准

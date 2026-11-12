@@ -1,72 +1,42 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { McInput, McNote, McSegmented, McSwitch, McWindow, type SegOption } from '@/design/components'
+import { ref, watch } from 'vue'
+import { McNote, McWindow } from '@/design/components'
 import BlockGrid from '@/components/blocks/BlockGrid.vue'
-import type { BlockGridGroup } from '@/components/blocks/types'
-import { ALL_BLOCK_DEFS, FAMILY_CATALOG, FAMILY_LABELS, PALETTE_IDS, type BlockDef } from '@/core/blocks'
+import { ALL_BLOCK_DEFS, PALETTE_IDS } from '@/core/blocks'
+import { ITEMS } from '@/core/items'
+import { useAtlas } from './composables/useAtlas'
+import AtlasFilters from './components/AtlasFilters.vue'
 import BlockDetailCard from './components/BlockDetailCard.vue'
+import ItemDetailCard from './components/ItemDetailCard.vue'
 
 /**
- * 方块图鉴。
+ * 图鉴：方块 + 物品。
  *
- * 全量注册表（色板源 + 识别扩展）的原版贴图、中文名与 ID：按分组浏览、
- * 中文名/英文名/ID 都能搜，点开就能复制 ID 或 give 命令。
- * 没有生成器那套画布逻辑，纯粹是查询与复制。
+ * 方块是全量注册表（色板源 + 识别扩展）的贴图、中文名与 ID；
+ * 物品是不参与像素画的那 563 条，只用于查名字、拿 ID 和给成就图标找素材。
+ * 两边共用同一套格子，靠顶部的模式切换在两组数据间跳。
  *
- * 一次能排出近千个格子，所以：分组由 FAMILY_CATALOG 固定顺序，
- * 贴图交给 BlockSlot 的懒加载，滚到哪儿请求到哪儿。
+ * 没有生成器那套画布逻辑，纯粹是查询与复制。一次能排出近千个格子，
+ * 所以贴图交给 BlockSlot 的懒加载，滚到哪儿请求到哪儿。
  */
-const keyword = ref('')
-const family = ref('all')
-const paletteOnly = ref(false)
-const selected = ref<BlockDef>(ALL_BLOCK_DEFS[0]!)
+const {
+  mode,
+  keyword,
+  family,
+  paletteOnly,
+  selectedBlock,
+  selectedItem,
+  blockGroups,
+  itemGroups,
+  matched,
+  filterKey,
+  familyOptions,
+} = useAtlas()
+
 const scroller = ref<HTMLElement>()
 
-/** 按分组预先分桶，筛选时不用每次全表扫一遍 */
-const byFamily = computed(() => {
-  const map = new Map<string, BlockDef[]>()
-  for (const b of ALL_BLOCK_DEFS) {
-    const list = map.get(b.fam)
-    if (list) list.push(b)
-    else map.set(b.fam, [b])
-  }
-  return map
-})
-
-const familyOptions: SegOption[] = [
-  { value: 'all', label: '全部' },
-  ...FAMILY_CATALOG.map((f) => ({ value: f.id, label: f.label })),
-]
-
-function matches(b: BlockDef, q: string): boolean {
-  if (paletteOnly.value && !PALETTE_IDS.has(b.id)) return false
-  if (!q) return true
-  return b.zh.includes(q) || b.en.toLowerCase().includes(q) || b.id.includes(q)
-}
-
-const groups = computed<BlockGridGroup[]>(() => {
-  const q = keyword.value.trim().toLowerCase()
-  const out: BlockGridGroup[] = []
-
-  for (const fam of FAMILY_CATALOG) {
-    if (family.value !== 'all' && family.value !== fam.id) continue
-
-    const items = (byFamily.value.get(fam.id) ?? [])
-      .filter((b) => matches(b, q))
-      .map((b) => ({ block: b, selected: selected.value.id === b.id }))
-
-    if (items.length) {
-      out.push({ key: fam.id, label: `${FAMILY_LABELS[fam.id] ?? fam.id} ${items.length}`, items })
-    }
-  }
-
-  return out
-})
-
-const matched = computed(() => groups.value.reduce((n, g) => n + g.items.length, 0))
-
-/** 换分组/改关键词后回到顶部，否则停在上一个分组的中间位置很困惑 */
-watch([family, paletteOnly, keyword], () => {
+/** 换模式/分组/改关键词后回到顶部，否则停在上一个列表的中间位置很困惑 */
+watch(filterKey, () => {
   if (scroller.value) scroller.value.scrollTop = 0
 })
 </script>
@@ -74,32 +44,44 @@ watch([family, paletteOnly, keyword], () => {
 <template>
   <div class="atlas">
     <div class="atlas__main">
-      <McWindow title="方块图鉴">
-        <div class="atlas__filters">
-          <McInput v-model="keyword" type="search" placeholder="搜方块 / 英文名 / ID" />
-          <McSwitch v-model="paletteOnly" label="只看可用于像素画的 142 种" />
-          <McSegmented
-            :options="familyOptions"
-            :columns="4"
-            dense
-            :model-value="family"
-            @update:model-value="family = $event"
+      <McWindow :title="mode === 'block' ? '方块图鉴' : '物品图鉴'">
+        <AtlasFilters
+          v-model:mode="mode"
+          v-model:keyword="keyword"
+          v-model:family="family"
+          v-model:palette-only="paletteOnly"
+          :family-options="familyOptions"
+        />
+
+        <div ref="scroller" class="atlas__scroll">
+          <BlockGrid
+            v-if="mode === 'block'"
+            :groups="blockGroups"
+            :size="40"
+            @select="selectedBlock = $event"
+          />
+          <BlockGrid
+            v-else
+            :groups="itemGroups"
+            :size="40"
+            empty-text="没有匹配的物品"
+            @select="selectedItem = $event"
           />
         </div>
 
-        <div ref="scroller" class="atlas__scroll">
-          <BlockGrid :groups="groups" :size="40" @select="selected = $event" />
-        </div>
-
-        <McNote>
+        <McNote v-if="mode === 'block'">
           {{ matched }} / {{ ALL_BLOCK_DEFS.length }} 种 · 共
           {{ PALETTE_IDS.size }} 种参与像素画配色 · 点方块看详情与命令
+        </McNote>
+        <McNote v-else>
+          {{ matched }} / {{ ITEMS.length }} 种物品 · 不进像素画色板，供图鉴与成就图标使用
         </McNote>
       </McWindow>
     </div>
 
     <aside class="atlas__side">
-      <BlockDetailCard :block="selected" />
+      <BlockDetailCard v-if="mode === 'block'" :block="selectedBlock" />
+      <ItemDetailCard v-else :item="selectedItem" />
     </aside>
   </div>
 </template>
@@ -128,12 +110,6 @@ watch([family, paletteOnly, keyword], () => {
   flex-direction: column;
   min-height: 0;
   flex: 1;
-}
-
-.atlas__filters {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
 }
 
 .atlas__scroll {

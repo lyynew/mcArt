@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { BlockDef } from '@/core/blocks'
 import { textureUrl } from '@/core/textures'
+import type { SpriteDef } from './types'
 
 /**
- * 一个方块格子。
+ * 一个贴图格子。
  *
- * 色板、物品栏、自定义方案弹窗都用它，保证三处外观与交互一致：
- * 贴图铺满、角上标数量、选中描金边、没用到时压暗。
+ * 色板、物品栏、自定义方案弹窗、图鉴都用它，保证各处的
+ * 外观与交互一致：贴图铺满、角上标数量、选中描金边、没用到时压暗。
+ *
+ * 只认 SpriteDef 这份最小契约，方块和物品都能直接塞进来。
  */
 const props = withDefaults(
   defineProps<{
-    block?: BlockDef | null
+    block?: SpriteDef | null
     /** 格子边长，px */
     size?: number
     /** 右下角角标（一般是这个方块用了多少块） */
@@ -47,6 +49,11 @@ const boxStyle = computed(() =>
  * 平均色铺在底层，贴图没到位也不会露白。
  */
 const faceUrl = computed(() => textureUrl(props.block?.tex))
+
+/** 没有平均色（物品）就不铺底色，透明处直接露槽底的 MC 按钮灰 */
+const faceStyle = computed(() =>
+  props.block?.hex ? { backgroundColor: props.block.hex } : undefined,
+)
 </script>
 
 <template>
@@ -60,13 +67,13 @@ const faceUrl = computed(() => textureUrl(props.block?.tex))
       v-if="block && faceUrl"
       class="slot__face slot__face--img"
       :src="faceUrl"
-      :style="{ backgroundColor: block.hex }"
+      :style="faceStyle"
       alt=""
       loading="lazy"
       decoding="async"
       draggable="false"
     />
-    <span v-else-if="block" class="slot__face" :style="{ backgroundColor: block.hex }" />
+    <span v-else-if="block" class="slot__face" :style="faceStyle" />
     <span v-if="label" class="slot__label">{{ label }}</span>
     <span v-if="count" class="slot__count">{{ count }}</span>
   </div>

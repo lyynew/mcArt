@@ -25,11 +25,11 @@ title: 工具
   </a>
   <a class="tool-card" href="./atlas">
     <span class="tool-card__head">
-      <span class="tool-card__name">方块图鉴</span>
+      <span class="tool-card__name">图鉴</span>
       <span class="tool-card__tag">可用</span>
     </span>
-    <span class="tool-card__desc">978 种方块的原版贴图、中文名与 ID。可搜索，标出能用于像素画的方块，一键复制命令。</span>
-    <span class="tool-card__meta">978 种 · 16 个分组 · 命令复制</span>
+    <span class="tool-card__desc">978 种方块与 563 种物品的原版贴图、中文名与 ID。可搜索，标出能用于像素画的方块，一键复制命令。</span>
+    <span class="tool-card__meta">1541 条 · 方块按组 / 物品按字母 · 命令复制</span>
   </a>
   <a class="tool-card" href="./nbt">
     <span class="tool-card__head">

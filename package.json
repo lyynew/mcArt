@@ -10,7 +10,7 @@
     "sync:legacy": "node scripts/sync-legacy.mjs",
     "predev": "npm run sync",
     "dev": "vitepress dev docs",
-    "prebuild": "npm run sync",
+    "prebuild": "node scripts/clean-dist.mjs && npm run sync",
     "build": "npm run typecheck && vitepress build docs",
     "preview": "vitepress preview docs",
     "typecheck": "vue-tsc --noEmit",

@@ -1,12 +1,12 @@
-<script setup lang="ts" generic="T extends BlockDef">
-import type { BlockDef } from '@/core/blocks'
+<script setup lang="ts" generic="T extends SpriteDef">
 import BlockSlot from './BlockSlot.vue'
-import type { BlockGridGroup } from './types'
+import type { BlockGridGroup, SpriteDef } from './types'
 
 /**
- * 分组方块网格。
+ * 分组贴图网格。
  * 纯展示：分组、角标、选中态都由调用方算好，这里只负责排布与点击。
- * 泛型 T 跟着传进来的分组走，选中事件就能把调用方自己的方块类型原样还回去。
+ * 泛型 T 跟着传进来的分组走，选中事件就能把调用方自己的条目类型原样还回去。
+ * 方块与物品共用（约束是 SpriteDef），所以提示文案由调用方给。
  */
 withDefaults(
   defineProps<{

@@ -74,11 +74,11 @@ useBackdrop(backdrop)
         </a>
         <a class="home-card" href="./tools/atlas.html" data-build="card">
           <span class="home-card__no">03 / LOOK UP</span>
-          <span class="home-card__name">方块图鉴</span>
+          <span class="home-card__name">图鉴</span>
           <p class="home-card__desc">
-            978 种方块的贴图、中文名与 ID，可搜索，一键复制命令。
+            978 种方块与 563 种物品的贴图、中文名与 ID，可搜索，一键复制命令。
           </p>
-          <span class="home-card__foot">978 种 · 贴图放大 →</span>
+          <span class="home-card__foot">1541 条 · 贴图放大 →</span>
         </a>
         <a class="home-card" href="./tools/nbt.html" data-build="card">
           <span class="home-card__no">04 / VERIFY</span>
