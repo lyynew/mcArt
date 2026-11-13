@@ -180,13 +180,14 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 
 ## 素材与数据生成
 
-`原版材质/` 是贴图与平均色的唯一来源，`材质清单.txt` 记录分组、色值与文件名对照。贴图不直接引用该目录：`scripts/sync-textures.mjs` 增量拷贝到 `src/assets/textures/`（该目录在 `.gitignore` 里），再交给 Vite 做内容哈希输出。旧版单文件页面同理，`scripts/sync-legacy.mjs` 把它从 `public/legacy/` 复制到 `docs/public/legacy/` 一起发布；`public/legacy/index.html` 是源文件，也是 sync-legacy 与 make-fixtures 的基准，不能删。
+`原版材质/`（方块）与 `原版材质-items/`（物品）是贴图的唯一来源，两边有 72 个同名贴图，**必须分开存**。`scripts/sync-textures.mjs` 增量同步到 `docs/textures/`（方块在根、物品在 `items/`，该目录在 `.gitignore` 里），`scripts/copy-textures.mjs` 在 postbuild 把这一层直接拷进 `docs/.vitepress/dist/textures/`。**不要把贴图放回 `docs/public/`**：两千多张 16×16 小图让 VitePress 复制要十几分钟。URL 由 `core/textures.ts` 拼成 `BASE + tex + '.png'`，26.3 改名贴图走 `TEXTURE_ALIAS` 转换，别改方块表里的 `tex` 字段。旧版单文件页面同理，`scripts/sync-legacy.mjs` 把它从 `public/legacy/` 复制到 `docs/public/legacy/` 一起发布；`public/legacy/index.html` 是源文件，也是 sync-legacy 与 make-fixtures 的基准，不能删。
 
-**有 21 张贴图不是单个方块**，而是把动画帧 / 多个面纵向堆成 `16×N`（`water_still` 是 16×512，`magma` 是 16×48）。整张画进方格会被压成一团横条纹，所以显示时统一只取**左上角、以窄边为边长的那一块**（正好是游戏里的第一帧）：canvas 走 `core/textures.ts` 的 `squareSide` / `drawTexture`，图鉴格子的 `<img>` 用 `object-fit: cover` + `object-position: left top`。`.build/png_avg.py` 算平均色时取同一块区域，配色和显示才对得上。规则只在这两处，别在同步脚本里裁源文件，也别改 `原版材质/` —— 完整帧数据要留着，用户自选的材质包也走同一套绘制逻辑。
+**原版有一批贴图不是单个方块**，而是把动画帧 / 多个面纵向堆成 `16×N`（`water_still` 是 16×512，`magma` 是 16×48）。整张画进方格会被压成一团横条纹，所以显示时统一只取**左上角、以窄边为边长的那一块**（正好是游戏里的第一帧）：canvas 走 `core/textures.ts` 的 `squareSide` / `drawTexture`，图鉴格子的 `<img>` 用 `object-fit: cover` + `object-position: left top`。`.build/png_avg.py` 算平均色时取同一块区域，配色和显示才对得上。规则只在这两处，别在同步脚本里裁源文件，也别改 `原版材质/` —— 完整帧数据要留着，用户自选的材质包也走同一套绘制逻辑。
 
 其他脚本：
 
 - `scripts/build-block-extras.mjs` —— 从官方 1.21.4 的 assets / lang / textures 生成 `src/core/block-extras.ts`；生成器写文本用 Python 的 `writeTextPlain`，node 写出的文本会被 E-SafeNet 加密。
+- `scripts/build-texture-catalog.mjs` —— 扫两个素材目录、反查 `blocks.ts` / `block-extras.ts` / `items.ts` 的中文名，生成 `src/core/texture-catalog.ts`：像素画与地图画「使用内置素材」的清单（26.3 共 2134 张，方块 + 物品图标）。生成物**提交进仓库**，素材升级后重跑，`texture-catalog.test.ts` 会校验清单与目录是否一致。
 - `scripts/fetch-textures.sh` —— 补拉贴图；URL 要带 `/textures/`，curl 要 `-L`，否则 301 的 HTML 会被当成 png 存下来。
 - `.build/png_avg.py --json` —— 重算平均色，改色板时才跑。
 - `scripts/make-fixtures.mjs` —— 从旧版实现生成算法基准。

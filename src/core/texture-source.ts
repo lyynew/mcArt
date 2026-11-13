@@ -1,79 +1,68 @@
 /**
- * 把内置的原版材质当成「源图」。
+ * 把内置的原版素材当成「源图」。
  *
- * 方块图鉴里那些贴图本来是给画布当像素用的，其实也可以直接丢进
- * 像素画 / 地图画生成器当原图：挑一张草方块、钻石块，就能生成一张
- * 放大的方块图案。这里负责三件事：
- *   1. 列出全部内置贴图，并反查中文方块名（供搜索与分组）；
+ * 26.3 之后素材目录里有 1303 张方块贴图 + 831 张物品图标，二者都能直接
+ * 丢进像素画 / 地图画生成器：挑一张草方块、一把钻石剑，就生成一张放大的
+ * 像素图案。物品图标带透明背景，生成器已有对应语义（像素画留空格、
+ * 地图画按「背景」设置填白/填黑/留未探索），这里原样保留 alpha，不合成底色。
+ *
+ * 这里负责三件事：
+ *   1. 从生成好的总表列出全部内置素材，带中文名 / 英文名 / 分组（纯数据，可单测）；
  *   2. 把选中的贴图画到离屏 canvas，产出通用的 SquareImage；
  *   3. 长条贴图（16×N 的动画帧堆叠）只取左上角第一帧——
  *      规则复用 textures.ts 的 squareSide/drawTexture，和方块图鉴、
  *      画布显示、平均色取样完全一致，不另写一份。
  *
- * 列表与过滤是纯数据，方便单测；只有 loadBuiltinTexture 碰 canvas。
+ * 清单来自 texture-catalog.ts（由 scripts/build-texture-catalog.mjs 生成），
+ * 以素材目录里的 PNG 为准，方块表 / 物品表只负责反查名字。
+ * 色板仍然只认 blocks.ts 的 BLOCKS，物品不参与配色推导。
  */
-import { ALL_BLOCK_DEFS, BLOCKS, type BlockDef } from './blocks'
+import {
+  TEXTURE_CATALOG,
+  type TextureCatalogEntry,
+  type TextureKind,
+} from './texture-catalog'
 import type { SquareImage } from './image'
 import { drawTexture, squareSide, textureImage } from './textures'
 
-export interface BuiltinTexture {
-  /** 贴图主名，也是 TEXTURES 的键 */
-  tex: string
-  /** 优先显示中文方块名 */
-  label: string
-  /** 英文方块名，搜索用 */
-  en: string
-  /** 分组，供筛选 */
-  family: string
-}
+export type { TextureKind } from './texture-catalog'
 
-/** 一张贴图可能被多个方块共用（如木板类）：色板里的 142 种优先，名字更常用 */
-const byTex = new Map<string, BlockDef>()
-for (const block of [...BLOCKS, ...ALL_BLOCK_DEFS]) {
-  if (block.tex && !byTex.has(block.tex)) byTex.set(block.tex, block)
+export type BuiltinTexture = TextureCatalogEntry
+
+/** 同一类素材的分组：方块是中文方块分组，物品是英文名首字母桶 */
+export type TextureFilterKind = TextureKind | 'all'
+
+export const BUILTIN_TEXTURES: readonly BuiltinTexture[] = TEXTURE_CATALOG
+
+const familiesOf = (kind: TextureKind): readonly string[] =>
+  [...new Set(TEXTURE_CATALOG.filter((e) => e.kind === kind).map((e) => e.family))].sort((a, b) =>
+    a.localeCompare(b, 'zh-CN'),
+  )
+
+export const BUILTIN_FAMILIES = familiesOf('block')
+export const BUILTIN_ITEM_GROUPS = familiesOf('item')
+
+export function familiesFor(kind: TextureFilterKind): readonly string[] {
+  if (kind === 'block') return BUILTIN_FAMILIES
+  if (kind === 'item') return BUILTIN_ITEM_GROUPS
+  return [...new Set([...BUILTIN_FAMILIES, ...BUILTIN_ITEM_GROUPS])]
 }
 
 /**
- * 列表从方块表反推：贴图名 → 方块。
- *
- * 只列方块用到的贴图（不是素材目录里的全部文件），物品不参与像素画生成，
- * 放进「内置材质」里会让人以为选一把剑就能生成方块画。
- * 用到的贴图可能被多个方块共用，按出现顺序去重。
- */
-const usedTex: string[] = []
-for (const block of [...BLOCKS, ...ALL_BLOCK_DEFS]) {
-  if (block.tex && !usedTex.includes(block.tex)) usedTex.push(block.tex)
-}
-
-export const BUILTIN_TEXTURES: readonly BuiltinTexture[] = usedTex
-  .map((tex) => {
-    const block = byTex.get(tex)
-    return {
-      tex,
-      label: block?.zh ?? tex,
-      en: block?.en ?? tex,
-      family: block?.fam ?? '其他',
-    }
-  })
-  .sort((a, b) => a.label.localeCompare(b.label, 'zh-CN'))
-
-export const BUILTIN_FAMILIES: readonly string[] = [
-  ...new Set(BUILTIN_TEXTURES.map((t) => t.family)),
-].sort((a, b) => a.localeCompare(b, 'zh-CN'))
-
-/**
- * 按关键字与分组过滤，并限制返回条数。
- * 六百多张贴图全渲染进 DOM 会卡，弹层里只画前 limit 条。
+ * 按关键字、分组与素材种类过滤，并限制返回条数。
+ * 两千多张贴图全渲染进 DOM 会卡，弹层只画前 limit 条，滚到底再加载更多。
  */
 export function filterBuiltinTextures(
   list: readonly BuiltinTexture[],
   query: string,
   family = '全部',
   limit = 120,
+  kind: TextureFilterKind = 'all',
 ): readonly BuiltinTexture[] {
   const q = query.trim().toLowerCase()
   const out: BuiltinTexture[] = []
   for (const item of list) {
+    if (kind !== 'all' && item.kind !== kind) continue
     if (family !== '全部' && item.family !== family) continue
     if (q && !`${item.label} ${item.en} ${item.tex}`.toLowerCase().includes(q)) continue
     out.push(item)
@@ -82,14 +71,16 @@ export function filterBuiltinTextures(
   return out
 }
 
-/** 某张贴图共有多少条匹配（用于「还有 N 张没显示」提示，纯函数） */
+/** 某次筛选共有多少条匹配（不受 limit 影响，纯函数） */
 export function countBuiltinTextures(
   list: readonly BuiltinTexture[],
   query: string,
   family = '全部',
+  kind: TextureFilterKind = 'all',
 ): number {
   const q = query.trim().toLowerCase()
   return list.reduce((n, item) => {
+    if (kind !== 'all' && item.kind !== kind) return n
     if (family !== '全部' && item.family !== family) return n
     if (q && !`${item.label} ${item.en} ${item.tex}`.toLowerCase().includes(q)) return n
     return n + 1
@@ -97,11 +88,12 @@ export function countBuiltinTextures(
 }
 
 /**
- * 把内置贴图读成源图。
+ * 把内置素材读成源图。
  *
  * 输出尺寸就是贴图第一帧的原始边长（原版材质一般是 16），
  * 不做平滑放大：贴图本身是像素画，插值会糊掉硬边；
  * 后面生成器按网格采样时会自己放大到画布尺寸。
+ * 物品图标的透明像素原样保留，交给各自的算法层决定留空还是填背景。
  */
 export async function loadBuiltinTexture(item: BuiltinTexture): Promise<SquareImage> {
   const loading = textureImage(item.tex)
@@ -122,6 +114,6 @@ export async function loadBuiltinTexture(item: BuiltinTexture): Promise<SquareIm
   return {
     pixels: ctx.getImageData(0, 0, size, size).data,
     size,
-    name: `${item.label}（内置材质）`,
+    name: `${item.label}（内置${item.kind === 'item' ? '物品图标' : '方块材质'}）`,
   }
 }

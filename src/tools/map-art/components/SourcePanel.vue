@@ -27,7 +27,7 @@ const sizeText = () => (source.value ? `${source.value.size} × ${source.value.s
     <McDropzone class="source__drop" accept="image/*" @files="onFiles">
       <strong class="source__drop-title">把图片拖进来</strong>
       <small class="source__drop-hint">
-        点击选择，或拖到页面任意位置<br />放好后可自己挑 1:1 截取区域 · 本地处理，不上传
+        点击选择，或拖到页面任意位置<br />可自己挑 1:1 截取区域 · 内置方块 / 物品图标可直接生成
       </small>
     </McDropzone>
 
@@ -37,7 +37,7 @@ const sizeText = () => (source.value ? `${source.value.size} × ${source.value.s
     </div>
 
     <div class="source__actions">
-      <McButton size="sm" @click="openBuiltinPicker">使用内置方块图片</McButton>
+      <McButton size="sm" @click="openBuiltinPicker">使用内置素材</McButton>
       <McButton size="sm" :disabled="!canRecrop" @click="reopenCrop">重新截取</McButton>
       <McButton size="sm" @click="loadDemo">载入示例图</McButton>
       <McButton size="sm" :disabled="!source" @click="clear">清空</McButton>

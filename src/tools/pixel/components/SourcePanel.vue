@@ -30,12 +30,12 @@ function onFiles(files: File[]): void {
     <McDropzone @files="onFiles">
       <strong class="source__title">放入图片</strong>
       <small class="source__hint">
-        点击选择 / 拖进来 / Ctrl+V 粘贴<br />放好后可自己挑 1:1 截取区域，透明处留空
+        点击选择 / 拖进来 / Ctrl+V 粘贴<br />放好后可自己挑 1:1 截取区域 · 内置方块 / 物品图标可直接生成
       </small>
     </McDropzone>
 
     <div class="source__actions">
-      <McButton size="sm" @click="openBuiltinPicker">使用内置方块图片</McButton>
+      <McButton size="sm" @click="openBuiltinPicker">使用内置素材</McButton>
       <McButton size="sm" :disabled="!canRecrop" @click="reopenCrop">重新截取</McButton>
     </div>
 
