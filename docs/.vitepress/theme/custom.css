@@ -972,18 +972,24 @@ html[data-motion='off'] .home-hero__art img {
   display: none;
 }
 
+/* 融进背景：去掉组件自带的底色与上边框，透出 body 的纸面方格，
+   不再像叠在工具页上的又一层。深浅两种模式下 body 与工作台是
+   同一张纸 + 同一款方格，透明后自然衔接。 */
 .Layout.tool-page .legal {
   display: flex;
+  background: transparent;
+  border-top: none;
 }
 
 .Layout.tool-page .legal__mini {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
+  justify-content: center;
   gap: 1px 8px;
   width: 100%;
   margin: 0;
-  padding: 3px 12px 4px;
+  padding: 4px 12px 5px;
   font-family: var(--font-mono);
   font-size: 9.5px;
   line-height: 1.4;
@@ -991,9 +997,9 @@ html[data-motion='off'] .home-hero__art img {
 }
 
 .Layout.tool-page .legal__mini a {
-  margin-left: auto;
-  color: var(--ink-2);
+  color: var(--ink-3);
   white-space: nowrap;
+  text-underline-offset: 3px;
 }
 
 .Layout.tool-page .legal__mini a:hover {
@@ -1003,6 +1009,6 @@ html[data-motion='off'] .home-hero__art img {
 @media (max-width: 600px) {
   .Layout.tool-page .legal__mini {
     font-size: 9px;
-    padding: 2px 10px 3px;
+    padding: 3px 10px 4px;
   }
 }
