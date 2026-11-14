@@ -65,10 +65,9 @@ src/tools/<name>/
 - 每个 grid 子项都要有 `min-width: 0`，否则一长串说明会把整行撑出屏幕
   （结构查看器在手机端踩过，连带顶栏汉堡按钮都被挤走）。
 - 工具页的 `.md` 用 `layout: page` + `pageClass: tool-page`，
-  内容只写 `<ToolFrame><ToolXxx /></ToolFrame>`。工具页底部会自动带一行极简
-  版权提示（`theme/SiteDisclaimer.vue`，显示规则由 `custom.css` 按页面类控制：
-  首页 / 关于页简版、工具页极简行、文档页不显示），工具里不要自己写页脚，
-  也不再加 `footer: false`。
+  内容只写 `<ToolFrame><ToolXxx /></ToolFrame>`。工具页不放底部声明——版权
+  提示由 `BuiltinTextureModal.vue` 弹窗顶部的 `bt__legal` 承担，只要工具用了
+  素材弹窗就会带上；不要自己写页脚，也不再加 `footer: false`。
 
 ### 舞台里的画布 / 固定比例块
 

@@ -39,13 +39,6 @@ const guidelines = 'https://www.minecraft.net/en-us/usage-guidelines'
         </p>
       </div>
 
-      <!-- 整屏工具页：极简一行小字。其余页面的显示/隐藏由 custom.css 按页面类控制 -->
-      <p class="legal__mini">
-        <span>
-          NOT AN OFFICIAL MINECRAFT PRODUCT · 非官方粉丝工具 · 游戏素材版权归 Mojang Studios
-        </span>
-        <a :href="aboutHref" target="_blank" rel="noopener noreferrer">详情</a>
-      </p>
     </div>
   </aside>
 </template>
@@ -124,11 +117,6 @@ const guidelines = 'https://www.minecraft.net/en-us/usage-guidelines'
   text-underline-offset: 3px;
 }
 
-/* 工具页的极简条默认藏起来，custom.css 里按 .Layout.tool-page 打开 */
-.legal__mini {
-  display: none;
-}
-
 @media (max-width: 768px) {
   .legal__inner {
     padding: 14px 18px 16px;
@@ -144,10 +132,10 @@ const guidelines = 'https://www.minecraft.net/en-us/usage-guidelines'
 }
 
 /*
- * 显示/隐藏与工具页极简条的规则都在 theme/custom.css 里，按页面类控制：
- * 默认（文档页）不显示，首页与关于页显示两行简版，工具页只留一行极小小字。
- * 别在这里用 :global(.Layout.tool-page) 选祖先：构建时 CSS 压缩器会吞掉
- * :global() 之后的后代选择器，产物变成 .Layout.tool-page{display:none}，
- * 整个工具页会被隐藏。祖先类只能在全局样式表里写完整选择器。
+ * 显示/隐藏规则都在 theme/custom.css 里按页面类控制：默认（文档页与工具页）
+ * 不显示，只有首页与关于页打开两行简版。工具页的版权提示在素材选择弹窗
+ * 顶部（BuiltinTextureModal.vue 的 bt__legal）。
+ * 别在这里用 :global(.Layout.xxx) 选祖先：构建时 CSS 压缩器会吞掉 :global()
+ * 之后的后代选择器。祖先类只能在全局样式表里写完整选择器。
  */
 </style>

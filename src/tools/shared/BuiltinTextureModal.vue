@@ -11,6 +11,9 @@
  * allow 是可选的额外白名单：进度图标只需要「有立体图标」的方块，
  * 由调用方传入；像素画 / 地图画不传，行为完全不变。
  *
+ * 顶部的 bt__legal 是全站唯一的弹窗级版权声明：工具页与文档页底部
+ * 都不放声明，详情在关于页。
+ *
  * 两千多张不能一次渲染进 DOM，所以按筛选结果分页「加载更多」；
  * 缩略图 <img loading="lazy">，滚到附近才真正请求贴图。
  */
@@ -129,6 +132,10 @@ async function choose(item: BuiltinTexture): Promise<void> {
 <template>
   <McModal v-model="open" :title="dialogTitle" width="880px">
     <div class="bt">
+      <p class="bt__legal">
+        NOT AN OFFICIAL MINECRAFT PRODUCT · 站内素材版权归 Mojang Studios，依据
+        Minecraft Usage Guidelines 用于本站这一非官方粉丝工具
+      </p>
       <p class="bt__hint">{{ hint ?? DEFAULT_HINT }}</p>
 
       <div class="bt__filters">
@@ -185,6 +192,16 @@ async function choose(item: BuiltinTexture): Promise<void> {
   gap: var(--sp-3);
 }
 
+.bt__legal {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--mc-ink-soft);
+  opacity: 0.85;
+}
+
+/* 站内只在素材弹窗顶部放这一句版权提示（工具页与文档页不再放），
+   与下方 hint 同色系但更小一号，不抢筛选区的注意力。 */
 .bt__hint {
   font-size: var(--fs-sm);
   color: var(--mc-ink-soft);

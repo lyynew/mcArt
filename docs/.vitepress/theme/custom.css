@@ -947,13 +947,12 @@ html[data-motion='off'] .home-hero__art img {
 /* ============================================================
    底部严正声明（theme/SiteDisclaimer.vue）
    ------------------------------------------------------------
-   挂在 #layout-bottom 插槽，但按页面类控制显示：
-   - 文档页默认 display:none（声明全文在关于页，文档页里再放一份
-     既重复、还会被固定侧栏盖住左侧）
-   - 首页与关于页显示两行简版
-   - 整屏工具页只留一行极小小字，不挤占工作台
+   挂在 #layout-bottom 插槽，但只在首页与关于页显示（.Layout.home-page /
+   .about-page 打开），默认 display:none —— 文档页与工具页都不放：
+   声明全文在关于页；工具页的版权提示放在素材选择弹窗顶部
+   （BuiltinTextureModal.vue 的 bt__legal）。
    组件用的是 <style scoped>，祖先类只能在这张全局表里匹配；
-   这里的多段选择器优先级高于 [data-v-*]，不需要 !important。
+   多段选择器优先级高于 [data-v-*]，不需要 !important。
    ============================================================ */
 .legal {
   display: none;
@@ -966,49 +965,4 @@ html[data-motion='off'] .home-hero__art img {
 
 .Layout.home-page .legal {
   border-top: none;
-}
-
-.Layout.tool-page .legal__full {
-  display: none;
-}
-
-/* 融进背景：去掉组件自带的底色与上边框，透出 body 的纸面方格，
-   不再像叠在工具页上的又一层。深浅两种模式下 body 与工作台是
-   同一张纸 + 同一款方格，透明后自然衔接。 */
-.Layout.tool-page .legal {
-  display: flex;
-  background: transparent;
-  border-top: none;
-}
-
-.Layout.tool-page .legal__mini {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: center;
-  gap: 1px 8px;
-  width: 100%;
-  margin: 0;
-  padding: 4px 12px 5px;
-  font-family: var(--font-mono);
-  font-size: 9.5px;
-  line-height: 1.4;
-  color: var(--ink-3);
-}
-
-.Layout.tool-page .legal__mini a {
-  color: var(--ink-3);
-  white-space: nowrap;
-  text-underline-offset: 3px;
-}
-
-.Layout.tool-page .legal__mini a:hover {
-  color: var(--green);
-}
-
-@media (max-width: 600px) {
-  .Layout.tool-page .legal__mini {
-    font-size: 9px;
-    padding: 3px 10px 4px;
-  }
 }
