@@ -10,11 +10,13 @@
  * 产出：
  *   原版材质/            方块贴图（textures/block）
  *   原版材质-items/      物品贴图（textures/item）
+ *   原版材质-gui/toast/  进度提示等 GUI 底图（textures/gui/sprites/toast）
  *   .build/lang/*.json   中英文语言文件
  *   .build/textures-manifest.json  版本号、张数、动画贴图清单
  *
  * 方块与物品分开两个目录，是因为两边有 72 个同名贴图（告示牌、蜡烛、酿造台…），
  * 平铺到一个目录会互相覆盖，图鉴里的物品图标就会变成方块贴图。
+ * GUI 底图也单独放：它不是「图标素材」，不该混进 TEXTURE_CATALOG 让人误选来画像素画。
  *
  * 幂等：逐张比对大小，一致就跳过，可以反复跑。
  */
@@ -160,6 +162,7 @@ async function main() {
 
   const blockDir = join(root, '原版材质')
   const itemDir = join(root, '原版材质-items')
+  const guiDir = join(root, '原版材质-gui', 'toast')
   const langDir = join(root, '.build', 'lang')
   await ensureDir(langDir)
 
@@ -170,6 +173,12 @@ async function main() {
   console.log('导入物品贴图…')
   const items = await extract(jar, 'assets/minecraft/textures/item/', itemDir)
   console.log(`  共 ${items.total}，新写入 ${items.written}，未变 ${items.skipped}`)
+
+  // 进度提示横幅的原版底图：160×32 索引色，四角透明、双层描边。
+  // 之前只抽方块/物品，这一组一直没进项目，成就工具要用就得补上。
+  console.log('导入 GUI toast 底图…')
+  const gui = await extract(jar, 'assets/minecraft/textures/gui/sprites/toast/', guiDir)
+  console.log(`  共 ${gui.total}，新写入 ${gui.written}，未变 ${gui.skipped}`)
 
   for (const name of BORROWED_FROM_ITEMS) {
     const from = join(itemDir, `${name}.png`)
@@ -204,6 +213,7 @@ async function main() {
     source: 'client.jar',
     blocks: blockNames.length,
     items: (await readdir(itemDir)).filter((f) => f.endsWith('.png')).length,
+    guiToast: (await readdir(guiDir)).filter((f) => f.endsWith('.png')).length,
     animated: anim.length,
     animatedTextures: anim,
     importedAt: new Date().toISOString().slice(0, 10),
@@ -212,7 +222,8 @@ async function main() {
   await writeFile(join(root, '.build', 'textures-manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
 
   console.log(
-    `\n完成：方块 ${manifest.blocks} 张，物品 ${manifest.items} 张，动画贴图 ${manifest.animated} 张`,
+    `\n完成：方块 ${manifest.blocks} 张，物品 ${manifest.items} 张，` +
+      `GUI 底图 ${manifest.guiToast} 张，动画贴图 ${manifest.animated} 张`,
   )
 }
 

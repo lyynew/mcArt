@@ -2,9 +2,11 @@
 /**
  * 内置原版素材选择器（方块贴图 + 物品图标）。
  *
- * 两处共用：像素画、地图画生成器的「使用内置素材」按钮。清单来自
- * core/texture-catalog.ts，以素材目录里的 PNG 为准；选中后交给 core 取
- * 左上角第一帧，再送进生成器。物品图标带透明背景，原样保留 alpha。
+ * 像素画 / 地图画把它当「选源图」用，进度提示工具把它当「选图标」用。
+ * 两种用法靠 pickOnly 分流：
+ *   默认     → 解码成 SquareImage，emit confirm（源图生成器要的是像素）
+ *   pickOnly → 只把条目原样 emit select（图标工具要的是 tex 键，还要自己合成三面）
+ * 不复制第二份选择器，2134 条素材的搜索/分组/分页只维护一份。
  *
  * 两千多张不能一次渲染进 DOM，所以按筛选结果分页「加载更多」；
  * 缩略图 <img loading="lazy">，滚到附近才真正请求贴图。
@@ -31,7 +33,24 @@ import {
 } from '@/core/texture-source'
 
 const open = defineModel<boolean>({ default: false })
-const emit = defineEmits<{ confirm: [image: SquareImage] }>()
+const emit = defineEmits<{
+  confirm: [image: SquareImage]
+  select: [entry: BuiltinTexture]
+}>()
+
+/** 选图标时只回传条目，不解码；文案与标题也按用途替换 */
+const props = withDefaults(
+  defineProps<{
+    pickOnly?: boolean
+    dialogTitle?: string
+    hint?: string
+  }>(),
+  { pickOnly: false, dialogTitle: '使用内置素材', hint: undefined },
+)
+
+const DEFAULT_HINT =
+  '挑一张原版方块贴图或物品图标当源图，选中后直接生成。长条堆叠贴图（动画帧 / 多个面）' +
+  '只取最开始的 1:1 第一帧；物品图标的透明背景会保留。'
 
 const KINDS: SegOption[] = [
   { value: 'all', label: '全部', title: '方块贴图与物品图标一起找' },
@@ -77,7 +96,12 @@ function loadMore(): void {
   shown.value = Math.min(shown.value + PAGE, total.value)
 }
 
-async function pick(item: BuiltinTexture): Promise<void> {
+async function choose(item: BuiltinTexture): Promise<void> {
+  if (props.pickOnly) {
+    emit('select', item)
+    open.value = false
+    return
+  }
   if (busy.value) return
   busy.value = item.tex
   error.value = ''
@@ -94,12 +118,9 @@ async function pick(item: BuiltinTexture): Promise<void> {
 </script>
 
 <template>
-  <McModal v-model="open" title="使用内置素材" width="880px">
+  <McModal v-model="open" :title="dialogTitle" width="880px">
     <div class="bt">
-      <p class="bt__hint">
-        挑一张原版方块贴图或物品图标当源图，选中后直接生成。长条堆叠贴图（动画帧 / 多个面）只取最开始的
-        1:1 第一帧；物品图标的透明背景会保留 —— 像素画留空格，地图画按「背景」设置处理。
-      </p>
+      <p class="bt__hint">{{ hint ?? DEFAULT_HINT }}</p>
 
       <div class="bt__filters">
         <div class="bt__tabs">
@@ -122,7 +143,7 @@ async function pick(item: BuiltinTexture): Promise<void> {
           :class="{ 'bt__item--busy': busy === item.tex }"
           :title="`${item.label} · ${item.tex}.png`"
           :disabled="Boolean(busy)"
-          @click="pick(item)"
+          @click="choose(item)"
         >
           <span class="bt__thumb">
             <TextureThumb :tex="item.tex" :alt="item.label" />

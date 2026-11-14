@@ -35,6 +35,16 @@ describe('贴图注册表', () => {
     expect(missing.map((i) => i.id)).toEqual([])
   })
 
+  it('进度提示的原版 GUI 底图在素材目录里', () => {
+    // 它由 import-vanilla.mjs 从 jar 的 gui/sprites/toast/ 单独抽出。
+    // 漏抽不会让构建失败，只会让成就图静默丢掉框体，所以钉在这里。
+    const file = join(root, '原版材质-gui', 'toast', 'advancement.png')
+    expect(existsSync(file)).toBe(true)
+    expect(textureUrl('gui/toast/advancement')).toMatch(
+      /\/textures\/gui\/toast\/advancement\.png$/,
+    )
+  })
+
   it('26.3 改名的贴图靠别名接上', () => {
     expect(TEXTURE_ALIAS.chain).toBe('iron_chain')
     expect(existsSync(join(blockDir, 'iron_chain.png'))).toBe(true)

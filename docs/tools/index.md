@@ -4,7 +4,7 @@ title: 工具
 
 # 工具
 
-四个工具：两个做画，一个查方块，一个复查导出的文件。
+五个工具：两个做画、一个查方块与物品、一个复查导出的文件、一个做进度提示图。
 
 <div class="tool-cards">
   <a class="tool-card" href="./pixel">
@@ -38,6 +38,14 @@ title: 工具
     </span>
     <span class="tool-card__desc">拖入结构文件，按层看方块分布，点格子查名字与坐标；画布可以缩放拖拽，另附材料统计。</span>
     <span class="tool-card__meta">分层查看 · 点选查块 · 缩放画布 · 材料统计</span>
+  </a>
+  <a class="tool-card" href="./advancement">
+    <span class="tool-card__head">
+      <span class="tool-card__name">进度提示图生成器</span>
+      <span class="tool-card__tag">可用</span>
+    </span>
+    <span class="tool-card__desc">用游戏原版进度提示底图，配上方块等轴图标或物品图标，填两行中文文案，实时预览后导出 PNG。</span>
+    <span class="tool-card__meta">320 × 64 · 原版底图 · 1× / 2× / 4× · 只出 PNG</span>
   </a>
 </div>
 

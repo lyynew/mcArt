@@ -46,6 +46,7 @@ docs/.vitepress/config.mts.timestamp-*
 # 本地视觉验证用的临时脚本与截图（不参与构建）
 .build/shots/
 .build/cdp-shot.mjs
+.build/probe-*.js
 .build/edge-profile/
 
 # 构建前挪走的旧产物（safe-delete 拦下的，可手动清）

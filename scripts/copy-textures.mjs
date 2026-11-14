@@ -37,7 +37,9 @@ for (const name of readdirSync(to)) {
 
 cpSync(from, to, { recursive: true })
 
-const count = (dir) => readdirSync(dir).filter((f) => f.endsWith('.png')).length
+const count = (dir) =>
+  existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.png')).length : 0
 console.log(
-  `贴图入产物：方块 ${count(to)} 张，物品 ${count(join(to, 'items'))} 张`,
+  `贴图入产物：方块 ${count(to)} 张，物品 ${count(join(to, 'items'))} 张，` +
+    `GUI 底图 ${count(join(to, 'gui', 'toast'))} 张`,
 )

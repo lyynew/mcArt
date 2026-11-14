@@ -48,5 +48,9 @@ export default {
       'ToolMapArt',
       defineToolComponent(() => import('@/tools/map-art/MapArtPage.vue')),
     )
+    app.component(
+      'ToolAdvancement',
+      defineToolComponent(() => import('@/tools/advancement/AdvancementPage.vue')),
+    )
   },
 } satisfies Theme

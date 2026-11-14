@@ -64,7 +64,7 @@ export default defineConfig({
   title: 'mcArt',
   titleTemplate: ':title · mcArt',
   description:
-    '方块像素画、地图画、方块与物品图鉴、结构文件查看器。纯前端，图片不上传。',
+    '方块像素画、地图画、图鉴、结构查看器、进度提示图。纯前端，图片不上传。',
   base,
   cleanUrls: false,
   lastUpdated: true,
@@ -122,6 +122,7 @@ export default defineConfig({
           { text: '地图画生成器', link: '/tools/map-art' },
           { text: '图鉴', link: '/tools/atlas' },
           { text: '结构文件查看器', link: '/tools/nbt' },
+          { text: '进度提示图生成器', link: '/tools/advancement' },
         ],
       },
       { text: '关于', link: '/about' },

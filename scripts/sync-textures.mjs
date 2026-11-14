@@ -7,12 +7,13 @@
  *   2. 不放进 docs/public：VitePress 复制 public 的方式在本机异常慢（2100 多张要 12 分钟，
  *      自己 cp 只要 6 秒）。这里只负责同步，站点产物由 scripts/copy-textures.mjs 复制。
  *
- * 两个来源：
- *   原版材质/       → docs/textures/                （方块，键名就是文件名）
- *   原版材质-items/ → docs/textures/items/          （物品，键名带 items/ 前缀）
+ * 三个来源：
+ *   原版材质/           → docs/textures/                （方块，键名就是文件名）
+ *   原版材质-items/     → docs/textures/items/          （物品，键名带 items/ 前缀）
+ *   原版材质-gui/toast/ → docs/textures/gui/toast/      （进度提示底图，键名带 gui/toast/ 前缀）
  *
  * 分开目录是因为方块与物品有 72 个同名贴图（告示牌、蜡烛、酿造台…），
- * 平铺到一起会互相覆盖。
+ * 平铺到一起会互相覆盖；GUI 底图是界面素材，更不能和图标混在一处。
  *
  * 同步是增量的：只拷贝新增或内容有变化的文件，dev 启动时几乎无感。
  * 目标目录在 .gitignore 里，不会进仓库。
@@ -79,3 +80,4 @@ async function sync(from, to, label) {
 
 await sync(join(root, '原版材质'), destRoot, '方块贴图')
 await sync(join(root, '原版材质-items'), join(destRoot, 'items'), '物品贴图')
+await sync(join(root, '原版材质-gui', 'toast'), join(destRoot, 'gui', 'toast'), 'GUI 底图')

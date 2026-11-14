@@ -24,7 +24,7 @@ useBackdrop(backdrop)
 
     <section class="home-hero">
       <div class="home-hero__copy">
-        <p class="home-eyebrow" data-build="rule">方块画 / 地图画 / 图鉴 / 结构文件</p>
+        <p class="home-eyebrow" data-build="rule">方块画 / 地图画 / 图鉴 / 结构文件 / 进度提示</p>
         <h1 data-build="head">把一张图<br />变成<em>方块画</em></h1>
         <p class="home-lead" data-build="text">
           图片按色差匹配成方块，逐格改到满意，导出结构文件直接进游戏。<br />
@@ -54,7 +54,7 @@ useBackdrop(backdrop)
 
     <section class="home-section">
       <p class="home-kicker" data-build="rule">工具</p>
-      <h2 data-build="head">四个工具，做完一件事</h2>
+      <h2 data-build="head">五个工具，做完一件事</h2>
       <div class="home-cards">
         <a class="home-card" href="./tools/pixel.html" data-build="card">
           <span class="home-card__no">01 / GENERATE</span>
@@ -87,6 +87,14 @@ useBackdrop(backdrop)
             拖入结构文件，分层看结构、点格子查方块名，画布可缩放拖拽。
           </p>
           <span class="home-card__foot">分层查看 · 点选查块 →</span>
+        </a>
+        <a class="home-card" href="./tools/advancement.html" data-build="card">
+          <span class="home-card__no">05 / TOAST</span>
+          <span class="home-card__name">进度提示图生成器</span>
+          <p class="home-card__desc">
+            用原版进度底图，配上方块或物品图标与两行文案，实时预览、导出 PNG。
+          </p>
+          <span class="home-card__foot">320 × 64 · 原版底图 →</span>
         </a>
       </div>
     </section>

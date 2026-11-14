@@ -15,7 +15,7 @@ title: 指南
 - 想挑方块方案、换材质 → [方块与材质](./blocks-and-textures)
 - 遇到具体毛病 → [常见问题](./faq)
 
-## 四个工具
+## 五个工具
 
 | 工具 | 输入 | 输出 |
 | --- | --- | --- |
@@ -23,6 +23,7 @@ title: 指南
 | [地图画生成器](../tools/map-art) | 一张图片 | 地图数据文件、`give` 指令、施工文件 |
 | [图鉴](../tools/atlas) | — | 方块与物品的贴图、中文名、ID 与命令 |
 | [结构文件查看器](../tools/nbt) | 一个结构文件 | 分层视图、材料统计 |
+| [进度提示图生成器](../tools/advancement) | 两行文案 + 一个图标 | 320 × 64 进度提示 PNG |
 
 想改代码或加工具，看[新增一个工具](../dev/adding-a-tool)和仓库里的
 [TECHNICAL.md](https://github.com/lyynew/mcArt/blob/main/TECHNICAL.md)。
