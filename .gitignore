@@ -1,34 +1,33 @@
-# 系统
+# 系统 / 编辑器
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# 编辑器
 .vscode/
 .idea/
 *.swp
 
-# 依赖与构建产物
+# 依赖与站点构建产物
 node_modules/
 dist/
 docs/.vitepress/dist/
 docs/.vitepress/cache/
+docs/.vitepress/config.mts.timestamp-*
 *.local
 
 # 本地工作区数据（不是缓存，但不该进仓库）
 .workbuddy/
 
-# 贴图同步出来的副本（源在 原版材质/ 与 原版材质-items/，由 npm run sync:textures 生成）
+# 同步出来的副本：源在仓库里，由 predev / prebuild / pretest 自动生成
+# （docs/textures/ 来自 原版材质*，docs/public/legacy/ 来自 public/legacy/）
 docs/textures/
-
-# 旧版单文件页面的副本（源在 public/legacy/，由 npm run sync:legacy 生成）
 docs/public/legacy/
 
-# 构建中间产物（由 .build/*.py 重新生成）
+# .build/ 中间数据
+# 入库的只有：png_avg.py / catalog.py / fetch.py / lang/*.json / textures-manifest.json
+# 下面全是生成器缓存或本地验证产物，删掉不影响构建，需要时脚本会重新生成。
 .build/blocks.js
 .build/tex.js
-
-# 识别表的中间数据（scripts/build-block-extras.mjs 联网自动拉取，不进仓库）
+.build/t*.js
 .build/mc-tree.json
 .build/mc-ids.txt
 .build/mc-tex.txt
@@ -36,30 +35,16 @@ docs/public/legacy/
 .build/tex-need.txt
 .build/zh_cn.json
 .build/en_us.json
-
-# 临时测试脚本
-.build/t*.js
-
-# VitePress 加载 config 时的临时文件（构建被打断会留下）
-docs/.vitepress/config.mts.timestamp-*
-
-# 本地视觉验证用的临时脚本与截图（不参与构建）
-.build/shots/
-.build/cdp-shot.mjs
-.build/probe-*.js
-.build/edge-profile/
-
-# 构建前挪走的旧产物（safe-delete 拦下的，可手动清）
-.build/.trash/
-
-# 原版点阵字的下载缓存（源可随时由 scripts/build-unifont.mjs 重新拉取）
 .build/unifont*
 .build/asset-index-*.json
-
-# 方块立体图标的离线渲染中间数据（产物在 原版材质-icons/，已入库）
 .build/mc-models-*/
 .build/models/
-.build/icon-research/
 .build/block-icons-missing.json
-
+.build/icon-research/
+.build/downloads/
+.build/probe-*.js
+.build/shots/
+.build/cdp-shot.mjs
+.build/edge-profile/
+.build/.trash/
 .build/preview/

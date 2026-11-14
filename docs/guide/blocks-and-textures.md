@@ -37,7 +37,7 @@ title: 方块与材质
 [TECHNICAL.md](https://github.com/lyynew/mcArt/blob/main/TECHNICAL.md)。
 
 ::: warning 版权
-方块贴图版权归 Mojang Studios，仅供个人制作像素画使用，请勿商用或二次分发。这部分**不包含在 MIT 许可内**，代码本身才是 MIT。
+游戏素材版权归 Mojang Studios，依据 [Minecraft Usage Guidelines](https://www.minecraft.net/en-us/usage-guidelines) 用于本站这一非商业粉丝工具，请勿单独提取、再分发或商用；这部分**不包含在 MIT 代码许可内**。完整来源与免责声明见[关于页](../about)。
 :::
 
 ## 用高清材质包预览

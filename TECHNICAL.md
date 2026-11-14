@@ -6,9 +6,9 @@
 
 一个 VitePress 站点，分三个区：文章 `/guide/`、工具 `/tools/`、二次开发 `/dev/`。
 
-`src/` 是纯组件库，没有独立的应用入口。工具不是复制进文档站的第二份实现：`docs/tools/*.md` 只写一行组件挂载，实现和状态管理都留在 `src/tools/` 下，全站一份。组件用 `defineClientComponent` 注册，构建时不参与 SSR，canvas、IndexedDB、window 才不会进预渲染。
+`src/` 是纯组件库，没有独立的应用入口。工具不是复制进文档站的第二份实现：`docs/tools/*.md` 只写一行组件挂载，实现和状态管理都留在 `src/tools/` 下，全站一份。组件用 `theme/defineToolComponent.ts` 包装的异步组件注册，构建时不参与 SSR，canvas、IndexedDB、window 才不会进预渲染；等待期间显示一个像素加载圈。
 
-新增一个工具要登记四处：`theme/index.ts` 注册组件、`docs/tools/<name>.md` 挂页面、`config.mts` 加导航、`docs/tools/index.md` 与 `theme/HomePage.vue` 两张卡片。完整清单、目录约定与交付前自查见 [docs/dev/adding-a-tool.md](docs/dev/adding-a-tool.md)，参考实现是 `src/tools/map-art/`。
+新增一个工具要登记**四步五处**：`theme/index.ts` 注册组件、`docs/tools/<name>.md` 挂页面、`config.mts` 加导航、`docs/tools/index.md` 与 `theme/HomePage.vue` 两张卡片。完整清单、目录约定与交付前自查见 [docs/dev/adding-a-tool.md](docs/dev/adding-a-tool.md)，参考实现是 `src/tools/map-art/`。
 
 结构上的分工：纯算法放 `.ts`，状态放 `store.ts`，组件只渲染，页面只编排。
 
@@ -38,43 +38,49 @@ npm run fixtures   # 重新生成算法基准文件（一般不需要）
 docs/                         VitePress 站点（线上主体）
   .vitepress/config.mts       导航、侧栏、base、别名与版本注入
   .vitepress/head-script.ts   首屏内联脚本：定主题、定动效、给首页挂待施工标记
-  .vitepress/theme/           继承默认主题：注册工具组件、工具页整屏布局、
+  .vitepress/theme/           继承默认主题：defineToolComponent、工具页整屏布局、
                               导航显示开关（SiteControls）、首页施工动画的粘合层
   index.md / about.md         首页、关于
   guide/                      使用说明
   tools/                      工具页（一行组件挂载）
   dev/                        二次开发：新增工具的接线手册
   public/                     logo、favicon、字体授权文本、旧版页面副本（生成）
+  textures/                   静态贴图副本（由 sync-textures.mjs 生成，.gitignore）
 src/
   design/         设计令牌（tokens.css）、基础层（base.css，挂在 .mc-scope）、
                   基础组件 McWindow / McButton …
     builder/      首页施工动画引擎（纯逻辑 + canvas，不依赖 Vue）
     ambient/      首页背景环境层（图案库、网格落点、生命周期、渲染）
-  components/     跨工具复用的业务组件（方块格子、分组网格）
+  components/     跨工具复用的业务组件（方块格子、分组网格、缩略图）
   core/           纯逻辑：方块表、贴图、读图、颜色、转换、结构读写、gzip/zip
+    blocks.ts / block-extras.ts / items.ts   三张方块与物品总表
+    textures.ts / texture-catalog.ts / texture-source.ts
+                  贴图 URL、2134 条内置素材清单、筛选与取帧
+    block-icons.ts            立体方块图标索引（生成物）
   shared/         与业务无关的小工具：下载、剪贴板、防抖、超时
   tools/
     ToolShell.vue 工具页标准三栏外壳
+    shared/BuiltinTextureModal.vue  像素画 / 地图画 / 进度图共用的素材选择器
     pixel/        像素画生成器
     map-art/      地图画生成器（新工具的参考实现）
     atlas/        图鉴（方块按分组 / 物品按首字母）
     nbt-viewer/   结构文件查看器
     advancement/  进度提示图（原版 toast 底图 + unifont 点阵字 + 预渲染立体方块图标）
 public/
-  legacy/         旧版单文件页面，功能对照基准
-原版材质/          原版方块贴图，是贴图与平均色的唯一来源
-原版材质-items/    原版物品图标
-原版材质-gui/toast/ 原版 GUI 底图（进度提示框体，160×32）
-原版材质-font/     原版 unifont 点阵字表（unifont.bin，680 KB 定长二进制）
-原版材质-icons/    离线渲染的 32×32 立体方块图标（929 张，由 build-block-icons.mjs 生成）
-材质清单.txt       方块分组、色值、贴图文件名对照
-.build/           生成方块数据与平均色的 Python 脚本（改色板时才用）
-scripts/          贴图与旧版页面同步、算法基准生成、识别扩展表生成
-  build-unifont.mjs  从官方资源索引取 unifont.zip，转成定长点阵字表
-  build-block-icons.mjs 展开官方 models/block + blockstates，离线光栅化立体方块图标
-tests/fixtures/   算法基准文件，由旧版实现生成后冻结
+  legacy/         旧版单文件页面，功能对照基准（不能删）
+素材源目录（全部入库；贴图文件名即贴图键，图标文件名即 block id）
+  原版材质/            方块贴图 1303 张
+  原版材质-items/      物品图标 831 张
+  原版材质-gui/toast/  原版 GUI 底图 12 张（进度提示框体，160×32）
+  原版材质-font/       原版 unifont 点阵字表（unifont.bin，680 KB 定长二进制）
+  原版材质-icons/      离线渲染的 32×32 立体方块图标 929 张
+.build/               素材生成脚本（png_avg.py / catalog.py / fetch.py）与中间数据
+scripts/              导入、同步、生成、基准与构建辅助，共 13 个（见「素材与数据生成」）
+tests/fixtures/       算法基准文件，由旧版实现生成后冻结
 .github/workflows/deploy.yml   推 main 自动发布到 GitHub Pages
 ```
+
+素材源目录与 `src/core/` 下的数据表是**两回事**：前者是 PNG / 字表 / 模型产物，后者是可被 TypeScript 直接 import 的清单。改了源要重跑对应生成脚本，生成物同样入库，构建不用联网。
 
 ## 视觉
 
@@ -83,6 +89,7 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 - 标题用自托管的方舟像素字体（Ark Pixel 12px，SIL OFL 1.1），按 12 的整数倍放大才不会糊；正文用系统无衬线，标签与代码用等宽。
 - 默认主题用 `vitepress/theme-without-fonts`，不加载自带的一整套 Inter WebFont。
 - 字体文件在 `docs/.vitepress/theme/fonts/`，授权文本随站点发布在 `docs/public/LICENSE-ARK-PIXEL.txt`。字体作者 TakWolf，项目地址 https://github.com/TakWolf/ark-pixel-font 。
+- **进度提示图里的文字不是这套字体**：它用游戏原版 unifont 16×16 点阵逐像素绘制（`tools/advancement/unifont.ts`），字表在 `原版材质-font/unifont.bin`，预览与导出共用同一份绘制，见「素材与数据生成」。两套字体别混用。
 
 工具样式的作用域收敛在 `src/design/base.css`，所有规则挂在 `.mc-scope` 下；`ToolFrame` 带这个类，文档页一个像素都不受影响。工具内部保留游戏内 GUI 的浅灰面板（像素风、按格子对齐）。整屏高度归 `custom.css` 的 `.Layout.tool-page`，不要在工具里另写一套。
 
@@ -129,7 +136,7 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 
 ## 代码约定
 
-- **方块表分两层，别混用**。`core/blocks.ts` 的 `BLOCKS`（142 种）是像素画色板的唯一来源，`palettes.ts` 只从它推导，加条目会改变用户已存草稿的匹配结果；`core/block-extras.ts`（生成物）收识别用的其余大多数方块，两者合出 `findBlock` / `BLOCKS_BY_ID` 注册表。扩展表由 `scripts/build-block-extras.mjs` 从官方 1.21.4 资产生成，别手改生成文件。
+- **方块表分两层，别混用**。`core/blocks.ts` 的 `BLOCKS`（142 种）是像素画色板的唯一来源，`palettes.ts` 只从它推导，加条目会改变用户已存草稿的匹配结果；`core/block-extras.ts`（生成物）收识别用的其余大多数方块，两者合出 `findBlock` / `BLOCKS_BY_ID` 注册表。扩展表由 `scripts/build-block-extras.mjs` 从官方 1.21.4 语言文件 / 资产生成（与 26.3 贴图版本解耦，见「素材与数据生成」），别手改生成文件。
 - **查表前先归一**。结构文件的方块串可能带 `minecraft:` 前缀、`[facing=north]` 状态或墙上形态（告示牌、旗帜、头颅、火把），一律过 `normalizeBlockId` 再查，否则同一种方块会在材料统计里拆成好几行（`findBlock` 已封装）。
 - **大数组不进响应式**。画布是 25,600 格，用 `Int16Array` + canvas 命令式绘制，改动靠版本号 `revision` 通知重绘。做成 `reactive` 会直接卡死。
 - **纯逻辑放在 `core/` 或工具自己的 `.ts`**，不碰 DOM，可单测；读图、导出、下载这类碰 DOM 的放 `core/image.ts` / `export.ts` / `shared/`。结构文件与地图数据共用 `core/nbt-writer.ts`，不要各写一个 NBT 拼接器。
@@ -146,6 +153,9 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 - **手势锚点按被操作元素自己的矩形算**，不要按滚动容器算。画布在容器里居中、还有内边距，漏掉这段偏移会让双指缩放一路滚到边界。公式在 `core/viewport.ts` / `tools/pixel/gesture.ts`，配了单测。
 - **影响滚动范围的尺寸变化必须同步生效**。画布尺寸原先等下一帧重绘才更新，手势写 `scrollLeft` 会被旧的内容尺寸夹住（拖 120px 只滚 90px）。现在用 `applyCssSize` 同步改显示尺寸，位图尺寸留给重绘帧。
 - **画布容器要给 `min-width: 0` / `min-height: 0`**。flex 子项默认 `min-width: auto`，放大后 `clientWidth == scrollWidth`，横向就滚不动了。滚动区用 `margin: auto` 居中，配 `overscroll-behavior: contain` 防止把整页一起带走。
+- **共享组件扩展用可选 prop，默认行为必须不变**。`BuiltinTextureModal` 的 `pickOnly` / `allow` 都是这样加的：像素画、地图画不传，仍然拿解码后的 `SquareImage` 显示全部 2134 张；只有进度图传 `allow` 过滤出有立体图标的方块。给共享组件加必填参数或改默认分支，等于同时改三个工具。
+- **格子契约只要求最小字段**。`components/blocks/types.ts` 的 `SpriteDef { zh, en, id, tex, hex? }` 让方块、物品共用一套 `BlockGrid` / `BlockSlot`；`hex` 可选，物品图标的透明区域直接露槽底灰，正是原版物品栏观感。别为第二类数据复制第二份 CSS。
+- **能在离线算完的就不要留到浏览器**。立体方块图标由 `build-block-icons.mjs` 展开官方模型渲染成 929 张 32×32 PNG 入库，运行时只 `drawImage`。曾经用三张面贴图在 canvas 里拼等轴立方体，只对 399 个完整立方体成立，台阶、楼梯、酿造台、花草全错。生成物入库后构建不联网，也便于单测直接查文件。
 
 ## 算法与测试
 
@@ -174,6 +184,12 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 - `design/ambient/scene.test.ts` —— 淡出重叠去重、受限屏幕、24 小时模拟轮换与反复缩放
 - `design/ambient/field.test.ts` —— 帧与监听清理、后台恢复、减少动效、缓存及背板预算
 - `design/ambient/grid.test.ts` —— 矩形留白相交、加权采样、落点不越界且互不重叠、连续摆放会铺开、塞满后返回 null
+- `tools/atlas/composables/useAtlas.test.ts` —— 方块分组顺序、物品首字母分桶无重无漏、色板开关隔离、两套选中项互不干扰
+- `tools/advancement/toast.test.ts` / `unifont.test.ts` —— 文案整字截断、原版点阵字按码点取字形与 ASCII/CJK 步进
+- `core/block-icons.test.ts` —— 立体图标索引优先级、`_top` / `_side` 归一、每个 id 都有 32×32 PNG
+- `core/texture-catalog.test.ts` / `textures.test.ts` —— 内置素材清单与目录一致、26.3 贴图别名、GUI 底图与字表存在
+
+素材类生成物漏跑不会让构建失败，只会让界面静默少一块，所以这几组测试直接查文件系统，不只测函数。
 
 `.litematic` 另外用独立的 Python `litemapy` 对 18 万体素做过逐格交叉验证。质量回归还有一条：4×4 块平均色的 ΔE 对比。
 
@@ -187,18 +203,34 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 
 ## 素材与数据生成
 
-`原版材质/`（方块）与 `原版材质-items/`（物品）是贴图的唯一来源，两边有 72 个同名贴图，**必须分开存**。`scripts/sync-textures.mjs` 增量同步到 `docs/textures/`（方块在根、物品在 `items/`，该目录在 `.gitignore` 里），`scripts/copy-textures.mjs` 在 postbuild 把这一层直接拷进 `docs/.vitepress/dist/textures/`。**不要把贴图放回 `docs/public/`**：两千多张 16×16 小图让 VitePress 复制要十几分钟。URL 由 `core/textures.ts` 拼成 `BASE + tex + '.png'`，26.3 改名贴图走 `TEXTURE_ALIAS` 转换，别改方块表里的 `tex` 字段。旧版单文件页面同理，`scripts/sync-legacy.mjs` 把它从 `public/legacy/` 复制到 `docs/public/legacy/` 一起发布；`public/legacy/index.html` 是源文件，也是 sync-legacy 与 make-fixtures 的基准，不能删。
+素材有两个官方来源：**26.3 客户端 jar**（贴图、GUI 底图、模型与 blockstates、语言文件）和**官方资源索引**（unifont 字表）。`scripts/import-vanilla.mjs` 从本机 jar 抽出贴图到各自源目录，`scripts/build-unifont.mjs` 从资源索引拉 `.hex` 转成定长二进制。源目录全部入库，构建不联网。
+
+`原版材质/`（方块）与 `原版材质-items/`（物品）是贴图的唯一来源，两边有 72 个同名贴图，**必须分开存**。`scripts/sync-textures.mjs` 增量同步五条来源到 `docs/textures/`：方块在根、物品在 `items/`、GUI 底图在 `gui/toast/`、点阵字表在 `font/`、立体方块图标在 `block-icons/`（该目录在 `.gitignore` 里）。`scripts/copy-textures.mjs` 在 postbuild 把这一层直接拷进 `docs/.vitepress/dist/textures/`。**不要把贴图放回 `docs/public/`**：三千多张小图让 VitePress 复制要十几分钟。URL 由 `core/textures.ts` 拼成 `BASE + tex + '.png'`，26.3 改名贴图走 `TEXTURE_ALIAS` 转换，别改方块表里的 `tex` 字段。GUI 底图、点阵字表、立体图标都**不进 `TEXTURE_CATALOG`**——它们是界面素材，不该被选去画像素画。旧版单文件页面同理，`scripts/sync-legacy.mjs` 把它从 `public/legacy/` 复制到 `docs/public/legacy/` 一起发布；`public/legacy/index.html` 是源文件，也是 sync-legacy 与 make-fixtures 的基准，不能删。
 
 **原版有一批贴图不是单个方块**，而是把动画帧 / 多个面纵向堆成 `16×N`（`water_still` 是 16×512，`magma` 是 16×48）。整张画进方格会被压成一团横条纹，所以显示时统一只取**左上角、以窄边为边长的那一块**（正好是游戏里的第一帧）：canvas 走 `core/textures.ts` 的 `squareSide` / `drawTexture`，图鉴格子的 `<img>` 用 `object-fit: cover` + `object-position: left top`。`.build/png_avg.py` 算平均色时取同一块区域，配色和显示才对得上。规则只在这两处，别在同步脚本里裁源文件，也别改 `原版材质/` —— 完整帧数据要留着，用户自选的材质包也走同一套绘制逻辑。
 
-其他脚本：
+### 脚本清单
 
-- `scripts/build-block-extras.mjs` —— 从官方 1.21.4 的 assets / lang / textures 生成 `src/core/block-extras.ts`；生成器写文本用 Python 的 `writeTextPlain`，node 写出的文本会被 E-SafeNet 加密。
-- `scripts/build-texture-catalog.mjs` —— 扫两个素材目录、反查 `blocks.ts` / `block-extras.ts` / `items.ts` 的中文名，生成 `src/core/texture-catalog.ts`：像素画与地图画「使用内置素材」的清单（26.3 共 2134 张，方块 + 物品图标）。生成物**提交进仓库**，素材升级后重跑，`texture-catalog.test.ts` 会校验清单与目录是否一致。
-- `scripts/fetch-textures.sh` —— 补拉贴图；URL 要带 `/textures/`，curl 要 `-L`，否则 301 的 HTML 会被当成 png 存下来。
-- `.build/png_avg.py --json` —— 重算平均色，改色板时才跑。
-- `scripts/make-fixtures.mjs` —— 从旧版实现生成算法基准。
-- `scripts/migrate-blocks.mjs` —— 方块表迁移。
+| 类别 | 脚本 | 作用 |
+| --- | --- | --- |
+| 导入 | `scripts/import-vanilla.mjs` | 从本机 26.3 客户端 jar 抽方块 / 物品 / GUI 贴图与语言文件，写 `.build/textures-manifest.json` |
+| 导入 | `scripts/build-unifont.mjs` | 从官方资源索引取 `unifont.zip`，解析 `.hex` → 四段定长二进制 `unifont.bin`（21744 码位 / 680 KB） |
+| 导入 | `scripts/fetch-textures.sh` | 补拉识别表缺的贴图；URL 要带 `/textures/`，curl 要 `-L`，否则 301 的 HTML 会被当成 png 存下来 |
+| 同步 | `scripts/sync-textures.mjs` | 五个素材目录增量同步到 `docs/textures/` |
+| 同步 | `scripts/sync-legacy.mjs` | 旧版单文件页面复制到 `docs/public/legacy/` |
+| 同步 | `scripts/copy-textures.mjs` | postbuild 把贴图拷进产物，并清掉旧的一层 |
+| 生成 | `scripts/build-block-extras.mjs` | 从官方 1.21.4 的 assets / lang / textures 生成 `block-extras.ts`；生成器写文本用 Python 的 `writeTextPlain`，node 写出的文本会被 E-SafeNet 加密 |
+| 生成 | `scripts/build-items.mjs` | 生成 `items.ts`（563 条物品表） |
+| 生成 | `scripts/build-texture-catalog.mjs` | 扫素材目录、反查 `blocks.ts` / `block-extras.ts` / `items.ts` 的中文名，生成 `texture-catalog.ts`（26.3 共 2134 条）；`texture-catalog.test.ts` 校验清单与目录一致 |
+| 生成 | `scripts/build-block-icons.mjs` | 展开官方 `models/block` + `blockstates`，离线光栅化成 929 张 32×32 PNG 与 `block-icons.ts` 索引；零外部依赖，PNG 编解码与等轴投影全部手写 |
+| 生成 | `scripts/migrate-blocks.mjs` | 早期方块表迁移，一次性脚本，保留作来源说明 |
+| 基准 | `scripts/make-fixtures.mjs` | 从旧版实现生成算法基准 |
+| 辅助 | `scripts/clean-dist.mjs` | prebuild 把旧 dist rename 到 `.build/.trash/`，绕开本机安全删除策略（dev 还开着时会 EPERM，脚本会明确提示） |
+| 辅助 | `.build/png_avg.py --json` | 重算平均色，改色板时才跑；`.build/catalog.py` / `fetch.py` 是它的配套数据脚本 |
+
+**生成物都入库**：`block-extras.ts` / `items.ts` / `texture-catalog.ts` / `block-icons.ts` / `unifont.bin` / `原版材质-icons/*.png`。构建与测试只依赖仓库里的文件，不需要 jar、不需要联网；CI 只跑 `npm ci → test → build`。
+
+**升级游戏版本**：改 `import-vanilla.mjs` 的 `VERSION`（或传 `--version` / `--jar`）→ 重跑导入 → 依次重跑 `build-unifont.mjs`、`build-block-icons.mjs`、`build-texture-catalog.mjs` → `npm run sync` → 提交生成物。`build-block-extras.mjs` 走的是 1.21.4 语言文件镜像，跟贴图版本解耦，不用每次都跑。
 
 加一个配色方块的顺序：把 PNG 放进 `原版材质/`（文件名用方块 ID）→ 在 `src/core/blocks.ts` 补一条数据（中文名、分组、平均色）→ 重跑 `npm run dev`，同步脚本会带上新文件。改了色板记得重跑 `npm run fixtures`。
 
@@ -208,14 +240,22 @@ tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 
 站点挂在 `/mcArt/` 子路径下，`config.mts` 按 `GITHUB_ACTIONS` 环境变量自动切换 `base`，本地开发仍是根路径。产物是 VitePress 的静态多页站点，深链 `/tools/pixel.html` 刷新由 Pages 直接命中同名文件，不需要 hash 路由与 404 兜底。
 
+验线上 base 要跑 `GITHUB_ACTIONS=1 npm run build`，并确认产物里贴图 / 字表 URL 带 `/mcArt/`（例如 `/mcArt/textures/block-icons/grass_block.png`）。`npm run preview` 默认在根路径服务，不会带 base，要端到端验证就把 `dist` 挂到 Web 服务器的 `mcArt/` 子目录下再打开。
+
 ## 数据来源与许可
 
-- 方块贴图取自 Minecraft Java 版资源，版权归 Mojang Studios，仅供个人制作像素画使用，请勿商用或二次分发，**不包含在 MIT 许可内**。
-- 地图基础色表、明暗系数、`map_#.dat` 字段与 DataVersion 来自 Minecraft Wiki 的公开游戏数据。
-- 方块 → 基础色来自 `plonck/palette`（MIT）导出的 `blocks.csv`；`.litematic` 格式来自公开的 Litematica Version 6 规格说明。
-- CIEDE2000 / Floyd–Steinberg / Atkinson / Bayer 是公开算法，实现均为本项目自写，没有复制第三方代码。
+- **游戏素材**：方块 / 物品贴图、GUI 底图、模型与 blockstates、unifont 字表均取自 Minecraft Java 版官方客户端资源与官方资源索引，版权归 Mojang Studios，依据 [Minecraft Usage Guidelines](https://www.minecraft.net/en-us/usage-guidelines) 用于本站这一非商业粉丝工具，**不包含在 MIT 代码许可内**，请勿单独提取、再分发或商用。
+- **免责声明**：NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. 完整措辞见 `docs/about.md` 与 README。
+- **没有引入第三方图片**：进度图的立体方块图标由 `build-block-icons.mjs` 依据官方模型与贴图离线渲染生成。刻意没用 Wiki / 第三方站点的预渲染图库——那些内容带 CC BY-NC-SA，与本项目 MIT 代码叠加后授权链不干净。
+- **字体**：站点标题用 Ark Pixel 12px（SIL OFL 1.1，授权文本随站发布在 `docs/public/LICENSE-ARK-PIXEL.txt`）；进度图内的文字用游戏原版 unifont 16×16 点阵（与游戏素材同源），两套字体别混用。
+- **数据**：地图基础色表、明暗系数、`map_#.dat` 字段与 DataVersion 来自 Minecraft Wiki 的公开游戏数据；方块 → 基础色来自 `plonck/palette`（MIT）导出的 `blocks.csv`；`.litematic` 格式来自公开的 Litematica Version 6 规格说明。
+- **算法**：CIEDE2000 / Floyd–Steinberg / Atkinson / Bayer 是公开算法，实现均为本项目自写，没有复制第三方代码。
+
+## 已知限制
+
 - 导出的 PNG 与施工图始终是纯色；真实材质只用于画布预览。
 - 结构方块单次上限 48×48，更大的画幅会自动分块打包成 zip，附载入说明。
 - 基岩版 `.mcstructure` 尚未支持，需要另写一套导出器。
+- 立体方块图标覆盖 929 / 978 个方块；旗帜、潜影盒、箱子、头颅等实体模型没有静态图标，素材选择器里已过滤掉。
 
 代码以 [MIT](LICENSE) 发布。旧版功能说明见 [docs/guide/legacy-generator.md](docs/guide/legacy-generator.md)。

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.1-beta.1",
   "type": "module",
-  "description": "Minecraft 网页工具集 · 方块像素画 / 地图画 / 方块图鉴 / 结构查看器",
+  "description": "Minecraft 网页工具集 · 方块像素画 / 地图画 / 图鉴 / 结构查看器 / 进度提示图",
   "scripts": {
     "sync": "npm run sync:textures && npm run sync:legacy",
     "sync:textures": "node scripts/sync-textures.mjs",
