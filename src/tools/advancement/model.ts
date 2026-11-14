@@ -17,18 +17,17 @@ export const ICON_SIZE = 32
 export const ICON_X = 16
 export const ICON_Y = 16
 
-export const TEXT_X = 52
-export const TITLE_Y = 17
-export const DESC_Y = 37
+export const TEXT_X = 60
+/** 两行文字的位置，按参考示例图的文字包围盒反推：标题 x=60..131 / y=13..28，描述 y=35..50。
+ * 原版点阵字高 16px，行距 22px，整体在 64px 画布里居中。 */
+export const TITLE_Y = 13
+export const DESC_Y = 35
+export const GLYPH_HEIGHT = 16
 export const TEXT_RIGHT_PADDING = 10
 export const TEXT_MAX_WIDTH = TOAST_WIDTH - TEXT_X - TEXT_RIGHT_PADDING
 
-/** Ark Pixel 是 12px 设计的像素字体，用整数倍才不会糊 */
-export const FONT_SIZE = 12
-export const FONT_STACK = '"Ark Pixel", ui-monospace, monospace'
-
-/** 方舟像素字体随站点发布，绘制前必须等它加载完（见 render.ts） */
-export const FONT_LOAD = `${FONT_SIZE}px "Ark Pixel"`
+/** 原版点阵字表没加载完时的兜底，正常路径不会用到 */
+export const FALLBACK_FONT = '12px ui-monospace, monospace'
 
 /** 游戏原版进度提示：黄标题 + 白描述 */
 export const VANILLA_TITLE_COLOR = '#ffff55'

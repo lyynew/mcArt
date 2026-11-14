@@ -21,7 +21,8 @@ import {
   type IconChoice,
   type ToastSpec,
 } from './model'
-import { ensureFont, type ToastAssets } from './render'
+import type { ToastAssets } from './render'
+import { FONT_BYTES_EXPECTED } from './unifont'
 import { facesOf } from './cube'
 
 const EMPTY_ASSETS: ToastAssets = {
@@ -30,6 +31,7 @@ const EMPTY_ASSETS: ToastAssets = {
   side: null,
   flat: null,
   upload: null,
+  font: null,
 }
 
 const title = ref(DEFAULT_SPEC.title)
@@ -89,13 +91,25 @@ async function loadIcon(choice: IconChoice): Promise<void> {
   assets.value = { ...assets.value, ...next }
 }
 
-/** 页面挂载时调一次：字体 → 原版底图 → 默认图标 */
-async function init(): Promise<void> {
+/** 原版点阵字表，680 KB 定长二进制，加载一次常驻内存 */
+async function loadFont(): Promise<void> {
   try {
-    await ensureFont()
+    const url = `${import.meta.env.BASE_URL}textures/font/unifont.bin`
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const buf = await res.arrayBuffer()
+    if (buf.byteLength !== FONT_BYTES_EXPECTED) {
+      throw new Error(`字表长度 ${buf.byteLength}，应为 ${FONT_BYTES_EXPECTED}`)
+    }
+    assets.value = { ...assets.value, font: new Uint8Array(buf) }
   } catch {
-    iconMessage.value = '像素字体加载失败，文字会退回系统字体'
+    iconMessage.value = '原版点阵字加载失败，文字已退回系统字体'
   }
+}
+
+/** 页面挂载时调一次：点阵字 → 原版底图 → 默认图标 */
+async function init(): Promise<void> {
+  await loadFont()
   fontReady.value = true
 
   try {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { McInput, McNote, McWindow } from '@/design/components'
-import { TEXT_MAX_WIDTH } from '../model'
+import { GLYPH_HEIGHT, TEXT_MAX_WIDTH } from '../model'
 import { useAdvancement } from '../store'
 
 /**
@@ -30,7 +30,7 @@ function onPreset(): void {
       <McInput v-model="title" placeholder="标题，例如：海底世界！" aria-label="进度标题" />
       <McInput v-model="description" placeholder="描述，例如：有用的知识又双叒增加了，" aria-label="进度描述" />
 
-      <McNote>每行最多约 {{ Math.floor(TEXT_MAX_WIDTH / 12) }} 个汉字；超出的会按整字截断，不会缩字号。</McNote>
+      <McNote>每行最多约 {{ Math.floor(TEXT_MAX_WIDTH / GLYPH_HEIGHT) }} 个汉字（原版 16×16 点阵）；超出的会按整字截断。</McNote>
     </div>
   </McWindow>
 </template>

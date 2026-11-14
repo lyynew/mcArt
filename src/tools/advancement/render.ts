@@ -3,14 +3,15 @@
  *
  * 预览与 PNG 导出共用这一个 paint 函数，保证「看到的」和「下载的」逐像素一致。
  * 基准画布固定 320×64，导出倍率只改 canvas 尺寸 + 一次整体 scale，
- * 所有布局数字、贴图缩放、字号都不跟着变。
+ * 所有布局数字、贴图缩放、点阵字大小都不跟着变。
+ *
+ * 文字用游戏原版的 unifont 16×16 点阵逐像素绘制（见 unifont.ts），
+ * 不是矢量字体：这样才有和游戏里一样的 1px 笔画、无抗锯齿硬边。
  */
 import {
   BACKGROUND_SCALE,
   DESC_Y,
-  FONT_LOAD,
-  FONT_SIZE,
-  FONT_STACK,
+  FALLBACK_FONT,
   ICON_SIZE,
   ICON_X,
   ICON_Y,
@@ -22,6 +23,7 @@ import {
 } from './model'
 import { fitLines, truncationNote, type FitResult } from './toast'
 import { paintCube } from './cube'
+import { drawUnifontText, measureUnifont } from './unifont'
 
 export interface ToastAssets {
   /** 原版 toast sprite（160×32） */
@@ -33,33 +35,14 @@ export interface ToastAssets {
   flat: CanvasImageSource | null
   /** 用户上传的图 */
   upload: CanvasImageSource | null
+  /** 原版 unifont 点阵字表（定长二进制，见 scripts/build-unifont.mjs） */
+  font: Uint8Array | null
 }
 
 export interface PaintResult {
   title: FitResult
   description: FitResult
   note: string
-}
-
-/**
- * 等像素字体就绪。
- *
- * Ark Pixel 按 unicode-range 拆成 Latin 与简中两片，FontFace.load 不传文本
- * 时只加载空格的字形——中文会静默掉回系统字体，而且首屏那张图已经导出错了。
- * 所以传一段同时含中英文的探针，把两片都拉下来。
- */
-let fontPromise: Promise<void> | null = null
-
-export function ensureFont(): Promise<void> {
-  if (fontPromise) return fontPromise
-  fontPromise = (async () => {
-    if (typeof document === 'undefined' || !document.fonts) return
-    const probe =
-      '进度海底世界有用的知识又双叒增加了游戏开始了' +
-      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789，。！？'
-    await document.fonts.load(FONT_LOAD, probe)
-  })()
-  return fontPromise
 }
 
 /**
@@ -133,15 +116,20 @@ export function paintToast(
   }
   ctx.restore()
 
-  ctx.font = `${FONT_SIZE}px ${FONT_STACK}`
-  ctx.textBaseline = 'top'
-  const measure = (s: string): number => ctx.measureText(s).width
-  const lines = fitLines(spec.title, spec.description, measure)
-
-  ctx.fillStyle = spec.titleColor
-  ctx.fillText(lines.title.text, TEXT_X, TITLE_Y)
-  ctx.fillStyle = spec.descColor
-  ctx.fillText(lines.description.text, TEXT_X, DESC_Y)
+  // 点阵字宽度是固定步进，测量不依赖 canvas；预览、导出、单测同一套规则
+  const lines = fitLines(spec.title, spec.description, measureUnifont)
+  if (assets.font) {
+    drawUnifontText(ctx, lines.title.text, TEXT_X, TITLE_Y, spec.titleColor, assets.font)
+    drawUnifontText(ctx, lines.description.text, TEXT_X, DESC_Y, spec.descColor, assets.font)
+  } else {
+    // 字表还在加载（或加载失败）时用系统字顶一下，别让文字整块消失
+    ctx.font = FALLBACK_FONT
+    ctx.textBaseline = 'top'
+    ctx.fillStyle = spec.titleColor
+    ctx.fillText(lines.title.text, TEXT_X, TITLE_Y)
+    ctx.fillStyle = spec.descColor
+    ctx.fillText(lines.description.text, TEXT_X, DESC_Y)
+  }
 
   return { ...lines, note: truncationNote(lines) }
 }

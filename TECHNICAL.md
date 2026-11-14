@@ -59,15 +59,17 @@ src/
     map-art/      地图画生成器（新工具的参考实现）
     atlas/        图鉴（方块按分组 / 物品按首字母）
     nbt-viewer/   结构文件查看器
-    advancement/  进度提示图（原版 toast 底图 + 等轴方块图标）
+    advancement/  进度提示图（原版 toast 底图 + unifont 点阵字 + 等轴方块）
 public/
   legacy/         旧版单文件页面，功能对照基准
 原版材质/          原版方块贴图，是贴图与平均色的唯一来源
 原版材质-items/    原版物品图标
 原版材质-gui/toast/ 原版 GUI 底图（进度提示框体，160×32）
+原版材质-font/     原版 unifont 点阵字表（unifont.bin，680 KB 定长二进制）
 材质清单.txt       方块分组、色值、贴图文件名对照
 .build/           生成方块数据与平均色的 Python 脚本（改色板时才用）
 scripts/          贴图与旧版页面同步、算法基准生成、识别扩展表生成
+  build-unifont.mjs  从官方资源索引取 unifont.zip，转成定长点阵字表
 tests/fixtures/   算法基准文件，由旧版实现生成后冻结
 .github/workflows/deploy.yml   推 main 自动发布到 GitHub Pages
 ```

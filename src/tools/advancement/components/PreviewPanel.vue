@@ -32,9 +32,9 @@ watch([spec, assets, fontReady], repaint)
     </div>
 
     <div class="preview__bar">
-      <McNote v-if="!fontReady">正在加载像素字体…</McNote>
+      <McNote v-if="!fontReady">正在加载原版点阵字…</McNote>
       <McNote v-else-if="note" tone="warn">{{ note }}</McNote>
-      <McNote v-else>实时预览 · 底图为游戏原版进度提示 · 只导出 PNG</McNote>
+      <McNote v-else>实时预览 · 原版底图 + 原版点阵字 · 只导出 PNG</McNote>
     </div>
   </McWindow>
 </template>

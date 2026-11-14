@@ -11,6 +11,7 @@
  *   原版材质/           → docs/textures/                （方块，键名就是文件名）
  *   原版材质-items/     → docs/textures/items/          （物品，键名带 items/ 前缀）
  *   原版材质-gui/toast/ → docs/textures/gui/toast/      （进度提示底图，键名带 gui/toast/ 前缀）
+ *   原版材质-font/      → docs/textures/font/            （原版 unifont 点阵字，单个 .bin）
  *
  * 分开目录是因为方块与物品有 72 个同名贴图（告示牌、蜡烛、酿造台…），
  * 平铺到一起会互相覆盖；GUI 底图是界面素材，更不能和图标混在一处。
@@ -21,6 +22,7 @@
  * 用法：node scripts/sync-textures.mjs
  */
 import { readdir, stat, mkdir, copyFile, rm } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -81,3 +83,21 @@ async function sync(from, to, label) {
 await sync(join(root, '原版材质'), destRoot, '方块贴图')
 await sync(join(root, '原版材质-items'), join(destRoot, 'items'), '物品贴图')
 await sync(join(root, '原版材质-gui', 'toast'), join(destRoot, 'gui', 'toast'), 'GUI 底图')
+
+// 点阵字表不是 PNG，不走上面的通用 sync；单文件比对大小后复制
+const fontFrom = join(root, '原版材质-font', 'unifont.bin')
+const fontTo = join(destRoot, 'font', 'unifont.bin')
+if (existsSync(fontFrom)) {
+  await mkdir(dirname(fontTo), { recursive: true })
+  let needCopy = true
+  try {
+    const [a, b] = await Promise.all([stat(fontFrom), stat(fontTo)])
+    needCopy = a.size !== b.size || a.mtimeMs > b.mtimeMs
+  } catch {
+    /* 目标不存在 */
+  }
+  if (needCopy) await copyFile(fontFrom, fontTo)
+  console.log(`点阵字表：${needCopy ? '已拷贝' : '无变化'}`)
+} else {
+  console.log('点阵字表：源不存在，先跑 node scripts/build-unifont.mjs')
+}

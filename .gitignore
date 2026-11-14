@@ -51,3 +51,7 @@ docs/.vitepress/config.mts.timestamp-*
 
 # 构建前挪走的旧产物（safe-delete 拦下的，可手动清）
 .build/.trash/
+
+# 原版点阵字的下载缓存（源可随时由 scripts/build-unifont.mjs 重新拉取）
+.build/unifont*
+.build/asset-index-*.json
