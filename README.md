@@ -61,6 +61,6 @@ npm run preview      # 用生产产物起本地服务
 
 NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
 
-站点每一页底部都显示这份严正声明（两行简版，整屏工具页更紧凑），详细说明在[关于页](https://lyynew.github.io/mcArt/about.html)，实现在 `docs/.vitepress/theme/SiteDisclaimer.vue`。若认为本站内容侵犯您的合法权益，请通过 [GitHub Issues](https://github.com/lyynew/mcArt/issues) 联系我们，我们会及时处理。
+首页与关于页底部显示这份严正声明（两行简版），工具页底部另有一行极简提示，详细说明在[关于页](https://lyynew.github.io/mcArt/about.html)，实现在 `docs/.vitepress/theme/SiteDisclaimer.vue`。若认为本站内容侵犯您的合法权益，请通过 [GitHub Issues](https://github.com/lyynew/mcArt/issues) 联系我们，我们会及时处理。
 
 代码以 [MIT](LICENSE) 发布。问题与建议走 [GitHub Issues](https://github.com/lyynew/mcArt/issues)。

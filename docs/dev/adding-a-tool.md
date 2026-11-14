@@ -65,9 +65,10 @@ src/tools/<name>/
 - 每个 grid 子项都要有 `min-width: 0`，否则一长串说明会把整行撑出屏幕
   （结构查看器在手机端踩过，连带顶栏汉堡按钮都被挤走）。
 - 工具页的 `.md` 用 `layout: page` + `pageClass: tool-page`，
-  内容只写 `<ToolFrame><ToolXxx /></ToolFrame>`。底部严正声明由
-  `theme/SiteDisclaimer.vue` 经 `Layout.vue` 的 `#layout-bottom` 插槽统一提供
-  （工具页自动切成紧凑条），工具里不要自己写页脚，也不再加 `footer: false`。
+  内容只写 `<ToolFrame><ToolXxx /></ToolFrame>`。工具页底部会自动带一行极简
+  版权提示（`theme/SiteDisclaimer.vue`，显示规则由 `custom.css` 按页面类控制：
+  首页 / 关于页简版、工具页极简行、文档页不显示），工具里不要自己写页脚，
+  也不再加 `footer: false`。
 
 ### 舞台里的画布 / 固定比例块
 
@@ -90,7 +91,7 @@ src/tools/<name>/
 1. `docs/.vitepress/theme/index.ts` —— `app.component('ToolXxx', defineToolComponent(() => import('@/tools/<name>/<Name>Page.vue')))`。
    **必须用 `theme/defineToolComponent.ts` 的包装**：它是异步客户端组件，构建时不参与 SSR，canvas / IndexedDB / window 才不会进预渲染，等待期间还会顶一个像素加载圈。别照抄 VitePress 文档里的 `defineClientComponent`，本项目没用它。
 2. `docs/tools/<name>.md` —— 页面本体，只写 frontmatter + `<ToolFrame><ToolXxx /></ToolFrame>`
-   （`layout: page` + `pageClass: tool-page`）。底部声明不用管，全局插槽会带。
+   （`layout: page` + `pageClass: tool-page`）。底部的极简版权提示不用管，全局插槽会带。
 3. `docs/.vitepress/config.mts` —— 顶部「工具」下拉加链接；有侧栏的区再补侧栏项，站点描述顺手同步。
 4. `docs/tools/index.md` 工具卡片 + `docs/.vitepress/theme/HomePage.vue` 首页卡片 —— 两处文案与入口（所以是「四步五处」）。首页 `hero` 面包屑与卡片数量标题也要一起改。
 

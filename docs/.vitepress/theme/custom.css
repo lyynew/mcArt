@@ -945,59 +945,64 @@ html[data-motion='off'] .home-hero__art img {
 }
 
 /* ============================================================
-   全站底部严正声明（theme/SiteDisclaimer.vue）
+   底部严正声明（theme/SiteDisclaimer.vue）
    ------------------------------------------------------------
-   组件用的是 <style scoped>，祖先类 .Layout.tool-page / .home-page
-   只能在这张全局表里匹配。这里的三段选择器优先级高于组件的 [data-v-*]，
-   能稳定覆盖，不用 !important。工具页是 100dvh 整屏工作台，只留紧凑条，
-   否则会把画布区压矮。
+   挂在 #layout-bottom 插槽，但按页面类控制显示：
+   - 文档页默认 display:none（声明全文在关于页，文档页里再放一份
+     既重复、还会被固定侧栏盖住左侧）
+   - 首页与关于页显示两行简版
+   - 整屏工具页只留一行极小小字，不挤占工作台
+   组件用的是 <style scoped>，祖先类只能在这张全局表里匹配；
+   这里的多段选择器优先级高于 [data-v-*]，不需要 !important。
    ============================================================ */
-.Layout.home-page .legal {
-  border-top: none;
+.legal {
+  display: none;
 }
 
-.Layout.tool-page .legal__inner {
-  max-width: none;
-  padding: 6px 16px;
+.Layout.home-page .legal,
+.Layout.about-page .legal {
+  display: block;
+}
+
+.Layout.home-page .legal {
+  border-top: none;
 }
 
 .Layout.tool-page .legal__full {
   display: none;
 }
 
-.Layout.tool-page .legal__compact {
+.Layout.tool-page .legal {
+  display: flex;
+}
+
+.Layout.tool-page .legal__mini {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 10px;
-  min-height: 30px;
+  align-items: baseline;
+  gap: 1px 8px;
+  width: 100%;
   margin: 0;
+  padding: 3px 12px 4px;
   font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+
+.Layout.tool-page .legal__mini a {
+  margin-left: auto;
   color: var(--ink-2);
+  white-space: nowrap;
 }
 
-.Layout.tool-page .legal__tag {
-  padding: 2px 6px;
-  font-size: 11px;
-}
-
-.Layout.tool-page .legal__compact-text {
-  flex: 1 1 260px;
-  min-width: 0;
-}
-
-.Layout.tool-page .legal__link {
-  font-size: 11px;
+.Layout.tool-page .legal__mini a:hover {
+  color: var(--green);
 }
 
 @media (max-width: 600px) {
-  .Layout.tool-page .legal__inner {
-    padding: 5px 12px;
-  }
-
-  .Layout.tool-page .legal__compact {
-    font-size: 10.5px;
+  .Layout.tool-page .legal__mini {
+    font-size: 9px;
+    padding: 2px 10px 3px;
   }
 }

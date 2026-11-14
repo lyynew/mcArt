@@ -1,15 +1,14 @@
 <script setup lang="ts">
 /**
- * 全站底部的严正声明。
+ * 底部严正声明。
  *
- * 挂在 Layout.vue 的 #layout-bottom 插槽上，是默认主题 .Layout flex 列的
- * 最后一项，所以文档页、首页、工具页都会出现。不能只写进 themeConfig.footer：
- * VitePress 那个 VPFooter 在有侧栏的页面会被 display:none，首页和五个工具页
- * 过去也写着 footer: false —— 靠它兜不住「每页底部都有声明」。
+ * 挂在 Layout.vue 的 #layout-bottom 插槽上，但**不是每页都显示**，由
+ * theme/custom.css 按页面类控制：首页与关于页显示两行简版，整屏工具页
+ * 只在最后留一行极小小字（不挤占工作台），其余文档页不显示——声明全文
+ * 在关于页，文档页里再放一份既重复又会被侧栏遮挡。
  *
  * 内容按 Mojang Usage Guidelines 的要求写：显著、明确非官方、不暗示关联。
- * 底部只留两行简版（官方要求的英文原句 + 一段中文），素材来源与许可的
- * 详细说明在关于页。工具页是 100dvh 整屏工作台，由 CSS 切成紧凑条。
+ * 素材来源与许可的详细说明在关于页。
  */
 import { useData } from 'vitepress'
 
@@ -24,7 +23,7 @@ const guidelines = 'https://www.minecraft.net/en-us/usage-guidelines'
 <template>
   <aside class="legal" aria-label="版权与免责声明">
     <div class="legal__inner">
-      <!-- 文档页 / 首页：两行简版，详细来源与许可说明放关于页 -->
+      <!-- 首页 / 关于页：两行简版，详细来源与许可说明放关于页 -->
       <div class="legal__full">
         <p class="legal__head">
           <span class="legal__tag">严正声明</span>
@@ -40,14 +39,12 @@ const guidelines = 'https://www.minecraft.net/en-us/usage-guidelines'
         </p>
       </div>
 
-      <!-- 整屏工具页：紧凑条。完整版由全局 CSS 按 .Layout.tool-page 隐藏 -->
-      <p class="legal__compact">
-        <span class="legal__tag">严正声明</span>
-        <span class="legal__compact-text">
-          NOT AN OFFICIAL MINECRAFT PRODUCT · 与 Mojang / Microsoft 无关联 ·
-          游戏素材版权归 Mojang Studios，不得单独提取或商用
+      <!-- 整屏工具页：极简一行小字。其余页面的显示/隐藏由 custom.css 按页面类控制 -->
+      <p class="legal__mini">
+        <span>
+          NOT AN OFFICIAL MINECRAFT PRODUCT · 非官方粉丝工具 · 游戏素材版权归 Mojang Studios
         </span>
-        <a class="legal__link" :href="aboutHref" target="_blank" rel="noopener noreferrer">完整声明 →</a>
+        <a :href="aboutHref" target="_blank" rel="noopener noreferrer">详情</a>
       </p>
     </div>
   </aside>
@@ -127,7 +124,8 @@ const guidelines = 'https://www.minecraft.net/en-us/usage-guidelines'
   text-underline-offset: 3px;
 }
 
-.legal__compact {
+/* 工具页的极简条默认藏起来，custom.css 里按 .Layout.tool-page 打开 */
+.legal__mini {
   display: none;
 }
 
@@ -146,7 +144,8 @@ const guidelines = 'https://www.minecraft.net/en-us/usage-guidelines'
 }
 
 /*
- * 文档页 / 首页 / 工具页三种形态的切换规则在 theme/custom.css 里。
+ * 显示/隐藏与工具页极简条的规则都在 theme/custom.css 里，按页面类控制：
+ * 默认（文档页）不显示，首页与关于页显示两行简版，工具页只留一行极小小字。
  * 别在这里用 :global(.Layout.tool-page) 选祖先：构建时 CSS 压缩器会吞掉
  * :global() 之后的后代选择器，产物变成 .Layout.tool-page{display:none}，
  * 整个工具页会被隐藏。祖先类只能在全局样式表里写完整选择器。
