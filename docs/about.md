@@ -36,7 +36,7 @@ mcArt 是一个 Minecraft 周边的小工具站：把图片变成方块画或地
 > NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
 > 本站是非官方的 Minecraft 粉丝工具，与 Mojang Studios、Microsoft 无关联，也未获其认可或支持。
 
-本页是完整版；站点每一页底部也会显示同一份「严正声明」，工具页为紧凑条。若认为本站内容侵犯您的合法权益，请通过 [GitHub Issues](https://github.com/lyynew/mcArt/issues) 联系我们，我们会及时处理。
+站点每一页底部显示的是这份声明的**两行简版**（整屏工具页更紧凑），完整来源与许可说明以本页为准。若认为本站内容侵犯您的合法权益，请通过 [GitHub Issues](https://github.com/lyynew/mcArt/issues) 联系我们，我们会及时处理。
 
 ## 反馈
 
