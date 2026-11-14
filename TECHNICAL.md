@@ -39,7 +39,8 @@ docs/                         VitePress 站点（线上主体）
   .vitepress/config.mts       导航、侧栏、base、别名与版本注入
   .vitepress/head-script.ts   首屏内联脚本：定主题、定动效、给首页挂待施工标记
   .vitepress/theme/           继承默认主题：defineToolComponent、工具页整屏布局、
-                              导航显示开关（SiteControls）、首页施工动画的粘合层
+                              导航显示开关（SiteControls）、全站底部声明（SiteDisclaimer）、
+                              首页施工动画的粘合层
   index.md / about.md         首页、关于
   guide/                      使用说明
   tools/                      工具页（一行组件挂载）
@@ -92,6 +93,10 @@ tests/fixtures/       算法基准文件，由旧版实现生成后冻结
 - **进度提示图里的文字不是这套字体**：它用游戏原版 unifont 16×16 点阵逐像素绘制（`tools/advancement/unifont.ts`），字表在 `原版材质-font/unifont.bin`，预览与导出共用同一份绘制，见「素材与数据生成」。两套字体别混用。
 
 工具样式的作用域收敛在 `src/design/base.css`，所有规则挂在 `.mc-scope` 下；`ToolFrame` 带这个类，文档页一个像素都不受影响。工具内部保留游戏内 GUI 的浅灰面板（像素风、按格子对齐）。整屏高度归 `custom.css` 的 `.Layout.tool-page`，不要在工具里另写一套。
+
+全站底部的严正声明在 `theme/SiteDisclaimer.vue`，挂在 `Layout.vue` 的 `#layout-bottom` 插槽：文档页与首页是完整版，整屏工具页由 `custom.css` 切成紧凑条。刻意不用 `themeConfig.footer` —— VitePress 的 `VPFooter` 在有侧栏的页面会被 `display:none`，首页和工具页过去又都写了 `footer: false`，只有最外层插槽能覆盖每一页。
+
+> **样式坑**：组件的 `<style scoped>` 里不要用 `:global(.Layout.tool-page)` 匹配祖先。构建时 CSS 压缩器会吞掉 `:global()` 之后的后代选择器，产物退化成 `.Layout.tool-page{display:none}`，整个工具页会消失。祖先类一律在 `custom.css` 写完整选择器，三段类名的优先级足以盖过 `[data-v-*]`。
 
 ## 首页施工动画
 
@@ -245,7 +250,7 @@ tests/fixtures/       算法基准文件，由旧版实现生成后冻结
 ## 数据来源与许可
 
 - **游戏素材**：方块 / 物品贴图、GUI 底图、模型与 blockstates、unifont 字表均取自 Minecraft Java 版官方客户端资源与官方资源索引，版权归 Mojang Studios，依据 [Minecraft Usage Guidelines](https://www.minecraft.net/en-us/usage-guidelines) 用于本站这一非商业粉丝工具，**不包含在 MIT 代码许可内**，请勿单独提取、再分发或商用。
-- **免责声明**：NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. 完整措辞见 `docs/about.md` 与 README。
+- **免责声明**：NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT. 这份声明由 `theme/SiteDisclaimer.vue` 显示在**每一页底部**（工具页为紧凑条），完整措辞见 `docs/about.md` 与 README。
 - **没有引入第三方图片**：进度图的立体方块图标由 `build-block-icons.mjs` 依据官方模型与贴图离线渲染生成。刻意没用 Wiki / 第三方站点的预渲染图库——那些内容带 CC BY-NC-SA，与本项目 MIT 代码叠加后授权链不干净。
 - **字体**：站点标题用 Ark Pixel 12px（SIL OFL 1.1，授权文本随站发布在 `docs/public/LICENSE-ARK-PIXEL.txt`）；进度图内的文字用游戏原版 unifont 16×16 点阵（与游戏素材同源），两套字体别混用。
 - **数据**：地图基础色表、明暗系数、`map_#.dat` 字段与 DataVersion 来自 Minecraft Wiki 的公开游戏数据；方块 → 基础色来自 `plonck/palette`（MIT）导出的 `blocks.csv`；`.litematic` 格式来自公开的 Litematica Version 6 规格说明。

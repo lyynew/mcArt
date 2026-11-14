@@ -64,8 +64,10 @@ src/tools/<name>/
   把预览提到最前，免得手机上先滑过一整屏滑杆才看到画。
 - 每个 grid 子项都要有 `min-width: 0`，否则一长串说明会把整行撑出屏幕
   （结构查看器在手机端踩过，连带顶栏汉堡按钮都被挤走）。
-- 工具页的 `.md` 用 `layout: page` + `pageClass: tool-page` + `footer: false`，
-  内容只写 `<ToolFrame><ToolXxx /></ToolFrame>`。
+- 工具页的 `.md` 用 `layout: page` + `pageClass: tool-page`，
+  内容只写 `<ToolFrame><ToolXxx /></ToolFrame>`。底部严正声明由
+  `theme/SiteDisclaimer.vue` 经 `Layout.vue` 的 `#layout-bottom` 插槽统一提供
+  （工具页自动切成紧凑条），工具里不要自己写页脚，也不再加 `footer: false`。
 
 ### 舞台里的画布 / 固定比例块
 
@@ -88,7 +90,7 @@ src/tools/<name>/
 1. `docs/.vitepress/theme/index.ts` —— `app.component('ToolXxx', defineToolComponent(() => import('@/tools/<name>/<Name>Page.vue')))`。
    **必须用 `theme/defineToolComponent.ts` 的包装**：它是异步客户端组件，构建时不参与 SSR，canvas / IndexedDB / window 才不会进预渲染，等待期间还会顶一个像素加载圈。别照抄 VitePress 文档里的 `defineClientComponent`，本项目没用它。
 2. `docs/tools/<name>.md` —— 页面本体，只写 frontmatter + `<ToolFrame><ToolXxx /></ToolFrame>`
-   （`layout: page` + `pageClass: tool-page` + `footer: false`）。
+   （`layout: page` + `pageClass: tool-page`）。底部声明不用管，全局插槽会带。
 3. `docs/.vitepress/config.mts` —— 顶部「工具」下拉加链接；有侧栏的区再补侧栏项，站点描述顺手同步。
 4. `docs/tools/index.md` 工具卡片 + `docs/.vitepress/theme/HomePage.vue` 首页卡片 —— 两处文案与入口（所以是「四步五处」）。首页 `hero` 面包屑与卡片数量标题也要一起改。
 
@@ -134,4 +136,8 @@ src/tools/<name>/
 - 不要给舞台里的固定比例块只定宽度就完事，矮视口会溢出（见「舞台里的画布」）
 - 不要在组件里复制算法；有第二个工具要用，就提到 `src/core/`
 - 不要给 VitePress 页面加第二套导航；顶栏、侧栏、搜索都归默认主题
+- 不要在工具页里另写页脚或版权声明；底部统一由 `SiteDisclaimer.vue` 负责，改文案只改一处
+- 不要在 `<style scoped>` 里用 `:global(.Layout.tool-page)` 匹配祖先：构建时的 CSS
+  压缩器会吞掉后代选择器，产物退化成 `.Layout.tool-page{display:none}`（整页消失）。
+  祖先类一律在 `theme/custom.css` 里写完整选择器
 - 不要在算法里引第三方压缩 / NBT 库；`src/core/archive.ts` 与 `nbt-writer.ts` 已经够用

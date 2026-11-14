@@ -943,3 +943,61 @@ html[data-motion='off'] .home-hero__art img {
     animation: none;
   }
 }
+
+/* ============================================================
+   全站底部严正声明（theme/SiteDisclaimer.vue）
+   ------------------------------------------------------------
+   组件用的是 <style scoped>，祖先类 .Layout.tool-page / .home-page
+   只能在这张全局表里匹配。这里的三段选择器优先级高于组件的 [data-v-*]，
+   能稳定覆盖，不用 !important。工具页是 100dvh 整屏工作台，只留紧凑条，
+   否则会把画布区压矮。
+   ============================================================ */
+.Layout.home-page .legal {
+  border-top: none;
+}
+
+.Layout.tool-page .legal__inner {
+  max-width: none;
+  padding: 6px 16px;
+}
+
+.Layout.tool-page .legal__full {
+  display: none;
+}
+
+.Layout.tool-page .legal__compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  min-height: 30px;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.Layout.tool-page .legal__tag {
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+.Layout.tool-page .legal__compact-text {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.Layout.tool-page .legal__link {
+  font-size: 11px;
+}
+
+@media (max-width: 600px) {
+  .Layout.tool-page .legal__inner {
+    padding: 5px 12px;
+  }
+
+  .Layout.tool-page .legal__compact {
+    font-size: 10.5px;
+  }
+}

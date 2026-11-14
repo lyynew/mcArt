@@ -199,9 +199,7 @@ export default defineConfig({
     sidebarMenuLabel: '目录',
     externalLinkIcon: true,
 
-    footer: {
-      message: '代码以 MIT 发布 · 方块贴图版权归 Mojang Studios，仅供个人制作像素画使用',
-      copyright: 'mcArt · 纯前端，图片不上传',
-    },
+    // 不配 themeConfig.footer：默认 VPFooter 在有侧栏的页面会被隐藏，
+    // 底部声明统一由 Layout.vue 的 #layout-bottom 插槽（SiteDisclaimer.vue）承担。
   },
 })
