@@ -22,15 +22,17 @@ import {
   type ToastSpec,
 } from './model'
 import { fitLines, truncationNote, type FitResult } from './toast'
-import { paintCube } from './cube'
 import { drawUnifontText, measureUnifont } from './unifont'
 
 export interface ToastAssets {
   /** 原版 toast sprite（160×32） */
   background: CanvasImageSource | null
-  /** 方块的顶面 / 侧面贴图 */
-  top: CanvasImageSource | null
-  side: CanvasImageSource | null
+  /**
+   * 离线渲染好的 32×32 立体方块图标。
+   * 原版 jar 里没有这种 PNG（游戏里是运行时按模型渲染的），由
+   * scripts/build-block-icons.mjs 依据官方模型批量生成后放进静态目录。
+   */
+  block: CanvasImageSource | null
   /** 物品平面图标 */
   flat: CanvasImageSource | null
   /** 用户上传的图 */
@@ -106,7 +108,8 @@ export function paintToast(
   ctx.save()
   ctx.translate(ICON_X, ICON_Y)
   if (spec.icon.kind === 'block') {
-    paintCube(ctx, { top: assets.top ?? undefined, side: assets.side ?? undefined }, ICON_SIZE)
+    // 预渲染图本身就是 32×32，1:1 贴进图标框；运行时不再拼三面
+    if (assets.block) ctx.drawImage(assets.block, 0, 0, ICON_SIZE, ICON_SIZE)
   } else {
     const img = spec.icon.kind === 'upload' ? assets.upload : assets.flat
     if (img) {

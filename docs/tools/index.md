@@ -44,7 +44,7 @@ title: 工具
       <span class="tool-card__name">进度提示图生成器</span>
       <span class="tool-card__tag">可用</span>
     </span>
-    <span class="tool-card__desc">用游戏原版进度提示底图，配上方块等轴图标或物品图标，填两行中文文案，实时预览后导出 PNG。</span>
+    <span class="tool-card__desc">用游戏原版进度提示底图，配上原版立体方块图标或物品图标，填两行中文文案，实时预览后导出 PNG。</span>
     <span class="tool-card__meta">320 × 64 · 原版底图 · 1× / 2× / 4× · 只出 PNG</span>
   </a>
 </div>

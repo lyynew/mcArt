@@ -23,12 +23,10 @@ import {
 } from './model'
 import type { ToastAssets } from './render'
 import { FONT_BYTES_EXPECTED } from './unifont'
-import { facesOf } from './cube'
 
 const EMPTY_ASSETS: ToastAssets = {
   background: null,
-  top: null,
-  side: null,
+  block: null,
   flat: null,
   upload: null,
   font: null,
@@ -73,18 +71,20 @@ async function loadIcon(choice: IconChoice): Promise<void> {
   // 免得切走再切回来时IconKind 和残留贴图对不上。
   if (choice.kind === 'upload') {
     if (token !== iconToken) return
-    assets.value = { ...assets.value, top: null, side: null, flat: null }
+    assets.value = { ...assets.value, block: null, flat: null }
     return
   }
 
   let next: Partial<ToastAssets>
   if (choice.kind === 'block') {
-    const faces = facesOf(choice.tex)
-    const [top, side] = await Promise.all([loadOne(faces.top), loadOne(faces.side)])
-    next = { top, side, flat: null }
+    // 立体图标是离线渲染好的 PNG，直接按 block id 取；万一缺图，
+    // 退回同名平面贴图，至少不让图标框空着
+    const icon = await loadOne(`block-icons/${choice.tex}`)
+    const flat = icon ? null : await loadOne(choice.tex)
+    next = { block: icon ?? flat, flat: null }
   } else {
     const flat = await loadOne(choice.tex)
-    next = { top: null, side: null, flat }
+    next = { block: null, flat }
   }
 
   if (token !== iconToken) return

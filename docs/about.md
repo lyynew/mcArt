@@ -31,9 +31,10 @@ mcArt 是一个 Minecraft 周边的小工具站：把图片变成方块画、变
 
 代码以 [MIT](https://github.com/lyynew/mcArt/blob/main/LICENSE) 发布，可自由使用、修改、再分发，保留版权声明即可。
 
-**方块贴图版权归 Mojang Studios 所有**，取自 Minecraft Java 版资源，仅供个人制作像素画使用，请勿商用或二次分发。这部分不包含在 MIT 许可内。
+**游戏素材版权归 Mojang Studios 所有**。站内的方块 / 物品贴图、GUI 底图、点阵字表、方块模型与 blockstates 均取自 Minecraft Java 版官方客户端资源，依据 [Minecraft Usage Guidelines](https://www.minecraft.net/en-us/usage-guidelines) 用于本站这一非商业粉丝工具；这部分**不包含在 MIT 代码许可内**，请勿将素材单独提取、再分发或用于商业用途。进度提示图里的立体方块图标由本项目依据官方模型与贴图离线渲染生成（`scripts/build-block-icons.mjs`），**不含任何第三方图片素材**。
 
-本项目与 Mojang Studios、Microsoft 无任何关联。
+> NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
+> 本站是非官方的 Minecraft 粉丝工具，与 Mojang Studios、Microsoft 无关联，也未获其认可或支持。
 
 ## 反馈
 

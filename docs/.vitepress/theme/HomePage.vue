@@ -120,7 +120,7 @@ useBackdrop(backdrop)
 
     <footer class="home-footer">
       <span>mcArt · MIT</span>
-      <span>方块贴图版权归 Mojang Studios，仅供个人制作像素画使用</span>
+      <span>游戏素材版权归 Mojang Studios · 非官方粉丝工具，与 Mojang / Microsoft 无关联</span>
       <a href="./about.html">关于</a>
       <a href="https://github.com/lyynew/mcArt">GitHub</a>
     </footer>

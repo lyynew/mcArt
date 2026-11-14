@@ -55,3 +55,11 @@ docs/.vitepress/config.mts.timestamp-*
 # 原版点阵字的下载缓存（源可随时由 scripts/build-unifont.mjs 重新拉取）
 .build/unifont*
 .build/asset-index-*.json
+
+# 方块立体图标的离线渲染中间数据（产物在 原版材质-icons/，已入库）
+.build/mc-models-*/
+.build/models/
+.build/icon-research/
+.build/block-icons-missing.json
+
+.build/preview/

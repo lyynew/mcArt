@@ -5,8 +5,11 @@
  * 像素画 / 地图画把它当「选源图」用，进度提示工具把它当「选图标」用。
  * 两种用法靠 pickOnly 分流：
  *   默认     → 解码成 SquareImage，emit confirm（源图生成器要的是像素）
- *   pickOnly → 只把条目原样 emit select（图标工具要的是 tex 键，还要自己合成三面）
+ *   pickOnly → 只把条目原样 emit select（进度图标工具要的是 tex 键）
  * 不复制第二份选择器，2134 条素材的搜索/分组/分页只维护一份。
+ *
+ * allow 是可选的额外白名单：进度图标只需要「有立体图标」的方块，
+ * 由调用方传入；像素画 / 地图画不传，行为完全不变。
  *
  * 两千多张不能一次渲染进 DOM，所以按筛选结果分页「加载更多」；
  * 缩略图 <img loading="lazy">，滚到附近才真正请求贴图。
@@ -44,6 +47,8 @@ const props = withDefaults(
     pickOnly?: boolean
     dialogTitle?: string
     hint?: string
+    /** 可选的条目白名单，不传则显示全部素材 */
+    allow?: (entry: BuiltinTexture) => boolean
   }>(),
   { pickOnly: false, dialogTitle: '使用内置素材', hint: undefined },
 )
@@ -70,14 +75,18 @@ const kindFilter = computed<TextureFilterKind>(() =>
   kind.value === 'block' || kind.value === 'item' ? kind.value : 'all',
 )
 const families = computed(() => familiesFor(kindFilter.value))
+/** 白名单先过一遍，再走共用的搜索 / 分组 / 分页 */
+const source = computed(() =>
+  props.allow ? BUILTIN_TEXTURES.filter(props.allow) : BUILTIN_TEXTURES,
+)
 const list = computed(() =>
-  filterBuiltinTextures(BUILTIN_TEXTURES, query.value, family.value, shown.value, kindFilter.value),
+  filterBuiltinTextures(source.value, query.value, family.value, shown.value, kindFilter.value),
 )
 const total = computed(() =>
-  countBuiltinTextures(BUILTIN_TEXTURES, query.value, family.value, kindFilter.value),
+  countBuiltinTextures(source.value, query.value, family.value, kindFilter.value),
 )
-const blockCount = BUILTIN_TEXTURES.filter((t) => t.kind === 'block').length
-const itemCount = BUILTIN_TEXTURES.length - blockCount
+const blockCount = computed(() => source.value.filter((t) => t.kind === 'block').length)
+const itemCount = computed(() => source.value.length - blockCount.value)
 
 watch([kind, query, family], () => {
   shown.value = PAGE
@@ -162,7 +171,7 @@ async function choose(item: BuiltinTexture): Promise<void> {
 
     <template #footer>
       <span class="bt__foot-note">
-        共 {{ BUILTIN_TEXTURES.length }} 张内置素材 · 方块 {{ blockCount }} · 物品图标 {{ itemCount }}
+        共 {{ source.length }} 张内置素材 · 方块 {{ blockCount }} · 物品图标 {{ itemCount }}
       </span>
       <McButton size="sm" @click="open = false">取消</McButton>
     </template>

@@ -3,21 +3,23 @@ import { computed, ref } from 'vue'
 import { McButton, McNote, McSegmented, McWindow, type SegOption } from '@/design/components'
 import BuiltinTextureModal from '@/tools/shared/BuiltinTextureModal.vue'
 import type { BuiltinTexture } from '@/core/texture-source'
+import { blockIconId } from '@/core/block-icons'
 import { useAdvancement } from '../store'
 import type { IconKind } from '../model'
 import IconPreview from './IconPreview.vue'
 
 /**
- * 图标面板：等轴方块 / 平面物品 / 自己上传。
+ * 图标面板：立体方块 / 平面物品 / 自己上传。
  *
  * 选内置素材复用像素画那条选择器（pickOnly 模式），2134 张素材只维护一份
- * 搜索与分组；选中的条目自带 kind，所以挑到物品图标会自动切到「物品」，
- * 不会出现「模式是方块却画了个平面剑」的错位。
+ * 搜索与分组；选中的条目自带 kind，所以挑到物品图标会自动切到「物品」。
+ * 方块那一栏只允许「有预渲染立体图标」的条目（allow），免得选到旗帜、
+ * 潜影盒这类实体模型后出来一个空格子。图标是离线渲染好的 PNG，运行时只贴图。
  */
 const { icon, assets, iconMessage, setIcon, setUpload } = useAdvancement()
 
 const KINDS: SegOption[] = [
-  { value: 'block', label: '方块', title: '等轴三面，顶面与侧面可以不同' },
+  { value: 'block', label: '方块', title: '原版立体方块图标，形状与游戏内一致' },
   { value: 'item', label: '物品', title: '原版物品图标，平面贴图' },
   { value: 'upload', label: '上传', title: '用自己的图片当图标' },
 ]
@@ -46,8 +48,19 @@ const currentLabel = computed(() => {
   return icon.value.tex || '还没选贴图'
 })
 
+/** 物品全部可挑；方块只放出有立体图标的，其余靠 allow 从弹窗里滤掉 */
+const allowIcon = (entry: BuiltinTexture): boolean =>
+  entry.kind !== 'block' || blockIconId(entry.tex) !== null
+
 function onPick(entry: BuiltinTexture): void {
-  setIcon(entry.kind, entry.tex)
+  if (entry.kind === 'block') {
+    const id = blockIconId(entry.tex)
+    if (id) {
+      setIcon('block', id)
+      return
+    }
+  }
+  setIcon('item', entry.tex)
 }
 
 function onFile(e: Event): void {
@@ -89,7 +102,7 @@ function onFile(e: Event): void {
       </div>
 
       <McNote v-if="iconMessage">{{ iconMessage }}</McNote>
-      <McNote v-else-if="icon.kind === 'block'">方块会按等轴三面合成：顶面最亮、左面 80%、右面 60%。</McNote>
+      <McNote v-else-if="icon.kind === 'block'">方块图标按官方模型离线渲染成 32×32 透明 PNG，台阶、楼梯、花草等形状都和游戏里一致。</McNote>
       <McNote v-else-if="icon.kind === 'item'">物品图标按原样平面绘制，透明背景保留。</McNote>
       <McNote v-else>上传的图只在本地处理，不会传到服务器。</McNote>
     </div>
@@ -99,7 +112,8 @@ function onFile(e: Event): void {
     v-model="pickerOpen"
     pick-only
     dialog-title="选一个进度图标"
-    hint="挑一张原版方块贴图或物品图标。方块会合成等轴三面，物品按平面图标显示；选中后立即生效。"
+    hint="挑一张方块或物品图标。方块会显示离线渲染好的立体图标，物品按平面图标显示；选中后立即生效。"
+    :allow="allowIcon"
     @select="onPick"
   />
 </template>

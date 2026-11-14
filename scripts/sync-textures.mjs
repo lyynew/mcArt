@@ -12,6 +12,7 @@
  *   原版材质-items/     → docs/textures/items/          （物品，键名带 items/ 前缀）
  *   原版材质-gui/toast/ → docs/textures/gui/toast/      （进度提示底图，键名带 gui/toast/ 前缀）
  *   原版材质-font/      → docs/textures/font/            （原版 unifont 点阵字，单个 .bin）
+ *   原版材质-icons/     → docs/textures/block-icons/     （离线渲染的 32×32 立体方块图标）
  *
  * 分开目录是因为方块与物品有 72 个同名贴图（告示牌、蜡烛、酿造台…），
  * 平铺到一起会互相覆盖；GUI 底图是界面素材，更不能和图标混在一处。
@@ -83,6 +84,12 @@ async function sync(from, to, label) {
 await sync(join(root, '原版材质'), destRoot, '方块贴图')
 await sync(join(root, '原版材质-items'), join(destRoot, 'items'), '物品贴图')
 await sync(join(root, '原版材质-gui', 'toast'), join(destRoot, 'gui', 'toast'), 'GUI 底图')
+// 立体方块图标由 scripts/build-block-icons.mjs 依据官方模型离线生成，不是从 jar 直接抽的
+if (existsSync(join(root, '原版材质-icons'))) {
+  await sync(join(root, '原版材质-icons'), join(destRoot, 'block-icons'), '方块立体图标')
+} else {
+  console.log('方块立体图标：源不存在，先跑 node scripts/build-block-icons.mjs')
+}
 
 // 点阵字表不是 PNG，不走上面的通用 sync；单文件比对大小后复制
 const fontFrom = join(root, '原版材质-font', 'unifont.bin')

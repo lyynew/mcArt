@@ -41,5 +41,6 @@ const count = (dir) =>
   existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.png')).length : 0
 console.log(
   `贴图入产物：方块 ${count(to)} 张，物品 ${count(join(to, 'items'))} 张，` +
+    `方块立体图标 ${count(join(to, 'block-icons'))} 张，` +
     `GUI 底图 ${count(join(to, 'gui', 'toast'))} 张`,
 )

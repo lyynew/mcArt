@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 import { ICON_SIZE } from '../model'
-import { paintCube } from '../cube'
 import type { ToastAssets } from '../render'
 import type { IconKind } from '../model'
 
@@ -27,7 +26,7 @@ function draw(): void {
   ctx.imageSmoothingEnabled = false
 
   if (props.kind === 'block') {
-    paintCube(ctx, { top: props.assets.top ?? undefined, side: props.assets.side ?? undefined })
+    if (props.assets.block) ctx.drawImage(props.assets.block, 0, 0, ICON_SIZE, ICON_SIZE)
     return
   }
 
@@ -53,7 +52,7 @@ function draw(): void {
 
 onMounted(draw)
 watch(
-  () => [props.kind, props.assets.top, props.assets.side, props.assets.flat, props.assets.upload],
+  () => [props.kind, props.assets.block, props.assets.flat, props.assets.upload],
   draw,
 )
 </script>

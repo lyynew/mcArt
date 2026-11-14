@@ -38,6 +38,10 @@ npm run test       # 单元测试
 
 ## 说明
 
-偏好和草稿存在浏览器本地，清掉本站的站点数据即可。方块贴图取自 Minecraft Java 版资源，版权归 Mojang Studios，仅供个人制作像素画使用，请勿商用或二次分发；这部分不包含在 MIT 许可内。
+偏好和草稿存在浏览器本地，清掉本站的站点数据即可。
 
-代码以 [MIT](LICENSE) 发布。问题与建议走 [GitHub Issues](https://github.com/lyynew/mcArt/issues)。本项目与 Mojang Studios、Microsoft 无关联。
+**游戏素材版权归 Mojang Studios 所有**，取自 Minecraft Java 版官方客户端资源，依据 [Minecraft Usage Guidelines](https://www.minecraft.net/en-us/usage-guidelines) 用于本站这一非商业粉丝工具；不含任何第三方图片素材，这部分**不包含在 MIT 代码许可内**，请勿单独提取、再分发或商用。
+
+NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
+
+代码以 [MIT](LICENSE) 发布。问题与建议走 [GitHub Issues](https://github.com/lyynew/mcArt/issues)。
